@@ -20,19 +20,19 @@ void main(void)
 	vec2 thetaBlue = theta1 * (ChromAbParam.z + ChromAbParam.w * rSq);
 	vec2 tcBlue = LensCenter + Scale * thetaBlue;
 
-	if (any(bvec2(clamp(tcBlue, ScreenCenter - vec2(0.5,0.5), ScreenCenter + vec2(0.5, 0.5)) - tcBlue))) {
+	if (any(bvec2(clamp(tcBlue, ScreenCenter - vec2(0.5, 0.5), ScreenCenter + vec2(0.5, 0.5)) - tcBlue))) {
 		gl_FragColor = vec4(0, 0, 0, 0);
 		return;
 	}
 
 	// Now do blue texture lookup.
-	float blue = texture2D( WarpTexture, tcBlue).b;
+	float blue = texture2D(WarpTexture, tcBlue).b;
 	// Do green lookup (no scaling).
 	vec2 tcGreen = LensCenter + Scale * theta1;
-	float green = texture2D( WarpTexture, tcGreen).g;
+	float green = texture2D(WarpTexture, tcGreen).g;
 	// Do red scale and lookup.
 	vec2 thetaRed = theta1 * (ChromAbParam.x + ChromAbParam.y * rSq);
 	vec2 tcRed = LensCenter + Scale * thetaRed;
-	float red = texture2D( WarpTexture, tcRed).r;
+	float red = texture2D(WarpTexture, tcRed).r;
 	gl_FragColor = vec4(red, green, blue, 1);
 };

@@ -1,7 +1,7 @@
 #include "oculusdevice.h"
 
 OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0),
-	m_scaleFactor(1.0), m_nearClip(0.3f), m_farClip(5000.0f)
+	m_scaleFactor(1.0f), m_nearClip(0.3f), m_farClip(5000.0f)
 {
 	// Init Oculus HMD
 	OVR::System::Init(OVR::Log::ConfigureDefaultLog(OVR::LogMask_All));
@@ -122,11 +122,11 @@ osg::Matrix OculusDevice::viewMatrix(EyeSide eye)  const
 	osg::Matrix viewMatrix;
 
 	if (eye == LEFT_EYE) {
-		viewMatrix.makeTranslate(osg::Vec3f(halfIPD() * viewCenter(), 0.0 ,0.0));
+		viewMatrix.makeTranslate(osg::Vec3f(halfIPD() * viewCenter(), 0.0f, 0.0f));
 	} else if (eye == RIGHT_EYE) {
-		viewMatrix.makeTranslate(osg::Vec3f(-halfIPD() * viewCenter(), 0.0 ,0.0));
+		viewMatrix.makeTranslate(osg::Vec3f(-halfIPD() * viewCenter(), 0.0f, 0.0f));
 	} else {
-		viewMatrix.makeTranslate(osg::Vec3f(0.0, 0.0 ,0.0));
+		viewMatrix.makeTranslate(osg::Vec3f(0.0f, 0.0f, 0.0f));
 	}
 
 	return viewMatrix;
@@ -140,9 +140,9 @@ osg::Matrix OculusDevice::projectionMatrix(EyeSide eye) const
 	float projectionCenterOffset = 4.0f * eyeProjectionShift / hScreenSize();
 
 	if (eye == LEFT_EYE) {
-		projectionMatrix.makeTranslate(osg::Vec3d(projectionCenterOffset, 0, 0));
+		projectionMatrix.makeTranslate(osg::Vec3d(projectionCenterOffset, 0.0f, 0.0f));
 	} else if (eye == RIGHT_EYE) {
-		projectionMatrix.makeTranslate(osg::Vec3d(-projectionCenterOffset, 0, 0));
+		projectionMatrix.makeTranslate(osg::Vec3d(-projectionCenterOffset, 0.0f, 0.0f));
 	} else {
 		projectionMatrix.makeIdentity();
 	}
@@ -163,14 +163,13 @@ osg::Matrix OculusDevice::projectionCenterMatrix() const
 osg::Vec2f OculusDevice::lensCenter(EyeSide eye) const
 {
 	if (eye == LEFT_EYE) {
-		osg::Vec2f(1.0-lensSeparationDistance()/hScreenSize(), 0.5);
+		return osg::Vec2f(1.0f-lensSeparationDistance()/hScreenSize(), 0.5f);
 	} else if (eye == RIGHT_EYE) {
-		return osg::Vec2f(lensSeparationDistance()/hScreenSize(), 0.5);
+		return osg::Vec2f(lensSeparationDistance()/hScreenSize(), 0.5f);
 	}
-
-	return osg::Vec2f(0.5, 0.5);
+	
+	return osg::Vec2f(0.5f, 0.5f);
 }
-
 
 osg::Vec2f OculusDevice::screenCenter() const
 {
@@ -179,14 +178,13 @@ osg::Vec2f OculusDevice::screenCenter() const
 
 osg::Vec2f OculusDevice::scale() const
 {
-	return osg::Vec2f(m_scaleFactor-1.0, m_scaleFactor-1.0);
+	return osg::Vec2f(m_scaleFactor-1.0f, m_scaleFactor-1.0f);
 }
 
 osg::Vec2f OculusDevice::scaleIn() const
 {
-	return osg::Vec2f(2.0, 2.0/aspectRatio());
+	return osg::Vec2f(2.0f, 2.0f/aspectRatio());
 }
-
 
 osg::Vec4f OculusDevice::warpParameters() const
 {
@@ -207,7 +205,6 @@ osg::Vec4f OculusDevice::chromAbParameters() const
 	// Default values from devkit
 	return osg::Vec4f(0.996f, -0.004f, 1.014f, 0.0f);
 }
-
 
 osg::Quat OculusDevice::getOrientation() const
 {
