@@ -40,8 +40,8 @@ class OculusDevice {
 		float aspectRatio() const {  return float (hScreenResolution()/2) / float (vScreenResolution()); }
 		osg::Quat getOrientation() const;
 
-		float setNearClip(float nearClip) { m_nearClip = nearClip; }
-		float setFarClip(float farclip) { m_farClip = farclip; }
+		void setNearClip(float nearClip) { m_nearClip = nearClip; }
+		void setFarClip(float farclip) { m_farClip = farclip; }
 	protected:
 		float viewCenter() const { return hScreenSize() * 0.25f; }
 		float halfIPD() const { return interpupillaryDistance() * 0.5f; }
