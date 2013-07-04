@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(OsgOculusViewer)
 
-SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}")
+SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" cmake)
 
 SET(NGAST_MAJOR_VERSION 1)
 SET(NGAST_MINOR_VERSION 0)
@@ -31,36 +31,14 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 #######################################
 FIND_PACKAGE( OpenGL REQUIRED )
 FIND_PACKAGE( OpenSceneGraph REQUIRED osgViewer osgDB osgGA)
+FIND_PACKAGE( OculusSDK REQUIRED )
 
-IF(WIN32)
-	SET(OCULUS_LIBRARY "${OCULUS_SDK_ROOT}/LibOVR/Lib/Win32/libovr.lib" CACHE FILEPATH "Path for a library.")
-	SET(OCULUS_LIBRARY_DEBUG "${OCULUS_SDK_ROOT}/LibOVR/Lib/Win32/libovrd.lib" CACHE FILEPATH "Path for a library.")
-ENDIF(WIN32)
-
-IF(UNIX)
-	IF( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    	SET(OCULUS_LIBRARY "${OCULUS_SDK_ROOT}/LibOVR/Lib/Linux/Release/x86_64/libovr.a" CACHE FILEPATH "Path for a library.")
-		SET(OCULUS_LIBRARY_DEBUG "${OCULUS_SDK_ROOT}/LibOVR/Lib/Linux/Debug/x86_64/libovr.a" CACHE FILEPATH "Path for a library.")
-	ELSE( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-		SET(OCULUS_LIBRARY "${OCULUS_SDK_ROOT}/LibOVR/Lib/Linux/Release/i386/libovr.a" CACHE FILEPATH "Path for a library.")
-		SET(OCULUS_LIBRARY_DEBUG "${OCULUS_SDK_ROOT}/LibOVR/Lib/Linux/Debug/i386/libovr.a" CACHE FILEPATH "Path for a library.")
-	ENDIF( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-ENDIF(UNIX)
-
-set(OCULUS_LIBRARIES 
-          optimized ${OCULUS_LIBRARY}
-          debug ${OCULUS_LIBRARY_DEBUG}
-)
 
 INCLUDE_DIRECTORIES(BEFORE
     ${OPENGL_INCLUDE_DIR}
     ${OPENSCENEGRAPH_INCLUDE_DIR}
+    ${OculusSDK_INCLUDE_DIRS}
 )
-
-INCLUDE_DIRECTORIES(BEFORE
-	${OCULUS_SDK_ROOT}/LibOVR/Include
-)
-
 
 ###############################################################################
 # Compiler Options
