@@ -31,8 +31,10 @@ TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME}  ${OPENSCENEGRAPH_LIBRARIES} )
 # Link to Oculus libs
 TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME} 	${OCULUS_LIBRARIES}	)
 
-# Link to Windows Multi Media Libs needed for Oculus
-TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME} winmm.lib )
+IF(WIN32)
+	# Link to Windows Multi Media Libs needed for Oculus
+	TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME} winmm.lib )
+ENDIF(WIN32)
 
 ####################################################################
 # Create user file for correct environment string
