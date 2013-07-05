@@ -2,11 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(OsgOculusViewer)
 
-SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" cmake)
-
-SET(NGAST_MAJOR_VERSION 1)
-SET(NGAST_MINOR_VERSION 0)
-SET(NGAST_REVISION_VERSION 0)
+SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Show relative paths options
 OPTION(CMAKE_USE_RELATIVE_PATHS "If true, cmake will use relative paths in makefiles and projects." ON)
@@ -19,9 +15,6 @@ IF (WIN32)
 	ENDIF(NOT OSG_THIRD_PARTY_DIR)
 ENDIF(WIN32)
 
-# Oculus SDK - LibOVR
-SET(OCULUS_SDK_ROOT CACHE PATH "Path where to find Oculus SDK installation ie. the OculusSDK folder")
-
 #Solution
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
@@ -33,11 +26,10 @@ FIND_PACKAGE( OpenGL REQUIRED )
 FIND_PACKAGE( OpenSceneGraph REQUIRED osgViewer osgDB osgGA)
 FIND_PACKAGE( OculusSDK REQUIRED )
 
-
 INCLUDE_DIRECTORIES(BEFORE
     ${OPENGL_INCLUDE_DIR}
     ${OPENSCENEGRAPH_INCLUDE_DIR}
-    ${OculusSDK_INCLUDE_DIRS}
+    ${OCULUS_SDK_INCLUDE_DIRS}
 )
 
 ###############################################################################
