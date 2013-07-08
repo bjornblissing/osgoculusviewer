@@ -1,3 +1,10 @@
+/*
+ * main.cpp
+ *
+ *  Created on: Jul 03, 2013
+ *      Author: Bjorn Blissing
+ */
+ 
 #include <iostream>
 #include <osg/io_utils>
 

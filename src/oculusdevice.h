@@ -1,3 +1,10 @@
+/*
+ * oculusdevice.h
+ *
+ *  Created on: Jul 03, 2013
+ *      Author: Bjorn Blissing
+ */
+ 
 #ifndef _OSG_OCULUSDEVICE_H_
 #define _OSG_OCULUSDEVICE_H_
 
