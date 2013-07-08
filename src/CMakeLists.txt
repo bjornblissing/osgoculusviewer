@@ -2,14 +2,16 @@
 SET(TARGET_TARGETNAME OsgOculusViewer)
 
 # Target source files
-SET(TARGET_SRC 
+SET(TARGET_SRC
 	main.cpp
 	oculusdevice.cpp
+	HMDCamera.cpp
 )
 
 # Target headerfiles
-SET(TARGET_H 
+SET(TARGET_H
 	oculusdevice.h
+	HMDCamera.h
 )
 
 #####################################################################
@@ -60,7 +62,7 @@ IF(WIN32)
 			ENDIF(EXISTS "${OSG_DIR}/bin")
 			SET(USERFILE_ENVIRONMENT_DEBUG "${USERFILE_ENVIRONMENT_DEBUG}${OSG_BIN_DIR}")
 			SET(USERFILE_ENVIRONMENT_RELEASE "${USERFILE_ENVIRONMENT_RELEASE}${OSG_BIN_DIR}")
-			
+
 			IF (OSG_THIRD_PARTY_DIR)
 				# Add third party to path
 				SET(USERFILE_ENVIRONMENT_DEBUG "${USERFILE_ENVIRONMENT_DEBUG};${OSG_THIRD_PARTY_DIR}/bin")
@@ -68,12 +70,12 @@ IF(WIN32)
 			ELSE (OSG_THIRD_PARTY_DIR)
 				MESSAGE("Warning: OpenSceneGraph 3rd Party Directory not found.")
 			ENDIF(OSG_THIRD_PARTY_DIR)
-					
+
 			# For visual studio 10
 			IF(MSVC10)
 				CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME}.vcxproj.user @ONLY)
 			ENDIF(MSVC10)
-			
+
 		ENDIF (OPENSCENEGRAPH_FOUND)
     ENDIF(MSVC)
 ENDIF(WIN32)
