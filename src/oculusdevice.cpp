@@ -1,3 +1,10 @@
+/*
+* oculusdevice.cpp
+*
+* Created on: Jul 03, 2013
+* Author: Bjorn Blissing
+*/
+
 #include "oculusdevice.h"
 
 OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0),
