@@ -10,11 +10,13 @@ class OculusDevice {
 	public:
 		OculusDevice();
 		~OculusDevice();
+
 		enum EyeSide {
 			CENTER_EYE	= 0,
 			LEFT_EYE	= 1,
 			RIGHT_EYE	= 2
 		};
+
 		unsigned int hScreenResolution() const;
 		unsigned int vScreenResolution() const;
 		float hScreenSize() const;
@@ -26,6 +28,8 @@ class OculusDevice {
 
 		osg::Matrix viewMatrix(EyeSide eye = CENTER_EYE) const;
 		osg::Matrix projectionMatrix(EyeSide eye = CENTER_EYE) const;
+        osg::Matrix projectionOffsetMatrix(EyeSide eye = CENTER_EYE) const;
+        osg::Matrix projectionCenterMatrix() const;
 
 		osg::Vec2f lensCenter(EyeSide eye = CENTER_EYE) const;
 		osg::Vec2f screenCenter() const;
@@ -42,10 +46,11 @@ class OculusDevice {
 
 		void setNearClip(float nearClip) { m_nearClip = nearClip; }
 		void setFarClip(float farclip) { m_farClip = farclip; }
+
 	protected:
 		float viewCenter() const { return hScreenSize() * 0.25f; }
 		float halfIPD() const { return interpupillaryDistance() * 0.5f; }
-		osg::Matrix projectionCenterMatrix() const;
+
 		OVR::DeviceManager* m_deviceManager;
 		OVR::HMDDevice* m_hmdDevice;
 		OVR::HMDInfo* m_hmdInfo;

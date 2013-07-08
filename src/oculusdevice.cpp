@@ -132,23 +132,11 @@ osg::Matrix OculusDevice::viewMatrix(EyeSide eye)  const
 	return viewMatrix;
 }
 
-
 osg::Matrix OculusDevice::projectionMatrix(EyeSide eye) const
 {
-	osg::Matrix projectionMatrix;
-	float eyeProjectionShift = viewCenter() - lensSeparationDistance()*0.5f;
-	float projectionCenterOffset = 4.0f * eyeProjectionShift / hScreenSize();
-
-	if (eye == LEFT_EYE) {
-		projectionMatrix.makeTranslate(osg::Vec3d(projectionCenterOffset, 0.0f, 0.0f));
-	} else if (eye == RIGHT_EYE) {
-		projectionMatrix.makeTranslate(osg::Vec3d(-projectionCenterOffset, 0.0f, 0.0f));
-	} else {
-		projectionMatrix.makeIdentity();
-	}
-
-	projectionMatrix.preMult(projectionCenterMatrix());
-	return projectionMatrix;
+    osg::Matrixf projectionMatrix = projectionOffsetMatrix(eye);
+    projectionMatrix.preMult(projectionCenterMatrix());
+    return projectionMatrix;
 }
 
 osg::Matrix OculusDevice::projectionCenterMatrix() const
@@ -160,6 +148,28 @@ osg::Matrix OculusDevice::projectionCenterMatrix() const
 	return projectionMatrix;
 }
 
+osg::Matrix OculusDevice::projectionOffsetMatrix(EyeSide eye) const
+{
+    osg::Matrix projectionMatrix;
+    float eyeProjectionShift = viewCenter() - lensSeparationDistance()*0.5f;
+    float projectionCenterOffset = 4.0f * eyeProjectionShift / hScreenSize();
+
+    if (eye == LEFT_EYE)
+    {
+        projectionMatrix.makeTranslate(osg::Vec3d(projectionCenterOffset, 0, 0));
+    }
+    else if (eye == RIGHT_EYE)
+    {
+        projectionMatrix.makeTranslate(osg::Vec3d(-projectionCenterOffset, 0, 0));
+    }
+    else
+    {
+        projectionMatrix.makeIdentity();
+    }
+
+    return projectionMatrix;
+}
+
 osg::Vec2f OculusDevice::lensCenter(EyeSide eye) const
 {
 	if (eye == LEFT_EYE) {
@@ -167,7 +177,7 @@ osg::Vec2f OculusDevice::lensCenter(EyeSide eye) const
 	} else if (eye == RIGHT_EYE) {
 		return osg::Vec2f(lensSeparationDistance()/hScreenSize(), 0.5f);
 	}
-	
+
 	return osg::Vec2f(0.5f, 0.5f);
 }
 
