@@ -5,13 +5,13 @@ SET(TARGET_TARGETNAME OsgOculusViewer)
 SET(TARGET_SRC
 	main.cpp
 	oculusdevice.cpp
-	HMDCamera.cpp
+	hmdcamera.cpp
 )
 
 # Target headerfiles
 SET(TARGET_H
 	oculusdevice.h
-	HMDCamera.h
+	hmdcamera.h
 )
 
 #####################################################################

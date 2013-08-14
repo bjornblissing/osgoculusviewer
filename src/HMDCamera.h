@@ -5,8 +5,8 @@
  *      Author: Jan Ciger
  */
 
-#ifndef HMDCAMERA_H_
-#define HMDCAMERA_H_
+#ifndef _OSG_HMDCAMERA_H_
+#define _OSG_HMDCAMERA_H_
 
 #include <osg/Group>
 
@@ -37,4 +37,4 @@ class HMDCamera: public osg::Group {
 		OculusDevice* m_dev;
 };
 
-#endif /* HMDCAMERA_H_ */
+#endif /* _OSG_HMDCAMERA_H_ */

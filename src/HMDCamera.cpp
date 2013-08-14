@@ -14,7 +14,7 @@
 #include <osgDB/ReadFile>
 #include <osgViewer/View>
 
-#include "HMDCamera.h"
+#include "hmdcamera.h"
 #include "oculusdevice.h"
 
 
@@ -23,8 +23,8 @@ HMDCamera::HMDCamera(osgViewer::View* view, OculusDevice* dev) : osg::Group(),
 	m_chromaticAberrationCorrection(false),
 	m_view(view),
 	m_dev(dev)
-
-{}
+{
+}
 
 
 HMDCamera::~HMDCamera()
