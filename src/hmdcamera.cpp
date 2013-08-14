@@ -137,7 +137,7 @@ void HMDCamera::configure()
 	if (m_chromaticAberrationCorrection) {
 		fragmentShader->loadShaderSourceFromFile("warpWithChromeAb.frag");
 	} else {
-		fragmentShader->loadShaderSourceFromFile("warp.frag");
+		fragmentShader->loadShaderSourceFromFile("warpWithoutChromeAb.frag");
 	}
 
 	program->addShader(vertexShader);
