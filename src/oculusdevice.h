@@ -69,4 +69,4 @@ class OculusDevice {
 		OculusDevice(const OculusDevice&); // Do not allow copy
 };
 
-#endif
+#endif /* _OSG_OCULUSDEVICE_H_ */
