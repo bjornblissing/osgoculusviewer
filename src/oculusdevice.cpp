@@ -4,8 +4,8 @@
  *  Created on: Jul 03, 2013
  *      Author: Bjorn Blissing
  */
- 
- #include "oculusdevice.h"
+
+#include "oculusdevice.h"
 
 OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0),
 	m_scaleFactor(1.0f), m_nearClip(0.3f), m_farClip(5000.0f)
@@ -141,9 +141,9 @@ osg::Matrix OculusDevice::viewMatrix(EyeSide eye)  const
 
 osg::Matrix OculusDevice::projectionMatrix(EyeSide eye) const
 {
-    osg::Matrixf projectionMatrix = projectionOffsetMatrix(eye);
-    projectionMatrix.preMult(projectionCenterMatrix());
-    return projectionMatrix;
+	osg::Matrixf projectionMatrix = projectionOffsetMatrix(eye);
+	projectionMatrix.preMult(projectionCenterMatrix());
+	return projectionMatrix;
 }
 
 osg::Matrix OculusDevice::projectionCenterMatrix() const
@@ -157,24 +157,19 @@ osg::Matrix OculusDevice::projectionCenterMatrix() const
 
 osg::Matrix OculusDevice::projectionOffsetMatrix(EyeSide eye) const
 {
-    osg::Matrix projectionMatrix;
-    float eyeProjectionShift = viewCenter() - lensSeparationDistance()*0.5f;
-    float projectionCenterOffset = 4.0f * eyeProjectionShift / hScreenSize();
+	osg::Matrix projectionMatrix;
+	float eyeProjectionShift = viewCenter() - lensSeparationDistance()*0.5f;
+	float projectionCenterOffset = 4.0f * eyeProjectionShift / hScreenSize();
 
-    if (eye == LEFT_EYE)
-    {
-        projectionMatrix.makeTranslate(osg::Vec3d(projectionCenterOffset, 0, 0));
-    }
-    else if (eye == RIGHT_EYE)
-    {
-        projectionMatrix.makeTranslate(osg::Vec3d(-projectionCenterOffset, 0, 0));
-    }
-    else
-    {
-        projectionMatrix.makeIdentity();
-    }
+	if (eye == LEFT_EYE) {
+		projectionMatrix.makeTranslate(osg::Vec3d(projectionCenterOffset, 0, 0));
+	} else if (eye == RIGHT_EYE) {
+		projectionMatrix.makeTranslate(osg::Vec3d(-projectionCenterOffset, 0, 0));
+	} else {
+		projectionMatrix.makeIdentity();
+	}
 
-    return projectionMatrix;
+	return projectionMatrix;
 }
 
 osg::Vec2f OculusDevice::lensCenter(EyeSide eye) const

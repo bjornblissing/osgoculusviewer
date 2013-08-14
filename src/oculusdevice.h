@@ -4,7 +4,7 @@
  *  Created on: Jul 03, 2013
  *      Author: Bjorn Blissing
  */
- 
+
 #ifndef _OSG_OCULUSDEVICE_H_
 #define _OSG_OCULUSDEVICE_H_
 
@@ -35,8 +35,8 @@ class OculusDevice {
 
 		osg::Matrix viewMatrix(EyeSide eye = CENTER_EYE) const;
 		osg::Matrix projectionMatrix(EyeSide eye = CENTER_EYE) const;
-        osg::Matrix projectionOffsetMatrix(EyeSide eye = CENTER_EYE) const;
-        osg::Matrix projectionCenterMatrix() const;
+		osg::Matrix projectionOffsetMatrix(EyeSide eye = CENTER_EYE) const;
+		osg::Matrix projectionCenterMatrix() const;
 
 		osg::Vec2f lensCenter(EyeSide eye = CENTER_EYE) const;
 		osg::Vec2f screenCenter() const;
