@@ -39,11 +39,13 @@ void HMDCamera::traverse(osg::NodeVisitor& nv)
 	}
 
 	// Get orientation from oculus sensor
-	osg::Matrixf orient = osg::Matrix::rotate(m_dev->getOrientation());
+	osg::Quat orient = m_dev->getOrientation();
+
 	// Nasty hack to update the view offset for each of the slave cameras
 	// There doesn't seem to be an accessor for this, fortunately the offsets are public
-	m_view->findSlaveForCamera(m_l_rtt.get())->_viewOffset = orient;
-	m_view->findSlaveForCamera(m_r_rtt.get())->_viewOffset = orient;
+	m_view->findSlaveForCamera(m_l_rtt.get())->_viewOffset.setRotate(orient);
+	m_view->findSlaveForCamera(m_r_rtt.get())->_viewOffset.setRotate(orient);
+
 	osg::Group::traverse(nv);
 }
 
