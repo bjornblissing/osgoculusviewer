@@ -5,6 +5,9 @@
 #  OCULUS_SDK_LIBRARIES    - List of libraries when using OculusSDK.
 #  OCULUS_SDK_FOUND        - True if OculusSDK found.
 
+IF (DEFINED ENV{OCULUS_SDK_ROOT_DIR})
+    SET(OCULUS_SDK_ROOT_DIR "$ENV{OCULUS_SDK_ROOT_DIR}")
+ENDIF()
 SET(OCULUS_SDK_ROOT_DIR
     "${OCULUS_SDK_ROOT_DIR}"
     CACHE
