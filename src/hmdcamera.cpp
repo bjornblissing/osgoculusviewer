@@ -39,11 +39,13 @@ void HMDCamera::traverse(osg::NodeVisitor& nv)
 	}
 
 	// Get orientation from oculus sensor
-	osg::Matrixf orient = osg::Matrix::rotate(m_dev->getOrientation());
+	osg::Quat orient = m_dev->getOrientation();
+
 	// Nasty hack to update the view offset for each of the slave cameras
 	// There doesn't seem to be an accessor for this, fortunately the offsets are public
-	m_view->findSlaveForCamera(m_l_rtt.get())->_viewOffset = orient;
-	m_view->findSlaveForCamera(m_r_rtt.get())->_viewOffset = orient;
+	m_view->findSlaveForCamera(m_l_rtt.get())->_viewOffset.setRotate(orient);
+	m_view->findSlaveForCamera(m_r_rtt.get())->_viewOffset.setRotate(orient);
+
 	osg::Group::traverse(nv);
 }
 
@@ -165,8 +167,8 @@ void HMDCamera::configure()
 	rightEyeStateSet->addUniform( new osg::Uniform("ChromAbParam", m_dev->chromAbParameters()));
 	// Add cameras as slaves, specifying offsets for the projection
 	// View takes ownership of our cameras, that's why we keep only weak pointers to them
-	m_view->addSlave(l_rtt, m_dev->projectionOffsetMatrix(OculusDevice::LEFT_EYE), osg::Matrixf::identity(), true);
-	m_view->addSlave(r_rtt, m_dev->projectionOffsetMatrix(OculusDevice::RIGHT_EYE), osg::Matrixf::identity(), true);
+	m_view->addSlave(l_rtt, m_dev->projectionOffsetMatrix(OculusDevice::LEFT_EYE), m_dev->projectionOffsetMatrix(OculusDevice::LEFT_EYE), true);
+	m_view->addSlave(r_rtt, m_dev->projectionOffsetMatrix(OculusDevice::RIGHT_EYE), m_dev->projectionOffsetMatrix(OculusDevice::RIGHT_EYE), true);
 	m_view->addSlave(l_hud, false);
 	m_view->addSlave(r_hud, false);
 }

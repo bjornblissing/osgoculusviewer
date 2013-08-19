@@ -22,7 +22,7 @@
 #include <osgViewer/Viewer>
 
 #include "oculusdevice.h"
-#include "HMDCamera.h"
+#include "hmdcamera.h"
 
 int main( int argc, char** argv )
 {
