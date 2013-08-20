@@ -8,7 +8,7 @@
 #include "oculusdevice.h"
 
 OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0),
-	m_scaleFactor(1.0f), m_nearClip(0.3f), m_farClip(5000.0f)
+	m_scaleFactor(1.0f), m_nearClip(0.3f), m_farClip(5000.0f), m_predictionDelta(0.050f)
 {
 	// Init Oculus HMD
 	OVR::System::Init(OVR::Log::ConfigureDefaultLog(OVR::LogMask_All));
@@ -25,7 +25,9 @@ OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0),
 		OVR::SensorDevice* sensor = m_hmdDevice->GetSensor();
 
 		if (sensor) {
-			m_sensorFusion.AttachToSensor(sensor);
+			m_sensorFusion = new OVR::SensorFusion;
+			m_sensorFusion->AttachToSensor(sensor);
+			m_sensorFusion->SetPredictionEnabled(true);
 		}
 	} else {
 		osg::notify(osg::WARN) << "Warning: Unable to find HMD Device, will use default renderpath instead." << std::endl;
@@ -34,6 +36,12 @@ OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0),
 
 OculusDevice::~OculusDevice()
 {
+	if (m_sensorFusion) {
+		// Detach sensor
+		m_sensorFusion->AttachToSensor(NULL);
+		delete m_sensorFusion;
+	}
+
 	if (m_hmdInfo) {
 		delete m_hmdInfo;
 	}
@@ -223,10 +231,24 @@ osg::Quat OculusDevice::getOrientation() const
 	// Create identity quaternion
 	osg::Quat osgQuat(0.0f, 0.0f, 0.0f, 1.0f);
 
-	if (m_sensorFusion.IsAttachedToSensor()) {
-		OVR::Quatf quat = m_sensorFusion.GetOrientation();
+	if (m_sensorFusion->IsAttachedToSensor()) {
+		OVR::Quatf quat;
+
+		if (m_sensorFusion->IsPredictionEnabled()) {
+			quat = m_sensorFusion->GetPredictedOrientation(m_predictionDelta);
+		} else {
+			quat = m_sensorFusion->GetOrientation();
+		}
+
 		osgQuat.set(quat.x, quat.y, quat.z, -quat.w);
 	}
 
 	return osgQuat;
+}
+
+void OculusDevice::setSensorPredictionEnabled(bool prediction)
+{
+	if (m_sensorFusion) {
+		m_sensorFusion->SetPredictionEnabled(prediction);
+	}
 }

@@ -54,6 +54,9 @@ class OculusDevice {
 		void setNearClip(float nearClip) { m_nearClip = nearClip; }
 		void setFarClip(float farclip) { m_farClip = farclip; }
 
+		void setSensorPredictionEnabled(bool prediction);
+		void setSensorPredictionDelta(float delta) { m_predictionDelta = delta; }
+
 	protected:
 		float viewCenter() const { return hScreenSize() * 0.25f; }
 		float halfIPD() const { return interpupillaryDistance() * 0.5f; }
@@ -61,10 +64,11 @@ class OculusDevice {
 		OVR::DeviceManager* m_deviceManager;
 		OVR::HMDDevice* m_hmdDevice;
 		OVR::HMDInfo* m_hmdInfo;
-		OVR::SensorFusion m_sensorFusion;
+		OVR::SensorFusion* m_sensorFusion;
 		float m_scaleFactor;
 		float m_nearClip;
 		float m_farClip;
+		float m_predictionDelta;
 	private:
 		OculusDevice(const OculusDevice&); // Do not allow copy
 };
