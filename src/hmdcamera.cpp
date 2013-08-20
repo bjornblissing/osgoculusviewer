@@ -167,8 +167,8 @@ void HMDCamera::configure()
 	rightEyeStateSet->addUniform( new osg::Uniform("ChromAbParam", m_dev->chromAbParameters()));
 	// Add cameras as slaves, specifying offsets for the projection
 	// View takes ownership of our cameras, that's why we keep only weak pointers to them
-	m_view->addSlave(l_rtt, m_dev->projectionOffsetMatrix(OculusDevice::LEFT_EYE), osg::Matrixf::identity(), true);
-	m_view->addSlave(r_rtt, m_dev->projectionOffsetMatrix(OculusDevice::RIGHT_EYE), osg::Matrixf::identity(), true);
+	m_view->addSlave(l_rtt, m_dev->projectionOffsetMatrix(OculusDevice::LEFT_EYE), m_dev->viewMatrix(OculusDevice::LEFT_EYE), true);
+	m_view->addSlave(r_rtt, m_dev->projectionOffsetMatrix(OculusDevice::RIGHT_EYE), m_dev->viewMatrix(OculusDevice::RIGHT_EYE), true);
 	m_view->addSlave(l_hud, false);
 	m_view->addSlave(r_hud, false);
 }
