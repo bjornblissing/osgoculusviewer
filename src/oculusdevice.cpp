@@ -8,7 +8,7 @@
 #include "oculusdevice.h"
 
 OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0),
-	m_scaleFactor(1.0f), m_nearClip(0.3f), m_farClip(5000.0f), m_predictionDelta(0.050f)
+	m_scaleFactor(1.0f), m_nearClip(0.3f), m_farClip(5000.0f), m_predictionDelta(0.03f)
 {
 	// Init Oculus HMD
 	OVR::System::Init(OVR::Log::ConfigureDefaultLog(OVR::LogMask_All));
@@ -28,6 +28,8 @@ OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0),
 			m_sensorFusion = new OVR::SensorFusion;
 			m_sensorFusion->AttachToSensor(sensor);
 			m_sensorFusion->SetPredictionEnabled(true);
+			// Get default sensor prediction delta
+			m_predictionDelta = m_sensorFusion->GetPredictionDelta();
 		}
 	} else {
 		osg::notify(osg::WARN) << "Warning: Unable to find HMD Device, will use default renderpath instead." << std::endl;
