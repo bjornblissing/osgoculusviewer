@@ -60,6 +60,7 @@ class OculusDevice {
 	protected:
 		float viewCenter() const { return hScreenSize() * 0.25f; }
 		float halfIPD() const { return interpupillaryDistance() * 0.5f; }
+		float distortionScale() const;
 
 		OVR::DeviceManager* m_deviceManager;
 		OVR::HMDDevice* m_hmdDevice;

@@ -159,7 +159,7 @@ osg::Matrix OculusDevice::projectionMatrix(EyeSide eye) const
 osg::Matrix OculusDevice::projectionCenterMatrix() const
 {
 	osg::Matrix projectionMatrix;
-	float halfScreenDistance = vScreenSize() * 0.5f;
+	float halfScreenDistance = vScreenSize() * 0.5f * distortionScale();
 	float yFov = (180.0f/3.14159f) * 2.0f * atan(halfScreenDistance / eyeToScreenDistance());
 	projectionMatrix.makePerspective(yFov, aspectRatio(), m_nearClip, m_farClip);
 	return projectionMatrix;
@@ -200,7 +200,8 @@ osg::Vec2f OculusDevice::screenCenter() const
 
 osg::Vec2f OculusDevice::scale() const
 {
-	return osg::Vec2f(m_scaleFactor-1.0f, m_scaleFactor-1.0f);
+	float scaleFactor = 1.0f/distortionScale();
+	return osg::Vec2f(0.5*scaleFactor, 0.5f*scaleFactor*aspectRatio());
 }
 
 osg::Vec2f OculusDevice::scaleIn() const
@@ -253,4 +254,15 @@ void OculusDevice::setSensorPredictionEnabled(bool prediction)
 	if (m_sensorFusion) {
 		m_sensorFusion->SetPredictionEnabled(prediction);
 	}
+}
+
+float OculusDevice::distortionScale() const
+{
+	float lensShift = hScreenSize() * 0.25f - lensSeparationDistance() * 0.5f;
+	float lensViewportShift = 4.0f * lensShift / hScreenSize();
+	float fitRadius = fabs(-1 - lensViewportShift);
+	float rsq = fitRadius*fitRadius;
+	osg::Vec4f k = warpParameters();
+	float scale = (k[0] + k[1] * rsq + k[2] * rsq * rsq + k[3] * rsq * rsq * rsq);
+	return scale;
 }
