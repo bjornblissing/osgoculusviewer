@@ -7,7 +7,7 @@
 
 #include "oculusdevice.h"
 
-OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0),
+OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0), m_sensorFusion(0),
 	m_scaleFactor(1.0f), m_nearClip(0.3f), m_farClip(5000.0f), m_predictionDelta(0.03f)
 {
 	// Init Oculus HMD
@@ -20,16 +20,16 @@ OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0),
 
 		if (!m_hmdDevice->GetDeviceInfo(m_hmdInfo)) {
 			osg::notify(osg::FATAL) << "Error: Unable to get device info" << std::endl;
-		}
+		} else {
+			OVR::SensorDevice* sensor = m_hmdDevice->GetSensor();
 
-		OVR::SensorDevice* sensor = m_hmdDevice->GetSensor();
-
-		if (sensor) {
-			m_sensorFusion = new OVR::SensorFusion;
-			m_sensorFusion->AttachToSensor(sensor);
-			m_sensorFusion->SetPredictionEnabled(true);
-			// Get default sensor prediction delta
-			m_predictionDelta = m_sensorFusion->GetPredictionDelta();
+			if (sensor) {
+				m_sensorFusion = new OVR::SensorFusion;
+				m_sensorFusion->AttachToSensor(sensor);
+				m_sensorFusion->SetPredictionEnabled(true);
+				// Get default sensor prediction delta
+				m_predictionDelta = m_sensorFusion->GetPredictionDelta();
+			}
 		}
 	} else {
 		osg::notify(osg::WARN) << "Warning: Unable to find HMD Device, will use default renderpath instead." << std::endl;
@@ -233,7 +233,7 @@ osg::Quat OculusDevice::getOrientation() const
 	// Create identity quaternion
 	osg::Quat osgQuat(0.0f, 0.0f, 0.0f, 1.0f);
 
-	if (m_sensorFusion->IsAttachedToSensor()) {
+	if (m_sensorFusion && m_sensorFusion->IsAttachedToSensor()) {
 		OVR::Quatf quat;
 
 		if (m_sensorFusion->IsPredictionEnabled()) {
