@@ -139,9 +139,9 @@ osg::Matrix OculusDevice::viewMatrix(EyeSide eye)  const
 	osg::Matrix viewMatrix;
 
 	if (eye == LEFT_EYE) {
-		viewMatrix.makeTranslate(osg::Vec3f(halfIPD() * viewCenter(), 0.0f, 0.0f));
+		viewMatrix.makeTranslate(osg::Vec3f(halfIPD(), 0.0f, 0.0f));
 	} else if (eye == RIGHT_EYE) {
-		viewMatrix.makeTranslate(osg::Vec3f(-halfIPD() * viewCenter(), 0.0f, 0.0f));
+		viewMatrix.makeTranslate(osg::Vec3f(-halfIPD(), 0.0f, 0.0f));
 	} else {
 		viewMatrix.makeTranslate(osg::Vec3f(0.0f, 0.0f, 0.0f));
 	}
