@@ -12,6 +12,8 @@
 #include <osg/Shader>
 
 #include <osgDB/ReadFile>
+#include <osgDB/FileUtils>
+
 #include <osgViewer/View>
 
 #include "hmdcamera.h"
@@ -129,14 +131,14 @@ void HMDCamera::configure()
 	// Set up shaders from the Oculus SDK documentation
 	osg::ref_ptr<osg::Program> program = new osg::Program;
 	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
-	vertexShader->loadShaderSourceFromFile("warp.vert");
+	vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp.vert"));
 	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
 
 	// Fragment shader with or without correction for chromatic aberration
 	if (m_chromaticAberrationCorrection) {
-		fragmentShader->loadShaderSourceFromFile("warpWithChromeAb.frag");
+		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warpWithChromeAb.frag"));
 	} else {
-		fragmentShader->loadShaderSourceFromFile("warpWithoutChromeAb.frag");
+		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warpWithoutChromeAb.frag"));
 	}
 
 	program->addShader(vertexShader);
