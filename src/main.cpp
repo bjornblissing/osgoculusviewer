@@ -47,9 +47,8 @@ int main( int argc, char** argv )
 	}
 
 	// Open the HMD
-	OculusDevice* oculusDevice = new OculusDevice;
-	// Set the scaling of the texture, using the recommend 25% from the SDK
-	oculusDevice->setScaleFactor(1.25f);
+	OculusDevice* oculusDevice = new OculusDevice();
+	oculusDevice->setCustomScaleFactor(1.25f);
 	osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
 
 	if (!wsi) {

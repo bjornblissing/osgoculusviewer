@@ -7,8 +7,11 @@
 
 #include "oculusdevice.h"
 
-OculusDevice::OculusDevice() : m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0), m_sensorFusion(0),
-	m_scaleFactor(1.0f), m_nearClip(0.3f), m_farClip(5000.0f), m_predictionDelta(0.03f)
+
+OculusDevice::OculusDevice() :
+	m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0), m_sensorFusion(0),
+	m_useCustomScaleFactor(false), m_customScaleFactor(1.0f),
+	m_nearClip(0.3f), m_farClip(5000.0f), m_predictionDelta(0.03f)
 {
 	// Init Oculus HMD
 	OVR::System::Init(OVR::Log::ConfigureDefaultLog(OVR::LogMask_All));
@@ -258,6 +261,11 @@ void OculusDevice::setSensorPredictionEnabled(bool prediction)
 
 float OculusDevice::distortionScale() const
 {
+	// Disable distortion scale calculation and use user suppied value instead
+	if (m_useCustomScaleFactor) {
+		return m_customScaleFactor;
+	}
+
 	float lensShift = hScreenSize() * 0.25f - lensSeparationDistance() * 0.5f;
 	float lensViewportShift = 4.0f * lensShift / hScreenSize();
 	float fitRadius = fabs(-1 - lensViewportShift);
