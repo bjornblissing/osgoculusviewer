@@ -21,6 +21,7 @@
 #include <osgViewer/Renderer>
 #include <osgViewer/ViewerEventHandlers>
 #include <osgDB/ReadFile>
+#include <osgDB/FileUtils>
 #include <osgGA/TrackballManipulator>
 
 osg::Geode* createScreenQuad( float width, float height, float scale=1.0f )
@@ -116,9 +117,17 @@ int main( int argc, char** argv )
 	// Set up shaders from the Oculus SDK documentation
 	osg::ref_ptr<osg::Program> program = new osg::Program;
 	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
-	vertexShader->loadShaderSourceFromFile("warp.vert");
+	vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp.vert"));
 	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-	fragmentShader->loadShaderSourceFromFile("warpWithChromeAb.frag");
+	// Fragment shader with or without correction for chromatic aberration
+	bool useChromaticAberrationCorrection = true;
+
+	if (useChromaticAberrationCorrection) {
+		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warpWithChromeAb.frag"));
+	} else {
+		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warp.frag"));
+	}
+
 	program->addShader( vertexShader );
 	program->addShader( fragmentShader );
 	// Configure state sets for both eyes
