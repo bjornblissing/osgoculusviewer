@@ -87,7 +87,7 @@ int main( int argc, char** argv )
 	if (!loadedModel) return 0;
 
 	// Set the scaleing of the texture, using the recommend 25% from the SDK
-	oculusDevice->setScaleFactor(1.25f);
+	oculusDevice->setCustomScaleFactor(1.25f);
 	// Calculate the texture size
 	const int textureWidth = oculusDevice->scaleFactor() * oculusDevice->hScreenResolution()/2;
 	const int textureHeight = oculusDevice->scaleFactor() * oculusDevice->vScreenResolution();
