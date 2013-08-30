@@ -125,7 +125,7 @@ int main( int argc, char** argv )
 	if (useChromaticAberrationCorrection) {
 		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warpWithChromeAb.frag"));
 	} else {
-		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warp.frag"));
+		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warpWithoutChromeAb.frag"));
 	}
 
 	program->addShader( vertexShader );
