@@ -47,9 +47,7 @@ OculusDevice::~OculusDevice()
 		delete m_sensorFusion;
 	}
 
-	if (m_hmdInfo) {
-		delete m_hmdInfo;
-	}
+	delete m_hmdInfo;
 
 	// Do a nice shutdown of the Oculus HMD
 	if (OVR::System::IsInitialized()) {
