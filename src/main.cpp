@@ -79,6 +79,8 @@ int main( int argc, char** argv )
 	osgViewer::Viewer viewer(arguments);
 	viewer.getCamera()->setGraphicsContext(gc);
 	viewer.getCamera()->setViewport(0, 0, traits->width, traits->height);
+	// Disable automatic computation of near and far plane
+	viewer.getCamera()->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
 	viewer.setCameraManipulator(cameraManipulator);
 	viewer.realize();
 	osg::ref_ptr<HMDCamera> hmd_camera = new HMDCamera(&viewer, oculusDevice);

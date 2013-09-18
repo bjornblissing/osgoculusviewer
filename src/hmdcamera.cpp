@@ -56,7 +56,6 @@ osg::Camera* HMDCamera::createRTTCamera(osg::Camera::BufferComponent buffer, osg
 	camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER_OBJECT );
 	camera->setRenderOrder( osg::Camera::PRE_RENDER );
 	camera->setGraphicsContext(m_view->getCamera()->getGraphicsContext());
-	camera->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
 	camera->setReferenceFrame(osg::Camera::RELATIVE_RF);
 
 	if ( tex ) {
@@ -110,12 +109,8 @@ void HMDCamera::configure()
 	r_tex->setTextureSize( textureWidth, textureHeight );
 	r_tex->setInternalFormat( GL_RGBA );
 	osg::ref_ptr<osg::Camera> l_rtt = createRTTCamera(osg::Camera::COLOR_BUFFER, l_tex);
-	l_rtt->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
-	l_rtt->setReferenceFrame(osg::Camera::RELATIVE_RF);
 	m_l_rtt = l_rtt;
 	osg::ref_ptr<osg::Camera> r_rtt = createRTTCamera(osg::Camera::COLOR_BUFFER, r_tex);
-	r_rtt->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
-	r_rtt->setReferenceFrame(osg::Camera::RELATIVE_RF);
 	m_r_rtt = r_rtt;
 	// Create HUD cameras for each eye
 	osg::ref_ptr<osg::Camera> l_hud = createHUDCamera(0.0, 1.0, 0.0, 1.0);
