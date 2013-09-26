@@ -1,9 +1,9 @@
 # Target name
+SET(TARGET_LIBRARYNAME OsgOculus)
 SET(TARGET_TARGETNAME OsgOculusViewer)
 
 # Target source files
 SET(TARGET_SRC
-	main.cpp
 	oculusdevice.cpp
 	hmdcamera.cpp
 )
@@ -15,33 +15,40 @@ SET(TARGET_H
 )
 
 #####################################################################
-# Create executable
+# Create library
 #####################################################################
 
-ADD_EXECUTABLE(${TARGET_TARGETNAME} ${TARGET_SRC} ${TARGET_H})
+ADD_LIBRARY(${TARGET_LIBRARYNAME} ${TARGET_SRC} ${TARGET_H})
 
 #####################################################################
 # Linker options
 #####################################################################
 
 # Link to open gl libs
-TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME}  ${OPENGL_LIBRARIES} )
+TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME}  ${OPENGL_LIBRARIES} )
 
 # Link to OpenSceneGraph libs
-TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME}  ${OPENSCENEGRAPH_LIBRARIES} )
+TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME}  ${OPENSCENEGRAPH_LIBRARIES} )
 
 # Link to Oculus libs
-TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME} 	${OCULUS_SDK_LIBRARIES}	)
+TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} 	${OCULUS_SDK_LIBRARIES}	)
 
 # Link to libraries needed for Oculus on Windows
 IF(WIN32)
-	TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME} winmm.lib )
+	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} winmm.lib )
 ENDIF(WIN32)
 
 # Link to libraries needed for Oculus on Linux
 IF(UNIX)
-	TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME} pthread udev X11 Xinerama)
+	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} pthread udev X11 Xinerama)
 ENDIF(UNIX)
+
+#####################################################################
+# Create executable
+#####################################################################
+
+ADD_EXECUTABLE(${TARGET_TARGETNAME} main.cpp)
+TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME} ${TARGET_LIBRARYNAME})
 
 ####################################################################
 # Create user file for correct environment string
