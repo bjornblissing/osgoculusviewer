@@ -45,8 +45,7 @@ class OculusDevice {
 		osg::Vec2f scale() const;
 		osg::Vec2f scaleIn() const;
 
-		void setScaleFactor(float scaleFactor) { m_scaleFactor = scaleFactor; }
-		float scaleFactor() const { return m_scaleFactor; }
+		float scaleFactor() const { return distortionScale(); }
 
 		float aspectRatio() const {  return float (hScreenResolution()/2) / float (vScreenResolution()); }
 		osg::Quat getOrientation() const;
@@ -54,17 +53,24 @@ class OculusDevice {
 		void setNearClip(float nearClip) { m_nearClip = nearClip; }
 		void setFarClip(float farclip) { m_farClip = farclip; }
 
+		void setSensorPredictionEnabled(bool prediction);
+		void setSensorPredictionDelta(float delta) { m_predictionDelta = delta; }
+		void setCustomScaleFactor(const float& customScaleFactor) { m_useCustomScaleFactor = true; m_customScaleFactor = customScaleFactor; }
+
 	protected:
 		float viewCenter() const { return hScreenSize() * 0.25f; }
 		float halfIPD() const { return interpupillaryDistance() * 0.5f; }
+		float distortionScale() const;
 
 		OVR::DeviceManager* m_deviceManager;
 		OVR::HMDDevice* m_hmdDevice;
 		OVR::HMDInfo* m_hmdInfo;
-		OVR::SensorFusion m_sensorFusion;
-		float m_scaleFactor;
+		OVR::SensorFusion* m_sensorFusion;
+		bool m_useCustomScaleFactor;
+		float m_customScaleFactor;
 		float m_nearClip;
 		float m_farClip;
+		float m_predictionDelta;
 	private:
 		OculusDevice(const OculusDevice&); // Do not allow copy
 };

@@ -12,6 +12,8 @@
 #include <osg/Shader>
 
 #include <osgDB/ReadFile>
+#include <osgDB/FileUtils>
+
 #include <osgViewer/View>
 
 #include "hmdcamera.h"
@@ -34,18 +36,15 @@ HMDCamera::~HMDCamera()
 void HMDCamera::traverse(osg::NodeVisitor& nv)
 {
 	if (!m_configured) {
-		m_configured = true;
 		configure();
 	}
 
 	// Get orientation from oculus sensor
 	osg::Quat orient = m_dev->getOrientation();
-
 	// Nasty hack to update the view offset for each of the slave cameras
 	// There doesn't seem to be an accessor for this, fortunately the offsets are public
 	m_view->findSlaveForCamera(m_l_rtt.get())->_viewOffset.setRotate(orient);
 	m_view->findSlaveForCamera(m_r_rtt.get())->_viewOffset.setRotate(orient);
-
 	osg::Group::traverse(nv);
 }
 
@@ -57,7 +56,6 @@ osg::Camera* HMDCamera::createRTTCamera(osg::Camera::BufferComponent buffer, osg
 	camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER_OBJECT );
 	camera->setRenderOrder( osg::Camera::PRE_RENDER );
 	camera->setGraphicsContext(m_view->getCamera()->getGraphicsContext());
-	camera->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
 	camera->setReferenceFrame(osg::Camera::RELATIVE_RF);
 
 	if ( tex ) {
@@ -111,12 +109,8 @@ void HMDCamera::configure()
 	r_tex->setTextureSize( textureWidth, textureHeight );
 	r_tex->setInternalFormat( GL_RGBA );
 	osg::ref_ptr<osg::Camera> l_rtt = createRTTCamera(osg::Camera::COLOR_BUFFER, l_tex);
-	l_rtt->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
-	l_rtt->setReferenceFrame(osg::Camera::RELATIVE_RF);
 	m_l_rtt = l_rtt;
 	osg::ref_ptr<osg::Camera> r_rtt = createRTTCamera(osg::Camera::COLOR_BUFFER, r_tex);
-	r_rtt->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
-	r_rtt->setReferenceFrame(osg::Camera::RELATIVE_RF);
 	m_r_rtt = r_rtt;
 	// Create HUD cameras for each eye
 	osg::ref_ptr<osg::Camera> l_hud = createHUDCamera(0.0, 1.0, 0.0, 1.0);
@@ -132,14 +126,14 @@ void HMDCamera::configure()
 	// Set up shaders from the Oculus SDK documentation
 	osg::ref_ptr<osg::Program> program = new osg::Program;
 	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
-	vertexShader->loadShaderSourceFromFile("warp.vert");
+	vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp.vert"));
 	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
 
 	// Fragment shader with or without correction for chromatic aberration
 	if (m_chromaticAberrationCorrection) {
-		fragmentShader->loadShaderSourceFromFile("warpWithChromeAb.frag");
+		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warpWithChromeAb.frag"));
 	} else {
-		fragmentShader->loadShaderSourceFromFile("warpWithoutChromeAb.frag");
+		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warpWithoutChromeAb.frag"));
 	}
 
 	program->addShader(vertexShader);
@@ -167,8 +161,9 @@ void HMDCamera::configure()
 	rightEyeStateSet->addUniform( new osg::Uniform("ChromAbParam", m_dev->chromAbParameters()));
 	// Add cameras as slaves, specifying offsets for the projection
 	// View takes ownership of our cameras, that's why we keep only weak pointers to them
-	m_view->addSlave(l_rtt, m_dev->projectionOffsetMatrix(OculusDevice::LEFT_EYE), m_dev->projectionOffsetMatrix(OculusDevice::LEFT_EYE), true);
-	m_view->addSlave(r_rtt, m_dev->projectionOffsetMatrix(OculusDevice::RIGHT_EYE), m_dev->projectionOffsetMatrix(OculusDevice::RIGHT_EYE), true);
+	m_view->addSlave(l_rtt, m_dev->projectionOffsetMatrix(OculusDevice::LEFT_EYE), m_dev->viewMatrix(OculusDevice::LEFT_EYE), true);
+	m_view->addSlave(r_rtt, m_dev->projectionOffsetMatrix(OculusDevice::RIGHT_EYE), m_dev->viewMatrix(OculusDevice::RIGHT_EYE), true);
 	m_view->addSlave(l_hud, false);
 	m_view->addSlave(r_hud, false);
+	m_configured = true;
 }

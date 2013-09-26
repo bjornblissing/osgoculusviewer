@@ -3,7 +3,7 @@ OsgOculusViewer
 
 An OsgViewer with support for the Oculus Rift
 
-Last tested against Oculus SDK 0.2.3
+Last tested against Oculus SDK 0.2.4
 
 License
 -------
@@ -15,3 +15,5 @@ Contributors
 Björn Blissing
 
 Jan Ciger
+
+Nico Kruithof

@@ -47,9 +47,8 @@ int main( int argc, char** argv )
 	}
 
 	// Open the HMD
-	OculusDevice* oculusDevice = new OculusDevice;
-	// Set the scaling of the texture, using the recommend 25% from the SDK
-	oculusDevice->setScaleFactor(1.25f);
+	OculusDevice* oculusDevice = new OculusDevice();
+	oculusDevice->setCustomScaleFactor(1.25f);
 	osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
 
 	if (!wsi) {
@@ -80,6 +79,8 @@ int main( int argc, char** argv )
 	osgViewer::Viewer viewer(arguments);
 	viewer.getCamera()->setGraphicsContext(gc);
 	viewer.getCamera()->setViewport(0, 0, traits->width, traits->height);
+	// Disable automatic computation of near and far plane
+	viewer.getCamera()->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
 	viewer.setCameraManipulator(cameraManipulator);
 	viewer.realize();
 	osg::ref_ptr<HMDCamera> hmd_camera = new HMDCamera(&viewer, oculusDevice);
