@@ -9,6 +9,10 @@ SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # Show relative paths options
 OPTION(CMAKE_USE_RELATIVE_PATHS "If true, cmake will use relative paths in makefiles and projects." ON)
 
+# Build example viewer
+OPTION(BUILD_EXAMPLE "Enable to build viewer example" ON)
+
+
 IF (WIN32)
 	# Where to find OSG directory
 	SET(OSG_THIRD_PARTY_DIR CACHE PATH "Path where to find the osg third party dependencies")
@@ -34,6 +38,16 @@ INCLUDE_DIRECTORIES(BEFORE
     ${OCULUS_SDK_INCLUDE_DIRS}
 )
 
+# osgViewer::ViewConfig concept requires osg 3.2 or later
+IF(NOT OPENSCENEGRAPH_VERSION VERSION_EQUAL 3.2.0 AND 
+NOT OPENSCENEGRAPH_VERSION VERSION_GREATER 3.2.0)
+	SET (USE_VIEW_CONFIG OFF)
+	SET (BUILD_DEPRECATED ON)
+ELSE()
+	SET (USE_VIEW_CONFIG ON)
+	OPTION(BUILD_DEPRECATED "Enable to build deprecated version as well" OFF)
+ENDIF()
+
 ###############################################################################
 # Compiler Options
 ################################################################################
@@ -43,7 +57,7 @@ IF(WIN32)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D \"NOMINMAX\"")
 	
 	# Use Link Time Code Generation
-	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG")
+	SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /LTCG")
 	
     IF(MSVC80)
 		# Detech 64-bit portability Issues

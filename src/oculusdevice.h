@@ -12,11 +12,10 @@
 #include <osg/Matrix>
 
 
-class OculusDevice {
+class OculusDevice : public osg::Referenced {
 
 	public:
 		OculusDevice();
-		~OculusDevice();
 
 		enum EyeSide {
 			CENTER_EYE	= 0,
@@ -58,12 +57,14 @@ class OculusDevice {
 		void setCustomScaleFactor(const float& customScaleFactor) { m_useCustomScaleFactor = true; m_customScaleFactor = customScaleFactor; }
 
 	protected:
+		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
 		float viewCenter() const { return hScreenSize() * 0.25f; }
 		float halfIPD() const { return interpupillaryDistance() * 0.5f; }
 		float distortionScale() const;
 
-		OVR::DeviceManager* m_deviceManager;
-		OVR::HMDDevice* m_hmdDevice;
+		OVR::Ptr<OVR::DeviceManager> m_deviceManager;
+		OVR::Ptr<OVR::HMDDevice> m_hmdDevice;
+		OVR::Ptr<OVR::SensorDevice> m_sensor;
 		OVR::HMDInfo* m_hmdInfo;
 		OVR::SensorFusion* m_sensorFusion;
 		bool m_useCustomScaleFactor;

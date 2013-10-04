@@ -26,6 +26,11 @@ ELSE()
 ENDIF()
 MARK_AS_ADVANCED(OCULUS_SDK_LIB_ARCH)
 
+# Append "d" to debug libs on windows platform
+IF (WIN32)
+	SET(CMAKE_DEBUG_POSTFIX d)
+ENDIF()
+
 # Look for the library.
 FIND_LIBRARY(OCULUS_SDK_LIBRARY NAMES libovr ovr HINTS ${OCULUS_SDK_ROOT_DIR} 
                                                       ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Win32

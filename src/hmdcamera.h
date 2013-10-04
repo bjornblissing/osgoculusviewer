@@ -19,11 +19,11 @@ namespace osgViewer {
 
 class HMDCamera: public osg::Group {
 	public:
-		HMDCamera(osgViewer::View* view, OculusDevice* dev);
+		HMDCamera(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev);
 		virtual void traverse(osg::NodeVisitor& nv);
 		void setChromaticAberrationCorrection(bool correctionEnabled) { m_chromaticAberrationCorrection = correctionEnabled; }
 	protected:
-		virtual ~HMDCamera();
+		~HMDCamera();
 		virtual void configure();
 
 		osg::Camera* createRTTCamera(osg::Camera::BufferComponent buffer, osg::Texture* tex);
@@ -34,7 +34,7 @@ class HMDCamera: public osg::Group {
 		bool m_chromaticAberrationCorrection;
 		osg::observer_ptr<osgViewer::View> m_view;
 		osg::observer_ptr<osg::Camera> m_l_rtt, m_r_rtt;
-		OculusDevice* m_dev;
+		osg::observer_ptr<OculusDevice> m_dev;
 };
 
 #endif /* _OSG_HMDCAMERA_H_ */

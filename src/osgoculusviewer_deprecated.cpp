@@ -47,7 +47,7 @@ int main( int argc, char** argv )
 	}
 
 	// Open the HMD
-	OculusDevice* oculusDevice = new OculusDevice();
+	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice();
 	oculusDevice->setCustomScaleFactor(1.25f);
 	osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
 

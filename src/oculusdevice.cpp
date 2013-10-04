@@ -9,14 +9,14 @@
 
 
 OculusDevice::OculusDevice() :
-	m_deviceManager(0), m_hmdDevice(0), m_hmdInfo(0), m_sensorFusion(0),
+	m_deviceManager(0), m_hmdDevice(0), m_sensor(0), m_hmdInfo(0), m_sensorFusion(0),
 	m_useCustomScaleFactor(false), m_customScaleFactor(1.0f),
 	m_nearClip(0.3f), m_farClip(5000.0f), m_predictionDelta(0.03f)
 {
 	// Init Oculus HMD
 	OVR::System::Init(OVR::Log::ConfigureDefaultLog(OVR::LogMask_All));
-	m_deviceManager = OVR::DeviceManager::Create();
-	m_hmdDevice = m_deviceManager->EnumerateDevices<OVR::HMDDevice>().CreateDevice();
+	m_deviceManager = *OVR::DeviceManager::Create();
+	m_hmdDevice = *m_deviceManager->EnumerateDevices<OVR::HMDDevice>().CreateDevice();
 
 	if (m_hmdDevice) {
 		m_hmdInfo = new OVR::HMDInfo;
@@ -24,11 +24,11 @@ OculusDevice::OculusDevice() :
 		if (!m_hmdDevice->GetDeviceInfo(m_hmdInfo)) {
 			osg::notify(osg::FATAL) << "Error: Unable to get device info" << std::endl;
 		} else {
-			OVR::SensorDevice* sensor = m_hmdDevice->GetSensor();
+			m_sensor = *m_hmdDevice->GetSensor();
 
-			if (sensor) {
+			if (m_sensor) {
 				m_sensorFusion = new OVR::SensorFusion;
-				m_sensorFusion->AttachToSensor(sensor);
+				m_sensorFusion->AttachToSensor(m_sensor);
 				m_sensorFusion->SetPredictionEnabled(true);
 				// Get default sensor prediction delta
 				m_predictionDelta = m_sensorFusion->GetPredictionDelta();
@@ -45,9 +45,14 @@ OculusDevice::~OculusDevice()
 		// Detach sensor
 		m_sensorFusion->AttachToSensor(NULL);
 		delete m_sensorFusion;
+		m_sensorFusion = NULL;
 	}
 
 	delete m_hmdInfo;
+	m_hmdInfo = NULL;
+	m_sensor.Clear();
+	m_hmdDevice.Clear();
+	m_deviceManager.Clear();
 
 	// Do a nice shutdown of the Oculus HMD
 	if (OVR::System::IsInitialized()) {
