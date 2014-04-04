@@ -14,11 +14,23 @@ OPTION(BUILD_EXAMPLE "Enable to build viewer example" ON)
 
 
 IF (WIN32)
-	# Where to find OSG directory
-	SET(OSG_THIRD_PARTY_DIR CACHE PATH "Path where to find the osg third party dependencies")
+	# Path to find OpenSceneGraph
+	SET(OSG_DIR $ENV{OSG_DIR} CACHE PATH "Path where to find the OpenSceneGraph")
+	IF(NOT OSG_DIR)
+		MESSAGE(FATAL_ERROR "Error: OpenSceneGraph not found.")
+	ENDIF(NOT OSG_DIR)
+	
+	# Where to find OpenSceneGraph third party dependencies
+	SET(OSG_THIRD_PARTY_DIR CACHE PATH "Path where to find the OpenSceneGraph third party dependencies")
 	IF(NOT OSG_THIRD_PARTY_DIR)
 		MESSAGE(FATAL_ERROR "Error: OpenSceneGraph 3rd Party Directory not found.")
 	ENDIF(NOT OSG_THIRD_PARTY_DIR)
+	
+	# Where to find Oculus SDK
+	SET(OCULUS_SDK_ROOT_DIR ENV{OCULUS_SDK_ROOT_DIR} CACHE PATH "Path where to find the Oculus SDK")
+	IF(NOT OCULUS_SDK_ROOT_DIR)
+		MESSAGE(FATAL_ERROR "Error: Oculus SDK not found.")
+	ENDIF(NOT OCULUS_SDK_ROOT_DIR)
 ENDIF(WIN32)
 
 #Solution

@@ -110,7 +110,6 @@ IF(WIN32)
 			SET(USERFILE_ENVIRONMENT_RELEASE "PATH=")
 
 			# Add OpenSceneGraph to path
-			STRING(REPLACE "\\" "/" OSG_DIR $ENV{OSG_DIR})
 			IF (EXISTS "${OSG_DIR}/bin")
 				SET(OSG_BIN_DIR "${OSG_DIR}/bin" CACHE PATH "Path where to find OpenSceneGraph binaries")
 			ELSE (EXISTS "${OSG_DIR}/bin")
