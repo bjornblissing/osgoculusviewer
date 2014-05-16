@@ -25,17 +25,23 @@ OculusDevice::OculusDevice() :
 			osg::notify(osg::FATAL) << "Error: Unable to get device info" << std::endl;
 		} else {
 			m_sensor = *m_hmdDevice->GetSensor();
-
-			if (m_sensor) {
-				m_sensorFusion = new OVR::SensorFusion;
-				m_sensorFusion->AttachToSensor(m_sensor);
-				m_sensorFusion->SetPredictionEnabled(true);
-				// Get default sensor prediction delta
-				m_predictionDelta = m_sensorFusion->GetPredictionDelta();
-			}
 		}
 	} else {
 		osg::notify(osg::WARN) << "Warning: Unable to find HMD Device, will use default renderpath instead." << std::endl;
+		
+		// Try to connect to sensor only, used for emulated devices
+		m_sensor = *m_deviceManager->EnumerateDevices<OVR::SensorDevice>().CreateDevice();
+	}
+
+	// Attach sensor
+	if (m_sensor) {
+		m_sensorFusion = new OVR::SensorFusion;
+		m_sensorFusion->AttachToSensor(m_sensor);
+		m_sensorFusion->SetPredictionEnabled(true);
+		// Get default sensor prediction delta
+		m_predictionDelta = m_sensorFusion->GetPredictionDelta();
+	} else {
+		osg::notify(osg::WARN) << "Warning: Unable to connect to tracker sensor." << std::endl;
 	}
 }
 
