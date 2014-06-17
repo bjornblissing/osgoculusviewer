@@ -100,6 +100,16 @@ IF (BUILD_DEPRECATED)
 ENDIF()
 
 ####################################################################
+# Copy shaders if we are doing out of source builds
+#####################################################################
+STRING(COMPARE NOTEQUAL ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} CMAKE_OUT_OF_SOURCE_BUILD)
+IF (CMAKE_OUT_OF_SOURCE_BUILD)
+	CONFIGURE_FILE(warp.vert warp.vert COPYONLY)
+	CONFIGURE_FILE(warpWithChromeAb.frag warpWithChromeAb.frag COPYONLY)
+	CONFIGURE_FILE(warpWithoutChromeAb.frag warpWithoutChromeAb.frag COPYONLY)
+ENDIF()
+
+####################################################################
 # Create user file for correct environment string
 #####################################################################
 IF(WIN32)
