@@ -126,15 +126,15 @@ IF(WIN32)
 				MESSAGE("Warning: OpenSceneGraph 3rd Party Directory not found.")
 			ENDIF(OSG_THIRD_PARTY_DIR)
 
-			# For visual studio 10
-			IF(MSVC10)
+			# For visual studio 2010 (MSVC10), 2012 (MSVC11) and 2013 (MSVC12)
+			IF(MSVC10 OR MSVC11 OR MSVC12)
 				IF (USE_VIEW_CONFIG)
 					CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME}.vcxproj.user @ONLY)
 				ENDIF()
 				IF (BUILD_DEPRECATED)
 					CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_DEPRECATED}.vcxproj.user @ONLY)
 				ENDIF()
-			ENDIF(MSVC10)
+			ENDIF()
 
 		ENDIF (OPENSCENEGRAPH_FOUND)
     ENDIF(MSVC)
