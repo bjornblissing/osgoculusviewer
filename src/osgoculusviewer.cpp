@@ -25,8 +25,14 @@ int main( int argc, char** argv )
 	// Still no loaded model, then exit
 	if (!loadedModel) return 0;
 
+	// Subtract at least one bit of the node mask to disable rendering for main camera
+	osg::Node::NodeMask sceneNodeMask = loadedModel->getNodeMask() & ~0x1;
+	loadedModel->setNodeMask(sceneNodeMask);
+		 
 	// Create Oculus View Config
 	osg::ref_ptr<OculusViewConfig> oculusViewConfig = new OculusViewConfig;
+	// Set the node mask used for scene
+	oculusViewConfig->setSceneNodeMask(sceneNodeMask);
 	// Create viewer
 	osgViewer::Viewer viewer(arguments);
 	// Add statistics handler
