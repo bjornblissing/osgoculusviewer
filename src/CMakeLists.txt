@@ -7,11 +7,13 @@ SET(TARGET_TARGETNAME_DEPRECATED OsgOculusViewer_deprecated)
 # Target source files
 SET(TARGET_SRC
 	oculusdevice.cpp
+	oculuseventhandler.cpp
 	oculusviewconfig.cpp
 )
 # Target header files
 SET(TARGET_H
 	oculusdevice.h
+	oculuseventhandler.h
 	oculusviewconfig.h
 )
 
