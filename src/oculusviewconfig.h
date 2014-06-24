@@ -33,6 +33,7 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		void setFarClip(float farclip) { m_farClip = farclip; }
 		void setSensorPredictionEnabled(bool prediction);
 		void setSensorPredictionDelta(float delta) { m_predictionDelta = delta; }
+		void resetSensorOrientation() { if (m_device) m_device->resetSensorOrientation(); }
 		void setUseDefaultScaleFactor(bool useDefault) { m_useCustomScaleFactor = !useDefault; }
 		void setCustomScaleFactor(const float& customScaleFactor) { m_useCustomScaleFactor = true; m_customScaleFactor = customScaleFactor; }
 		void setSceneNodeMask(osg::Node::NodeMask nodeMask) { m_sceneNodeMask = nodeMask; }

@@ -56,6 +56,8 @@ class OculusDevice : public osg::Referenced {
 		void setSensorPredictionDelta(float delta) { m_predictionDelta = delta; }
 		void setCustomScaleFactor(const float& customScaleFactor) { m_useCustomScaleFactor = true; m_customScaleFactor = customScaleFactor; }
 
+		void resetSensorOrientation() { if (m_sensorFusion) m_sensorFusion->Reset(); }
+
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
 		float viewCenter() const { return hScreenSize() * 0.25f; }
