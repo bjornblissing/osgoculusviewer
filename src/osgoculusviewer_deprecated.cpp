@@ -20,6 +20,7 @@
 #include <osgDB/ReadFile>
 #include <osgGA/TrackballManipulator>
 #include <osgViewer/Viewer>
+#include <osgViewer/ViewerEventHandlers>
 
 #include "oculusdevice.h"
 #include "hmdcamera.h"
@@ -49,6 +50,8 @@ int main( int argc, char** argv )
 	// Open the HMD
 	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice();
 	oculusDevice->setCustomScaleFactor(1.25f);
+
+	// Create screen with match the Oculus Rift resolution
 	osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
 
 	if (!wsi) {
@@ -56,9 +59,23 @@ int main( int argc, char** argv )
 		return 1;
 	}
 
+	// Get the screen identifiers set in environment variable DISPLAY
+	osg::GraphicsContext::ScreenIdentifier si;
+	si.readDISPLAY();
+
+	// If displayNum has not been set, reset it to 0.
+	if (si.displayNum < 0) si.displayNum = 0;
+
+	// If screenNum has not been set, reset it to 0.
+	if (si.screenNum < 0) si.screenNum = 0;
+
 	unsigned int width, height;
-	wsi->getScreenResolution(osg::GraphicsContext::ScreenIdentifier(0), width, height);
+	wsi->getScreenResolution(si, width, height);
+
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
+	traits->hostName = si.hostName;
+	traits->screenNum = si.screenNum;
+	traits->displayNum = si.displayNum;
 	traits->windowDecoration = false;
 	traits->x = 0;
 	traits->y = 0;
@@ -66,10 +83,14 @@ int main( int argc, char** argv )
 	traits->height = oculusDevice->vScreenResolution();
 	traits->doubleBuffer = true;
 	traits->sharedContext = 0;
-	traits->sampleBuffers = true;
-	traits->samples = 4;
-	traits->vsync = true;
+	traits->vsync = true; // VSync should always be enabled for Oculus Rift applications
+
+	// Create a graphic context based on our desired traits
 	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits);
+	if (!gc) {
+		osg::notify(osg::NOTICE) << "Error, GraphicsWindow has not been created successfully" << std::endl;
+		return 1;
+	}
 
 	if (gc.valid()) {
 		gc->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
@@ -79,17 +100,23 @@ int main( int argc, char** argv )
 	osgViewer::Viewer viewer(arguments);
 	viewer.getCamera()->setGraphicsContext(gc);
 	viewer.getCamera()->setViewport(0, 0, traits->width, traits->height);
+
 	// Disable automatic computation of near and far plane
 	viewer.getCamera()->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
 	viewer.setCameraManipulator(cameraManipulator);
 	viewer.realize();
+	
+	// Subtract at least one bit of the node mask to disable rendering for main camera
+	osg::Node::NodeMask sceneNodeMask = loadedModel->getNodeMask() & ~0x1;
+	loadedModel->setNodeMask(sceneNodeMask);
+
 	osg::ref_ptr<HMDCamera> hmd_camera = new HMDCamera(&viewer, oculusDevice);
 	hmd_camera->setChromaticAberrationCorrection(true);
+	hmd_camera->setSceneNodeMask(sceneNodeMask);
 	hmd_camera->addChild(loadedModel);
 	viewer.setSceneData(hmd_camera);
-	// Create matrix for camera position and orientation (from HMD)
-	osg::Matrix cameraManipulatorViewMatrix;
-	osg::Matrix orientationMatrix;
+	// Add statistics handler
+	viewer.addEventHandler(new osgViewer::StatsHandler);
 	// Start Viewer
 	viewer.run();
 	return 0;
