@@ -11,7 +11,7 @@
 #include <osgViewer/ViewerEventHandlers>
 
 #include "oculuseventhandler.h"
-#include "oculusViewConfig.h"
+#include "oculusviewconfig.h"
 
 int main( int argc, char** argv )
 {
