@@ -101,9 +101,23 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 		return;
 	}
 
+	// Get the screen identifiers set in environment variable DISPLAY
+	osg::GraphicsContext::ScreenIdentifier si;
+	si.readDISPLAY();
+	
+	// If displayNum has not been set, reset it to 0.
+	if (si.displayNum < 0) si.displayNum = 0;
+
+	// If screenNum has not been set, reset it to 0.
+	if (si.screenNum < 0) si.screenNum = 0;
+
 	unsigned int width, height;
-	wsi->getScreenResolution(osg::GraphicsContext::ScreenIdentifier(0), width, height);
+	wsi->getScreenResolution(si, width, height);
+
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
+	traits->hostName = si.hostName;
+	traits->screenNum = si.screenNum;
+	traits->displayNum = si.displayNum;
 	traits->windowDecoration = false;
 	traits->x = 0;
 	traits->y = 0;
@@ -111,9 +125,9 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	traits->height = m_device->vScreenResolution();
 	traits->doubleBuffer = true;
 	traits->sharedContext = 0;
-	traits->sampleBuffers = true;
-	traits->samples = 4;
-	traits->vsync = true;
+	traits->vsync = true; // VSync should always be enabled for Oculus Rift applications
+
+	// Create a graphic context based on our desired traits
 	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits);
 	if (!gc) {
 		osg::notify(osg::NOTICE) << "Error, GraphicsWindow has not been created successfully" << std::endl;
