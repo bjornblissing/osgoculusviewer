@@ -64,7 +64,7 @@ ENDIF()
 ###############################################################################
 # Compiler Options
 ################################################################################
-IF(WIN32)
+IF(MSVC)
 	# Make sure we use minimal windows.h library without min max macros
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D \"WIN32_LEAN_AND_MEAN\"")
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D \"NOMINMAX\"")
@@ -89,7 +89,7 @@ IF(WIN32)
 	IF (WARNINGS_AS_ERRORS)
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
 	ENDIF (WARNINGS_AS_ERRORS)
-ENDIF(WIN32)
+ENDIF(MSVC)
 
 IF(UNIX)
 	IF(CMAKE_COMPILER_IS_GNUCC)
