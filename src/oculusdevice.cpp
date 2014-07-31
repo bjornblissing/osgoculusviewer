@@ -8,237 +8,142 @@
 #include "oculusdevice.h"
 
 
-OculusDevice::OculusDevice() :
-	m_deviceManager(0), m_hmdDevice(0), m_sensor(0), m_hmdInfo(0), m_sensorFusion(0),
-	m_useCustomScaleFactor(false), m_customScaleFactor(1.0f),
-	m_nearClip(0.3f), m_farClip(5000.0f), m_predictionDelta(0.03f)
+OculusDevice::OculusDevice() : m_hmdDevice(0),
+	m_nearClip(0.01f), m_farClip(10000.0f)
 {
-	// Init Oculus HMD
-	OVR::System::Init(OVR::Log::ConfigureDefaultLog(OVR::LogMask_All));
-	m_deviceManager = *OVR::DeviceManager::Create();
-	m_hmdDevice = *m_deviceManager->EnumerateDevices<OVR::HMDDevice>().CreateDevice();
+	ovr_Initialize();
+	
+	// Enumerate HMD devices
+	int hmd_ovrHmd_Detect();
 
-	if (m_hmdDevice) {
-		m_hmdInfo = new OVR::HMDInfo;
-
-		if (!m_hmdDevice->GetDeviceInfo(m_hmdInfo)) {
-			osg::notify(osg::FATAL) << "Error: Unable to get device info" << std::endl;
-		} else {
-			m_sensor = *m_hmdDevice->GetSensor();
-		}
-	} else {
-		osg::notify(osg::WARN) << "Warning: Unable to find HMD Device, will use default renderpath instead." << std::endl;
-		
-		// Try to connect to sensor only, used for emulated devices
-		m_sensor = *m_deviceManager->EnumerateDevices<OVR::SensorDevice>().CreateDevice();
+	// Get first available HMD
+	m_hmdDevice = ovrHmd_Create(0);
+	
+	// If no HMD is found try an emulated device
+	if (!m_hmdDevice) {
+		osg::notify(osg::WARN) << "Warning: No device could be found. Creating emulated device " << std::endl;
+		m_hmdDevice = ovrHmd_CreateDebug(ovrHmd_DK1);
 	}
 
-	// Attach sensor
-	if (m_sensor) {
-		m_sensorFusion = new OVR::SensorFusion;
-		m_sensorFusion->AttachToSensor(m_sensor);
-		m_sensorFusion->SetPredictionEnabled(true);
-		// Get default sensor prediction delta
-		m_predictionDelta = m_sensorFusion->GetPredictionDelta();
-	} else {
-		osg::notify(osg::WARN) << "Warning: Unable to connect to tracker sensor." << std::endl;
+	if (m_hmdDevice) {
+		// Print out some information about the HMD
+		osg::notify(osg::ALWAYS) << "Product:         " << m_hmdDevice->ProductName << std::endl;
+		osg::notify(osg::ALWAYS) << "Manufacturer:    " << m_hmdDevice->Manufacturer << std::endl;
+		osg::notify(osg::ALWAYS) << "VendorId:          " << m_hmdDevice->VendorId << std::endl;
+		osg::notify(osg::ALWAYS) << "ProductId:       " << m_hmdDevice->ProductId << std::endl;
+		osg::notify(osg::ALWAYS) << "SerialNumber:    " << m_hmdDevice->SerialNumber << std::endl;
+		osg::notify(osg::ALWAYS) << "FirmwareVersion: " << m_hmdDevice->FirmwareMajor << "."  << m_hmdDevice->FirmwareMinor << std::endl;
+
+		// Get more details about the HMD.
+		m_resolution = m_hmdDevice->Resolution;
+		
+		// Compute recommended rendertexture size
+		float pixelsPerDisplayPixel = 1.0f; // Decrease this value to scale the size on render texture on lower performance hardware. Values above 1.0 is unnessesary.
+
+		ovrSizei recommenedLeftTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0], pixelsPerDisplayPixel);
+		ovrSizei recommenedRightTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1], pixelsPerDisplayPixel);
+
+		// Compute size of render target
+		m_renderTargetSize.w = recommenedLeftTextureSize.w + recommenedRightTextureSize.w;
+		m_renderTargetSize.h = osg::maximum(recommenedLeftTextureSize.h, recommenedRightTextureSize.h);
+
+		// Initialize ovrEyeRenderDesc struct.
+		ovrEyeRenderDesc eyeRenderDesc[2];
+		eyeRenderDesc[0] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0]);
+		eyeRenderDesc[1] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1]);
+		
+		ovrVector3f leftEyeAdjust = eyeRenderDesc[0].ViewAdjust;
+		m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
+		ovrVector3f rightEyeAdjust = eyeRenderDesc[1].ViewAdjust;
+		m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
+
+		bool isRightHanded = true;
+		
+		ovrMatrix4f leftEyeProjectionMatrix = ovrMatrix4f_Projection(eyeRenderDesc[0].Fov, m_nearClip, m_farClip, isRightHanded);
+		// Test of transpose
+		m_leftEyeProjectionMatrix.set(leftEyeProjectionMatrix.M[0][0], leftEyeProjectionMatrix.M[1][0], leftEyeProjectionMatrix.M[2][0], leftEyeProjectionMatrix.M[3][0],
+			leftEyeProjectionMatrix.M[0][1], leftEyeProjectionMatrix.M[1][1], leftEyeProjectionMatrix.M[2][1], leftEyeProjectionMatrix.M[3][1],
+			leftEyeProjectionMatrix.M[0][2], leftEyeProjectionMatrix.M[1][2], leftEyeProjectionMatrix.M[2][2], leftEyeProjectionMatrix.M[3][2],
+			leftEyeProjectionMatrix.M[0][3], leftEyeProjectionMatrix.M[1][3], leftEyeProjectionMatrix.M[2][3], leftEyeProjectionMatrix.M[3][3]);
+		//m_leftEyeProjectionMatrix.set(*leftEyeProjectionMatrix.M);
+
+		ovrMatrix4f rightEyeProjectionMatrix = ovrMatrix4f_Projection(eyeRenderDesc[1].Fov, m_nearClip, m_farClip, isRightHanded);
+			
+		m_rightEyeProjectionMatrix.set(rightEyeProjectionMatrix.M[0][0], rightEyeProjectionMatrix.M[1][0], rightEyeProjectionMatrix.M[2][0], rightEyeProjectionMatrix.M[3][0],
+			rightEyeProjectionMatrix.M[0][1], rightEyeProjectionMatrix.M[1][1], rightEyeProjectionMatrix.M[2][1], rightEyeProjectionMatrix.M[3][1],
+			rightEyeProjectionMatrix.M[0][2], rightEyeProjectionMatrix.M[1][2], rightEyeProjectionMatrix.M[2][2], rightEyeProjectionMatrix.M[3][2],
+			rightEyeProjectionMatrix.M[0][3], rightEyeProjectionMatrix.M[1][3], rightEyeProjectionMatrix.M[2][3], rightEyeProjectionMatrix.M[3][3]);
+
+
+		//m_rightEyeProjectionMatrix.set(*rightEyeProjectionMatrix.M);
+
+		// Start the sensor which provides the Rift’s pose and motion.
+		ovrHmd_ConfigureTracking(m_hmdDevice, ovrTrackingCap_Orientation |
+			ovrTrackingCap_MagYawCorrection |
+			ovrTrackingCap_Position, 0);
+
 	}
 }
 
 OculusDevice::~OculusDevice()
 {
-	if (m_sensorFusion) {
-		// Detach sensor
-		m_sensorFusion->AttachToSensor(NULL);
-		delete m_sensorFusion;
-		m_sensorFusion = NULL;
-	}
-
-	delete m_hmdInfo;
-	m_hmdInfo = NULL;
-	m_sensor.Clear();
-	m_hmdDevice.Clear();
-	m_deviceManager.Clear();
-
-	// Do a nice shutdown of the Oculus HMD
-	if (OVR::System::IsInitialized()) {
-		OVR::System::Destroy();
-	}
+	ovrHmd_Destroy(m_hmdDevice);
+	ovr_Shutdown();
 }
 
 unsigned int OculusDevice::hScreenResolution() const
 {
-	if (m_hmdInfo) {
-		return m_hmdInfo->HResolution;
+	if (m_hmdDevice) {
+		return m_hmdDevice->Resolution.w;
 	}
-
-	// Default value from dev kit
+	
+	// Default value from dev kit 1
 	return 1280;
 }
 
 unsigned int OculusDevice::vScreenResolution() const
 {
-	if (m_hmdInfo) {
-		return m_hmdInfo->VResolution;
+	if (m_hmdDevice) {
+		return m_hmdDevice->Resolution.h;
 	}
 
-	// Default value from dev kit
+	// Default value from dev kit 1
 	return 800;
 }
 
-float OculusDevice::hScreenSize() const
-{
-	if (m_hmdInfo) {
-		return m_hmdInfo->HScreenSize;
-	}
 
-	// Default value from dev kit
-	return 0.14976f;
+unsigned int OculusDevice::hRenderTargetSize() const
+{
+	return m_renderTargetSize.w;
 }
 
-float OculusDevice::vScreenSize() const
+unsigned int OculusDevice::vRenderTargetSize() const
 {
-	if (m_hmdInfo) {
-		return m_hmdInfo->VScreenSize;
-	}
-
-	// Default value from dev kit
-	return 0.0936f;
+	return m_renderTargetSize.h;
 }
 
-float OculusDevice::vScreenCenter() const
+osg::Matrix OculusDevice::projectionMatrixLeft() const
 {
-	if (m_hmdInfo) {
-		return m_hmdInfo->VScreenCenter;
-	}
-
-	return vScreenSize()*0.5f;
+	return m_leftEyeProjectionMatrix;
 }
 
-float OculusDevice::eyeToScreenDistance() const
+osg::Matrix OculusDevice::projectionMatrixRight() const
 {
-	if (m_hmdInfo) {
-		return m_hmdInfo->EyeToScreenDistance;
-	}
-
-	// Default value from dev kit
-	return 0.041f;
+	return m_rightEyeProjectionMatrix;
 }
 
-float OculusDevice::lensSeparationDistance() const
-{
-	if (m_hmdInfo) {
-		return m_hmdInfo->LensSeparationDistance;
-	}
-
-	// Default value from dev kit
-	return 0.0635f;
-}
-
-
-float OculusDevice::interpupillaryDistance() const
-{
-	if (m_hmdInfo) {
-		return m_hmdInfo->InterpupillaryDistance;
-	}
-
-	// Default value from dev kit, typical values for average human male
-	return 0.064f;
-}
-
-osg::Matrix OculusDevice::viewMatrix(EyeSide eye)  const
+osg::Matrix OculusDevice::viewMatrixLeft() const
 {
 	osg::Matrix viewMatrix;
-
-	if (eye == LEFT_EYE) {
-		viewMatrix.makeTranslate(osg::Vec3f(halfIPD(), 0.0f, 0.0f));
-	} else if (eye == RIGHT_EYE) {
-		viewMatrix.makeTranslate(osg::Vec3f(-halfIPD(), 0.0f, 0.0f));
-	} else {
-		viewMatrix.makeTranslate(osg::Vec3f(0.0f, 0.0f, 0.0f));
-	}
-
+	viewMatrix.makeTranslate(m_leftEyeAdjust);
 	return viewMatrix;
 }
 
-osg::Matrix OculusDevice::projectionMatrix(EyeSide eye) const
+osg::Matrix OculusDevice::viewMatrixRight() const
 {
-	osg::Matrixf projectionMatrix = projectionOffsetMatrix(eye);
-	projectionMatrix.preMult(projectionCenterMatrix());
-	return projectionMatrix;
-}
-
-osg::Matrix OculusDevice::projectionCenterMatrix() const
-{
-	osg::Matrix projectionMatrix;
-	float halfScreenDistance = vScreenSize() * 0.5f * distortionScale();
-	float yFov = (180.0f/3.14159f) * 2.0f * atan(halfScreenDistance / eyeToScreenDistance());
-	projectionMatrix.makePerspective(yFov, aspectRatio(), m_nearClip, m_farClip);
-	return projectionMatrix;
-}
-
-osg::Matrix OculusDevice::projectionOffsetMatrix(EyeSide eye) const
-{
-	osg::Matrix projectionMatrix;
-	float eyeProjectionShift = viewCenter() - lensSeparationDistance()*0.5f;
-	float projectionCenterOffset = 4.0f * eyeProjectionShift / hScreenSize();
-
-	if (eye == LEFT_EYE) {
-		projectionMatrix.makeTranslate(osg::Vec3d(projectionCenterOffset, 0, 0));
-	} else if (eye == RIGHT_EYE) {
-		projectionMatrix.makeTranslate(osg::Vec3d(-projectionCenterOffset, 0, 0));
-	} else {
-		projectionMatrix.makeIdentity();
-	}
-
-	return projectionMatrix;
-}
-
-osg::Vec2f OculusDevice::lensCenter(EyeSide eye) const
-{
-	if (eye == LEFT_EYE) {
-		return osg::Vec2f(1.0f-lensSeparationDistance()/hScreenSize(), 0.5f);
-	} else if (eye == RIGHT_EYE) {
-		return osg::Vec2f(lensSeparationDistance()/hScreenSize(), 0.5f);
-	}
-
-	return osg::Vec2f(0.5f, 0.5f);
-}
-
-osg::Vec2f OculusDevice::screenCenter() const
-{
-	return osg::Vec2f(0.5f, 0.5f);
-}
-
-osg::Vec2f OculusDevice::scale() const
-{
-	float scaleFactor = 1.0f/distortionScale();
-	return osg::Vec2f(0.5*scaleFactor, 0.5f*scaleFactor*aspectRatio());
-}
-
-osg::Vec2f OculusDevice::scaleIn() const
-{
-	return osg::Vec2f(2.0f, 2.0f/aspectRatio());
-}
-
-osg::Vec4f OculusDevice::warpParameters() const
-{
-	if (m_hmdInfo) {
-		return osg::Vec4f(m_hmdInfo->DistortionK[0], m_hmdInfo->DistortionK[1], m_hmdInfo->DistortionK[2], m_hmdInfo->DistortionK[3]);
-	}
-
-	// Default values from devkit
-	return osg::Vec4f(1.0f, 0.22f, 0.24f, 0.0f);
-}
-
-osg::Vec4f OculusDevice::chromAbParameters() const
-{
-	if (m_hmdInfo) {
-		return osg::Vec4f(m_hmdInfo->ChromaAbCorrection[0], m_hmdInfo->ChromaAbCorrection[1], m_hmdInfo->ChromaAbCorrection[2], m_hmdInfo->ChromaAbCorrection[3]);
-	}
-
-	// Default values from devkit
-	return osg::Vec4f(0.996f, -0.004f, 1.014f, 0.0f);
+	osg::Matrix viewMatrix;
+	viewMatrix.makeTranslate(m_rightEyeAdjust);
+	return viewMatrix;
 }
 
 osg::Quat OculusDevice::getOrientation() const
@@ -246,40 +151,5 @@ osg::Quat OculusDevice::getOrientation() const
 	// Create identity quaternion
 	osg::Quat osgQuat(0.0f, 0.0f, 0.0f, 1.0f);
 
-	if (m_sensorFusion && m_sensorFusion->IsAttachedToSensor()) {
-		OVR::Quatf quat;
-
-		if (m_sensorFusion->IsPredictionEnabled()) {
-			quat = m_sensorFusion->GetPredictedOrientation(m_predictionDelta);
-		} else {
-			quat = m_sensorFusion->GetOrientation();
-		}
-
-		osgQuat.set(quat.x, quat.y, quat.z, -quat.w);
-	}
-
 	return osgQuat;
-}
-
-void OculusDevice::setSensorPredictionEnabled(bool prediction)
-{
-	if (m_sensorFusion) {
-		m_sensorFusion->SetPredictionEnabled(prediction);
-	}
-}
-
-float OculusDevice::distortionScale() const
-{
-	// Disable distortion scale calculation and use user suppied value instead
-	if (m_useCustomScaleFactor) {
-		return m_customScaleFactor;
-	}
-
-	float lensShift = hScreenSize() * 0.25f - lensSeparationDistance() * 0.5f;
-	float lensViewportShift = 4.0f * lensShift / hScreenSize();
-	float fitRadius = fabs(-1 - lensViewportShift);
-	float rsq = fitRadius*fitRadius;
-	osg::Vec4f k = warpParameters();
-	float scale = (k[0] + k[1] * rsq + k[2] * rsq * rsq + k[3] * rsq * rsq * rsq);
-	return scale;
 }

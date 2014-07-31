@@ -69,29 +69,10 @@ osg::Geode* OculusViewConfig::createHUDQuad( float width, float height, float sc
 	return quad.release();
 }
 
-void OculusViewConfig::applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, 
-	osg::Texture2D* texture, OculusDevice::EyeSide eye) const {
-	stateSet->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
-	stateSet->setAttributeAndModes( program, osg::StateAttribute::ON );
-	stateSet->addUniform( new osg::Uniform("WarpTexture", 0) );
-	stateSet->addUniform( new osg::Uniform("LensCenter", m_device->lensCenter(eye)));
-	stateSet->addUniform( new osg::Uniform("ScreenCenter", m_device->screenCenter()));
-	stateSet->addUniform( new osg::Uniform("Scale", m_device->scale()));
-	stateSet->addUniform( new osg::Uniform("ScaleIn", m_device->scaleIn()));
-	stateSet->addUniform( new osg::Uniform("HmdWarpParam", m_device->warpParameters()));
-	stateSet->addUniform( new osg::Uniform("ChromAbParam", m_device->chromAbParameters()));
-}
-
 void OculusViewConfig::configure(osgViewer::View& view) const
 {
 	m_device->setNearClip(m_nearClip);
 	m_device->setFarClip(m_farClip);
-	m_device->setSensorPredictionEnabled(m_useSensorPrediction);
-	m_device->setSensorPredictionDelta(m_predictionDelta);
-
-	if (m_useCustomScaleFactor) {
-		m_device->setCustomScaleFactor(m_customScaleFactor);
-	}
 
 	// Create screen with match the Oculus Rift resolution
 	osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
@@ -143,10 +124,10 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
 	// Disable automatic computation of near and far plane on main camera, will propagate to slave cameras
 	camera->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
-	const int textureWidth  = m_device->scaleFactor() * m_device->hScreenResolution()/2;
-	const int textureHeight = m_device->scaleFactor() * m_device->vScreenResolution();
+	const int textureWidth  = m_device->hRenderTargetSize()/2;
+	const int textureHeight = m_device->vRenderTargetSize();
 	// master projection matrix
-	camera->setProjectionMatrix(m_device->projectionCenterMatrix());
+	camera->setProjectionMatrix(m_device->projectionMatrixLeft());
 	// Create textures for RTT cameras
 	osg::ref_ptr<osg::Texture2D> textureLeft = new osg::Texture2D;
 	textureLeft->setTextureSize( textureWidth, textureHeight );
@@ -176,37 +157,24 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	cameraHUDLeft->addChild(leftQuad);
 	osg::ref_ptr<osg::Geode> rightQuad = createHUDQuad(1.0f, 1.0f);
 	cameraHUDRight->addChild(rightQuad);
-
-	// Set up shaders from the Oculus SDK documentation
-	osg::ref_ptr<osg::Program> program = new osg::Program;
-	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
-	vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp.vert"));
-	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-
-	// Fragment shader with or without correction for chromatic aberration
-	if (m_useChromaticAberrationCorrection) {
-		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warpWithChromeAb.frag"));
-	} else {
-		fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warpWithoutChromeAb.frag"));
-	}
-
-	program->addShader(vertexShader);
-	program->addShader(fragmentShader);
 	
+	// Set up shaders from the Oculus SDK documentation
+
 	// Attach shaders to each HUD
 	osg::StateSet* leftEyeStateSet = leftQuad->getOrCreateStateSet();
+	leftEyeStateSet->setTextureAttributeAndModes(0, textureLeft, osg::StateAttribute::ON);
+
 	osg::StateSet* rightEyeStateSet = rightQuad->getOrCreateStateSet();
-	applyShaderParameters(leftEyeStateSet, program.get(), textureLeft.get(), OculusDevice::LEFT_EYE);
-	applyShaderParameters(rightEyeStateSet, program.get(), textureRight.get(), OculusDevice::RIGHT_EYE);
-	
+	rightEyeStateSet->setTextureAttributeAndModes(0, textureRight, osg::StateAttribute::ON);
+
 	// Add RTT cameras as slaves, specifying offsets for the projection
 	view.addSlave(cameraRTTLeft, 
-		m_device->projectionOffsetMatrix(OculusDevice::LEFT_EYE), 
-		m_device->viewMatrix(OculusDevice::LEFT_EYE), 
+		m_device->projectionMatrixLeft(),
+		m_device->viewMatrixLeft(), 
 		true);
 	view.addSlave(cameraRTTRight, 
-		m_device->projectionOffsetMatrix(OculusDevice::RIGHT_EYE), 
-		m_device->viewMatrix(OculusDevice::RIGHT_EYE), 
+		m_device->projectionMatrixRight(), 
+		m_device->viewMatrixRight(),
 		true);
 
 	// Add HUD cameras as slaves

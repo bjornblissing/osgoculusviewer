@@ -17,12 +17,10 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 			m_configured(false),
 			m_useChromaticAberrationCorrection(true),
 			m_useOrientations(true),
-			m_useSensorPrediction(true),
 			m_useCustomScaleFactor(false),
-			m_customScaleFactor(1.25f),
-			m_nearClip(0.3f),
-			m_farClip(5000.0f),
-			m_predictionDelta(0.03f),
+			m_customScaleFactor(1.0f),
+			m_nearClip(0.01f),
+			m_farClip(10000.0f),
 			m_sceneNodeMask(0x1),
 			m_device(0) {
 			m_device = new OculusDevice;
@@ -31,8 +29,6 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		void setEnableChromaticAberrationCorrection(bool correctionEnabled) { m_useChromaticAberrationCorrection = correctionEnabled; }
 		void setNearClip(float nearClip) { m_nearClip = nearClip; }
 		void setFarClip(float farclip) { m_farClip = farclip; }
-		void setSensorPredictionEnabled(bool prediction);
-		void setSensorPredictionDelta(float delta) { m_predictionDelta = delta; }
 		void resetSensorOrientation() { if (m_device) m_device->resetSensorOrientation(); }
 		void setUseDefaultScaleFactor(bool useDefault) { m_useCustomScaleFactor = !useDefault; }
 		void setCustomScaleFactor(const float& customScaleFactor) { m_useCustomScaleFactor = true; m_customScaleFactor = customScaleFactor; }
@@ -44,13 +40,10 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		osg::Camera* createRTTCamera(osg::Texture* tex, osg::GraphicsContext* gc) const;
 		osg::Camera* createHUDCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
 		osg::Geode*  createHUDQuad( float width, float height, float scale = 1.0f ) const;
-		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, 
-			osg::Texture2D* texture, OculusDevice::EyeSide eye) const;
 
 		bool m_configured;
 		bool m_useOrientations;
 		bool m_useChromaticAberrationCorrection;
-		bool m_useSensorPrediction;
 		bool m_useCustomScaleFactor;
 		float m_customScaleFactor;
 		float m_nearClip;
