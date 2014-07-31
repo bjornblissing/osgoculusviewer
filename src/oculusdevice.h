@@ -12,6 +12,8 @@
 #include "OVR.h"
 #include <osg/Matrix>
 #include <osg/Vec3>
+#include <osg/Geode>
+#include <osg/Program>
 
 
 class OculusDevice : public osg::Referenced {
@@ -40,6 +42,10 @@ class OculusDevice : public osg::Referenced {
 
 		void resetSensorOrientation() {  }
 		osg::Quat getOrientation() const;
+		
+		osg::Geode* distortionMesh(int eyeNum, osg::Program* program, int x, int y, int w, int h);
+		osg::Vec2f eyeToSourceUVScale(int eyeNum) const;
+		osg::Vec2f eyeToSourceUVOffset(int eyeNum) const;
 
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
@@ -47,6 +53,9 @@ class OculusDevice : public osg::Referenced {
 		ovrHmd m_hmdDevice;
 		ovrSizei m_resolution;
 		ovrSizei m_renderTargetSize;
+		ovrEyeRenderDesc m_eyeRenderDesc[2];
+		ovrVector2f m_UVScaleOffset[2][2];
+
 		osg::Matrixf m_leftEyeProjectionMatrix;
 		osg::Matrixf m_rightEyeProjectionMatrix;
 		osg::Vec3f m_leftEyeAdjust;

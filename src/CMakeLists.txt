@@ -106,9 +106,8 @@ ENDIF()
 #####################################################################
 STRING(COMPARE NOTEQUAL ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} CMAKE_OUT_OF_SOURCE_BUILD)
 IF (CMAKE_OUT_OF_SOURCE_BUILD)
-	CONFIGURE_FILE(warp.vert warp.vert COPYONLY)
-	CONFIGURE_FILE(warpWithChromeAb.frag warpWithChromeAb.frag COPYONLY)
-	CONFIGURE_FILE(warpWithoutChromeAb.frag warpWithoutChromeAb.frag COPYONLY)
+	CONFIGURE_FILE(warp_mesh.vert warp_mesh.vert COPYONLY)
+	CONFIGURE_FILE(warp_mesh.frag warp_mesh.frag COPYONLY)
 ENDIF()
 
 ####################################################################

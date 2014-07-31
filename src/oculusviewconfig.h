@@ -39,7 +39,6 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 
 		osg::Camera* createRTTCamera(osg::Texture* tex, osg::GraphicsContext* gc) const;
 		osg::Camera* createHUDCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
-		osg::Geode*  createHUDQuad( float width, float height, float scale = 1.0f ) const;
 
 		bool m_configured;
 		bool m_useOrientations;

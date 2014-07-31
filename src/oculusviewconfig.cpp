@@ -7,7 +7,6 @@
 #include <osg/io_utils>
 #include <osg/Texture2D>
 #include <osg/PolygonMode>
-#include <osg/Program>
 #include <osg/Shader>
 
 #include <osgDB/ReadFile>
@@ -44,7 +43,7 @@ osg::Camera* OculusViewConfig::createRTTCamera(osg::Texture* texture, osg::Graph
 osg::Camera* OculusViewConfig::createHUDCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const
 {
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
-	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
+	camera->setClearColor(osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	camera->setClearMask( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	camera->setRenderOrder(osg::Camera::POST_RENDER);
 	camera->setAllowEventFocus(false);
@@ -53,20 +52,6 @@ osg::Camera* OculusViewConfig::createHUDCamera(double left, double right, double
 	camera->setProjectionMatrix(osg::Matrix::ortho2D(left, right, bottom, top));
 	camera->getOrCreateStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
 	return camera.release();
-}
-
-osg::Geode* OculusViewConfig::createHUDQuad( float width, float height, float scale ) const
-{
-	osg::Geometry* geom = osg::createTexturedQuadGeometry(osg::Vec3(),
-						  osg::Vec3(width, 0.0f, 0.0f),
-						  osg::Vec3(0.0f,  height, 0.0f),
-						  0.0f, 0.0f, width*scale, height*scale );
-	osg::ref_ptr<osg::Geode> quad = new osg::Geode;
-	quad->addDrawable( geom );
-	int values = osg::StateAttribute::OFF | osg::StateAttribute::PROTECTED;
-	quad->getOrCreateStateSet()->setAttribute(new osg::PolygonMode(osg::PolygonMode::FRONT_AND_BACK, osg::PolygonMode::FILL), values );
-	quad->getOrCreateStateSet()->setMode( GL_LIGHTING, values );
-	return quad.release();
 }
 
 void OculusViewConfig::configure(osgViewer::View& view) const
@@ -142,30 +127,42 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	cameraRTTRight->setName("RightRTT");
 	cameraRTTLeft->setCullMask(m_sceneNodeMask);
 	cameraRTTRight->setCullMask(m_sceneNodeMask);
-	// Create HUD cameras for left eye
-	osg::ref_ptr<osg::Camera> cameraHUDLeft = createHUDCamera(0.0, 1.0, 0.0, 1.0, gc);
-	cameraHUDLeft->setName("LeftHUD");
-	cameraHUDLeft->setViewport(new osg::Viewport(0, 0, 
-		m_device->hScreenResolution() / 2.0f, m_device->vScreenResolution()));
-	// Create HUD cameras for right eye
-	osg::ref_ptr<osg::Camera> cameraHUDRight = createHUDCamera(0.0, 1.0, 0.0, 1.0, gc);
-	cameraHUDRight->setName("RightHUD");
-	cameraHUDRight->setViewport(new osg::Viewport(m_device->hScreenResolution() / 2.0f, 0,
-										 m_device->hScreenResolution() / 2.0f, m_device->vScreenResolution()));
-	// Create quads for each camera
-	osg::ref_ptr<osg::Geode> leftQuad = createHUDQuad(1.0f, 1.0f);
-	cameraHUDLeft->addChild(leftQuad);
-	osg::ref_ptr<osg::Geode> rightQuad = createHUDQuad(1.0f, 1.0f);
-	cameraHUDRight->addChild(rightQuad);
 	
+	// Create HUD camera
+	osg::ref_ptr<osg::Camera> cameraHUD = createHUDCamera(0.0, 1.0, 0.0, 1.0, gc);
+	cameraHUD->setName("OrthoCamera");
+	cameraHUD->setViewport(new osg::Viewport(0, 0, m_device->hScreenResolution(), m_device->vScreenResolution()));
+
 	// Set up shaders from the Oculus SDK documentation
+	osg::ref_ptr<osg::Program> program = new osg::Program;
+	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
+	vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.vert"));
+	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
+	fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.frag"));
+	program->addShader(vertexShader);
+	program->addShader(fragmentShader);
 
-	// Attach shaders to each HUD
-	osg::StateSet* leftEyeStateSet = leftQuad->getOrCreateStateSet();
+	// Create distortionMesh for each camera
+	osg::ref_ptr<osg::Geode> leftDistortionMesh = m_device->distortionMesh(0, program, 0, 0, textureWidth, textureHeight);
+	cameraHUD->addChild(leftDistortionMesh);
+
+	osg::ref_ptr<osg::Geode> rightDistortionMesh = m_device->distortionMesh(1, program, textureWidth, 0, textureWidth, textureHeight);
+	cameraHUD->addChild(rightDistortionMesh);
+
+	// Attach shaders to each distortion mesh
+	osg::StateSet* leftEyeStateSet = leftDistortionMesh->getOrCreateStateSet();
 	leftEyeStateSet->setTextureAttributeAndModes(0, textureLeft, osg::StateAttribute::ON);
+	leftEyeStateSet->setAttributeAndModes(program, osg::StateAttribute::ON);
+	leftEyeStateSet->addUniform(new osg::Uniform("Texture", 0));
+	leftEyeStateSet->addUniform(new osg::Uniform("EyeToSourceUVScale", m_device->eyeToSourceUVScale(0)));
+	leftEyeStateSet->addUniform(new osg::Uniform("EyeToSourceUVOffset", m_device->eyeToSourceUVOffset(0)));
 
-	osg::StateSet* rightEyeStateSet = rightQuad->getOrCreateStateSet();
+	osg::StateSet* rightEyeStateSet = rightDistortionMesh->getOrCreateStateSet();
 	rightEyeStateSet->setTextureAttributeAndModes(0, textureRight, osg::StateAttribute::ON);
+	rightEyeStateSet->setAttributeAndModes(program, osg::StateAttribute::ON);
+	rightEyeStateSet->addUniform(new osg::Uniform("Texture", 0));
+	rightEyeStateSet->addUniform(new osg::Uniform("EyeToSourceUVScale", m_device->eyeToSourceUVScale(1)));
+	rightEyeStateSet->addUniform(new osg::Uniform("EyeToSourceUVOffset", m_device->eyeToSourceUVOffset(1)));
 
 	// Add RTT cameras as slaves, specifying offsets for the projection
 	view.addSlave(cameraRTTLeft, 
@@ -177,11 +174,10 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 		m_device->viewMatrixRight(),
 		true);
 
-	// Add HUD cameras as slaves
-	view.addSlave(cameraHUDLeft, false);
-	view.addSlave(cameraHUDRight, false);
-
+	// Add HUD camera as slave
+	view.addSlave(cameraHUD, false);
 	view.setName("Oculus");
+
 	// Connect main camera to node callback that get HMD orientation
 	if (m_useOrientations) {
 		camera->setDataVariance(osg::Object::DYNAMIC);
