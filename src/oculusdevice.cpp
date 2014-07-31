@@ -122,6 +122,14 @@ unsigned int OculusDevice::vRenderTargetSize() const
 	return m_renderTargetSize.h;
 }
 
+osg::Matrix OculusDevice::projectionMatrixCenter() const
+{
+	osg::Matrix projectionMatrixCenter;
+	projectionMatrixCenter = m_leftEyeProjectionMatrix;
+	projectionMatrixCenter(2, 0) = 0; // Ugly hack to make left projection matrix into a center projection matrix
+	return projectionMatrixCenter;
+}
+
 osg::Matrix OculusDevice::projectionMatrixLeft() const
 {
 	return m_leftEyeProjectionMatrix;
@@ -132,6 +140,21 @@ osg::Matrix OculusDevice::projectionMatrixRight() const
 	return m_rightEyeProjectionMatrix;
 }
 
+osg::Matrix OculusDevice::projectionOffsetMatrixLeft() const
+{
+	osg::Matrix projectionOffsetMatrix;
+	float offset = m_leftEyeProjectionMatrix(2, 0); // Ugly hack to extract projection offset
+	projectionOffsetMatrix(3, 0) = offset;
+	return projectionOffsetMatrix;
+}
+
+osg::Matrix OculusDevice::projectionOffsetMatrixRight() const
+{
+	osg::Matrix projectionOffsetMatrix;
+	float offset = m_rightEyeProjectionMatrix(2, 0); // Ugly hack to extract projection offset
+	projectionOffsetMatrix(3, 0) = offset;
+	return projectionOffsetMatrix;
+}
 osg::Matrix OculusDevice::viewMatrixLeft() const
 {
 	osg::Matrix viewMatrix;

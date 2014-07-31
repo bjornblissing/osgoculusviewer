@@ -127,7 +127,7 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	const int textureWidth  = m_device->hRenderTargetSize()/2;
 	const int textureHeight = m_device->vRenderTargetSize();
 	// master projection matrix
-	camera->setProjectionMatrix(m_device->projectionMatrixLeft());
+	camera->setProjectionMatrix(m_device->projectionMatrixCenter());
 	// Create textures for RTT cameras
 	osg::ref_ptr<osg::Texture2D> textureLeft = new osg::Texture2D;
 	textureLeft->setTextureSize( textureWidth, textureHeight );
@@ -169,11 +169,11 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 
 	// Add RTT cameras as slaves, specifying offsets for the projection
 	view.addSlave(cameraRTTLeft, 
-		m_device->projectionMatrixLeft(),
+		m_device->projectionOffsetMatrixLeft(),
 		m_device->viewMatrixLeft(), 
 		true);
 	view.addSlave(cameraRTTRight, 
-		m_device->projectionMatrixRight(), 
+		m_device->projectionOffsetMatrixRight(),
 		m_device->viewMatrixRight(),
 		true);
 

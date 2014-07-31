@@ -25,8 +25,12 @@ class OculusDevice : public osg::Referenced {
 		unsigned int hRenderTargetSize() const;
 		unsigned int vRenderTargetSize() const;
 
+		osg::Matrix projectionMatrixCenter() const;
 		osg::Matrix projectionMatrixLeft() const;
 		osg::Matrix projectionMatrixRight() const;
+
+		osg::Matrix projectionOffsetMatrixLeft() const;
+		osg::Matrix projectionOffsetMatrixRight() const;
 
 		osg::Matrix viewMatrixLeft() const;
 		osg::Matrix viewMatrixRight() const;
