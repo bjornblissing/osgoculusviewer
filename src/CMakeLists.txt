@@ -48,10 +48,10 @@ IF(USE_VIEW_CONFIG)
 	# Link to Oculus libs
 	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OCULUS_SDK_LIBRARIES}	)
 
-	# Link to libraries needed for Oculus on Windows
-	IF(WIN32)
-		TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} winmm.lib )
-	ENDIF(WIN32)
+	# Link to libraries needed for Oculus on Visual Studio
+	IF(MSVC)
+		TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} winmm.lib ws2_32.lib)
+	ENDIF(MSVC)
 
 	# Link to libraries needed for Oculus on Linux
 	IF(UNIX)
@@ -114,40 +114,38 @@ ENDIF()
 ####################################################################
 # Create user file for correct environment string
 #####################################################################
-IF(WIN32)
-    IF(MSVC)
-		IF (OPENSCENEGRAPH_FOUND)
-			# Build path
-			SET(USERFILE_ENVIRONMENT_DEBUG "PATH=")
-			SET(USERFILE_ENVIRONMENT_RELEASE "PATH=")
+IF(MSVC)
+	IF (OPENSCENEGRAPH_FOUND)
+		# Build path
+		SET(USERFILE_ENVIRONMENT_DEBUG "PATH=")
+		SET(USERFILE_ENVIRONMENT_RELEASE "PATH=")
 
-			# Add OpenSceneGraph to path
-			IF (EXISTS "${OSG_DIR}/bin")
-				SET(OSG_BIN_DIR "${OSG_DIR}/bin" CACHE PATH "Path where to find OpenSceneGraph binaries")
-			ELSE (EXISTS "${OSG_DIR}/bin")
-				SET (OSG_BIN_DIR CACHE PATH "Path where to find OpenSceneGraph binaries")
-			ENDIF(EXISTS "${OSG_DIR}/bin")
-			SET(USERFILE_ENVIRONMENT_DEBUG "${USERFILE_ENVIRONMENT_DEBUG}${OSG_BIN_DIR}")
-			SET(USERFILE_ENVIRONMENT_RELEASE "${USERFILE_ENVIRONMENT_RELEASE}${OSG_BIN_DIR}")
+		# Add OpenSceneGraph to path
+		IF (EXISTS "${OSG_DIR}/bin")
+			SET(OSG_BIN_DIR "${OSG_DIR}/bin" CACHE PATH "Path where to find OpenSceneGraph binaries")
+		ELSE (EXISTS "${OSG_DIR}/bin")
+			SET (OSG_BIN_DIR CACHE PATH "Path where to find OpenSceneGraph binaries")
+		ENDIF(EXISTS "${OSG_DIR}/bin")
+		SET(USERFILE_ENVIRONMENT_DEBUG "${USERFILE_ENVIRONMENT_DEBUG}${OSG_BIN_DIR}")
+		SET(USERFILE_ENVIRONMENT_RELEASE "${USERFILE_ENVIRONMENT_RELEASE}${OSG_BIN_DIR}")
 
-			IF (OSG_THIRD_PARTY_DIR)
-				# Add third party to path
-				SET(USERFILE_ENVIRONMENT_DEBUG "${USERFILE_ENVIRONMENT_DEBUG};${OSG_THIRD_PARTY_DIR}/bin")
-				SET(USERFILE_ENVIRONMENT_RELEASE "${USERFILE_ENVIRONMENT_RELEASE};${OSG_THIRD_PARTY_DIR}/bin")
-			ELSE (OSG_THIRD_PARTY_DIR)
-				MESSAGE("Warning: OpenSceneGraph 3rd Party Directory not found.")
-			ENDIF(OSG_THIRD_PARTY_DIR)
+		IF (OSG_THIRD_PARTY_DIR)
+			# Add third party to path
+			SET(USERFILE_ENVIRONMENT_DEBUG "${USERFILE_ENVIRONMENT_DEBUG};${OSG_THIRD_PARTY_DIR}/bin")
+			SET(USERFILE_ENVIRONMENT_RELEASE "${USERFILE_ENVIRONMENT_RELEASE};${OSG_THIRD_PARTY_DIR}/bin")
+		ELSE (OSG_THIRD_PARTY_DIR)
+			MESSAGE("Warning: OpenSceneGraph 3rd Party Directory not found.")
+		ENDIF(OSG_THIRD_PARTY_DIR)
 
-			# For visual studio 2010 (MSVC10), 2012 (MSVC11) and 2013 (MSVC12)
-			IF(MSVC10 OR MSVC11 OR MSVC12)
-				IF (USE_VIEW_CONFIG)
-					CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME}.vcxproj.user @ONLY)
-				ENDIF()
-				IF (BUILD_DEPRECATED)
-					CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_DEPRECATED}.vcxproj.user @ONLY)
-				ENDIF()
+		# For visual studio 2010 (MSVC10), 2012 (MSVC11) and 2013 (MSVC12)
+		IF(MSVC10 OR MSVC11 OR MSVC12)
+			IF (USE_VIEW_CONFIG)
+				CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME}.vcxproj.user @ONLY)
 			ENDIF()
+			IF (BUILD_DEPRECATED)
+				CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_DEPRECATED}.vcxproj.user @ONLY)
+			ENDIF()
+		ENDIF()
 
-		ENDIF (OPENSCENEGRAPH_FOUND)
-    ENDIF(MSVC)
-ENDIF(WIN32)
+	ENDIF (OPENSCENEGRAPH_FOUND)
+ENDIF(MSVC)

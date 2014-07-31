@@ -20,10 +20,21 @@ FIND_PATH(OCULUS_SDK_INCLUDE_DIRS NAMES OVR.h HINTS
 
 # Determine architecture
 IF(CMAKE_SIZEOF_VOID_P MATCHES "8")
-    SET(OCULUS_SDK_LIB_ARCH "x86_64" CACHE STRING "library location")
+	IF(UNIX)
+		SET(OCULUS_SDK_LIB_ARCH "x86_64" CACHE STRING "library location")
+	ENDIF()
+	IF(MSVC)
+		SET(OCULUS_SDK_LIB_ARCH "x64" CACHE STRING "library location")
+	ENDIF()
 ELSE()
-    SET(OCULUS_SDK_LIB_ARCH "i386" CACHE STRING "library location")
+	IF(UNIX)
+		SET(OCULUS_SDK_LIB_ARCH "i386" CACHE STRING "library location")
+	ENDIF()
+	IF(MSVC)
+		SET(OCULUS_SDK_LIB_ARCH "Win32" CACHE STRING "library location")
+	ENDIF()
 ENDIF()
+
 MARK_AS_ADVANCED(OCULUS_SDK_LIB_ARCH)
 
 # Append "d" to debug libs on windows platform
@@ -31,16 +42,33 @@ IF (WIN32)
 	SET(CMAKE_DEBUG_POSTFIX d)
 ENDIF()
 
+# Determine the compiler version for Visual Studio
+IF (MSVC)
+	# Visual Studio 2010
+	IF(MSVC10)
+		SET(OCULUS_MSVC_DIR "VS2010" CACHE STRING "library location")
+	ENDIF()
+	# Visual Studio 2012
+	IF(MSVC11)
+		SET(OCULUS_MSVC_DIR "VS2012" CACHE STRING "library location")
+	ENDIF()
+	# Visual Studio 2013
+	IF(MSVC12)
+		SET(OCULUS_MSVC_DIR "VS2013" CACHE STRING "library location")
+	ENDIF()
+ENDIF()
+MARK_AS_ADVANCED(OCULUS_MSVC_DIR)
+
 # Look for the library.
 FIND_LIBRARY(OCULUS_SDK_LIBRARY NAMES libovr ovr HINTS ${OCULUS_SDK_ROOT_DIR} 
-                                                      ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Win32
+                                                      ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/${OCULUS_SDK_LIB_ARCH}/${OCULUS_MSVC_DIR}
                                                       ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Linux/Release/${OCULUS_SDK_LIB_ARCH}
                                                     )
 
 # This will find release lib on Linux if no debug is available - on Linux this is no problem and avoids 
 # having to compile in debug when not needed
 FIND_LIBRARY(OCULUS_SDK_LIBRARY_DEBUG NAMES libovr${CMAKE_DEBUG_POSTFIX} ovr${CMAKE_DEBUG_POSTFIX} ovr HINTS 
-                                                      ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Win32
+                                                      ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/${OCULUS_SDK_LIB_ARCH}/${OCULUS_MSVC_DIR}
                                                       ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Linux/Debug/${OCULUS_SDK_LIB_ARCH}
                                                       ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Linux/Release/${OCULUS_SDK_LIB_ARCH}
                                                     )
