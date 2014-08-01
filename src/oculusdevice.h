@@ -40,7 +40,7 @@ class OculusDevice : public osg::Referenced {
 		void setNearClip(float nearClip) { m_nearClip = nearClip; }
 		void setFarClip(float farclip) { m_farClip = farclip; }
 
-		void resetSensorOrientation() {  }
+		void resetSensorOrientation();
 		osg::Quat getOrientation() const;
 		
 		osg::Geode* distortionMesh(int eyeNum, osg::Program* program, int x, int y, int w, int h);

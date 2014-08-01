@@ -170,7 +170,20 @@ osg::Quat OculusDevice::getOrientation() const
 	// Create identity quaternion
 	osg::Quat osgQuat(0.0f, 0.0f, 0.0f, 1.0f);
 
+	// Query the HMD for the current tracking state.
+	ovrTrackingState ts = ovrHmd_GetTrackingState(m_hmdDevice, ovr_GetTimeInSeconds());
+	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked)) {
+		ovrPoseStatef headpose = ts.HeadPose;
+		ovrPosef pose = headpose.ThePose;
+		ovrQuatf quat = pose.Orientation;
+		osgQuat.set(quat.x, quat.y, quat.z, -quat.w);
+	}
+
 	return osgQuat;
+}
+
+void OculusDevice::resetSensorOrientation() {
+	ovrHmd_RecenterPose(m_hmdDevice);
 }
 
 osg::Geode* OculusDevice::distortionMesh(int eyeNum, osg::Program* program, int x, int y, int w, int h) {
