@@ -139,8 +139,7 @@ osg::Matrix OculusDevice::projectionMatrixRight() const
 osg::Matrix OculusDevice::projectionOffsetMatrixLeft() const
 {
 	osg::Matrix projectionOffsetMatrix;
-	float aspectRatio = float(m_eyeRenderDesc[0].DistortedViewport.Size.w) / float(m_eyeRenderDesc[0].DistortedViewport.Size.h);
-	float offset = m_leftEyeProjectionMatrix(2, 0) * aspectRatio; // Ugly hack to extract projection offset
+	float offset = m_leftEyeProjectionMatrix(2, 0) * aspectRatio(0); // Ugly hack to extract projection offset
 	projectionOffsetMatrix.makeTranslate(osg::Vec3(offset, 0.0, 0.0));//
 
 	return projectionOffsetMatrix;
@@ -149,8 +148,7 @@ osg::Matrix OculusDevice::projectionOffsetMatrixLeft() const
 osg::Matrix OculusDevice::projectionOffsetMatrixRight() const
 {
 	osg::Matrix projectionOffsetMatrix;
-	float aspectRatio = float(m_eyeRenderDesc[1].DistortedViewport.Size.w) / float(m_eyeRenderDesc[1].DistortedViewport.Size.h);
-	float offset = m_rightEyeProjectionMatrix(2, 0) * aspectRatio; // Ugly hack to extract projection offset
+	float offset = m_rightEyeProjectionMatrix(2, 0) * aspectRatio(1); // Ugly hack to extract projection offset
 	projectionOffsetMatrix.makeTranslate(osg::Vec3(offset, 0.0, 0.0));
 	return projectionOffsetMatrix;
 }
@@ -275,3 +273,6 @@ osg::Vec2f OculusDevice::eyeToSourceUVOffset(int eyeNum) const
 	return uvOffset;
 }
 
+float OculusDevice::aspectRatio(int eyeNum) const {
+	return float(m_eyeRenderDesc[eyeNum].DistortedViewport.Size.w) / float(m_eyeRenderDesc[eyeNum].DistortedViewport.Size.h);
+}

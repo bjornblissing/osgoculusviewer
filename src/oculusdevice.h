@@ -52,6 +52,7 @@ class OculusDevice : public osg::Referenced {
 
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
+		float aspectRatio(int eyeNum) const;
 
 		ovrHmd m_hmdDevice;
 		ovrSizei m_resolution;
