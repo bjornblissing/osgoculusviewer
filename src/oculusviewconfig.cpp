@@ -85,8 +85,8 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	traits->screenNum = si.screenNum;
 	traits->displayNum = si.displayNum;
 	traits->windowDecoration = false;
-	traits->x = 0;
-	traits->y = 0;
+	traits->x = m_device->windowPos().x();
+	traits->y = m_device->windowPos().y();
 	traits->width = m_device->hScreenResolution();
 	traits->height = m_device->vScreenResolution();
 	traits->doubleBuffer = true;
