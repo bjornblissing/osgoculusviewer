@@ -70,11 +70,15 @@ ENDIF(VISUAL_STUDIO_EXPRESS)
 # osgViewer::ViewConfig concept requires osg 3.2 or later
 IF(NOT OPENSCENEGRAPH_VERSION VERSION_EQUAL 3.2.0 AND 
 NOT OPENSCENEGRAPH_VERSION VERSION_GREATER 3.2.0)
-	SET (USE_VIEW_CONFIG OFF)
-	SET (BUILD_DEPRECATED ON)
+	#SET (USE_VIEW_CONFIG OFF)
+	#SET (BUILD_DEPRECATED ON)
+	MESSAGE(FATAL_ERROR "Error: Currently only supporting OpenSceneGraph 3.2.0 or later.")
 ELSE()
 	SET (USE_VIEW_CONFIG ON)
 	OPTION(BUILD_DEPRECATED "Enable to build deprecated version as well" OFF)
+	IF (BUILD_DEPRECATED)
+		MESSAGE(FATAL_ERROR "Error: Only supports Viewer Config.")
+	ENDIF()
 ENDIF()
 
 ###############################################################################
