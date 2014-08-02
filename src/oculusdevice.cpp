@@ -123,7 +123,7 @@ osg::Matrix OculusDevice::projectionMatrixCenter() const
 	osg::Matrix projectionMatrixCenter;
 	projectionMatrixCenter = m_leftEyeProjectionMatrix;
 	projectionMatrixCenter(2, 0) = 0; // Ugly hack to make left projection matrix into a center projection matrix
-	return projectionMatrixCenter;
+	return projectionMatrixCenter * osg::Matrix::scale(osg::Vec3(0.5, 1.0, 1.0)); // Scale for correct aspect ratio
 }
 
 osg::Matrix OculusDevice::projectionMatrixLeft() const
