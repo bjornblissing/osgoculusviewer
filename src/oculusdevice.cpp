@@ -31,7 +31,7 @@ OculusDevice::OculusDevice() : m_hmdDevice(0),
 		// Print out some information about the HMD
 		osg::notify(osg::ALWAYS) << "Product:         " << m_hmdDevice->ProductName << std::endl;
 		osg::notify(osg::ALWAYS) << "Manufacturer:    " << m_hmdDevice->Manufacturer << std::endl;
-		osg::notify(osg::ALWAYS) << "VendorId:          " << m_hmdDevice->VendorId << std::endl;
+		osg::notify(osg::ALWAYS) << "VendorId:        " << m_hmdDevice->VendorId << std::endl;
 		osg::notify(osg::ALWAYS) << "ProductId:       " << m_hmdDevice->ProductId << std::endl;
 		osg::notify(osg::ALWAYS) << "SerialNumber:    " << m_hmdDevice->SerialNumber << std::endl;
 		osg::notify(osg::ALWAYS) << "FirmwareVersion: " << m_hmdDevice->FirmwareMajor << "."  << m_hmdDevice->FirmwareMinor << std::endl;
@@ -166,13 +166,16 @@ osg::Matrix OculusDevice::viewMatrixRight() const
 	return viewMatrix;
 }
 
-osg::Quat OculusDevice::getOrientation() const
+osg::Quat OculusDevice::getOrientation(unsigned int frameIndex)
 {
 	// Create identity quaternion
 	osg::Quat osgQuat(0.0f, 0.0f, 0.0f, 1.0f);
 
+	// Ask the API for the times when this frame is expected to be displayed.
+	m_frameTiming = ovrHmd_GetFrameTiming(m_hmdDevice, frameIndex);
+
 	// Query the HMD for the current tracking state.
-	ovrTrackingState ts = ovrHmd_GetTrackingState(m_hmdDevice, ovr_GetTimeInSeconds());
+	ovrTrackingState ts = ovrHmd_GetTrackingState(m_hmdDevice, m_frameTiming.ScanoutMidpointSeconds);
 	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked)) {
 		ovrPoseStatef headpose = ts.HeadPose;
 		ovrPosef pose = headpose.ThePose;
@@ -183,7 +186,7 @@ osg::Quat OculusDevice::getOrientation() const
 	return osgQuat;
 }
 
-void OculusDevice::resetSensorOrientation() {
+void OculusDevice::resetSensorOrientation() const {
 	ovrHmd_RecenterPose(m_hmdDevice);
 }
 
@@ -275,4 +278,12 @@ osg::Vec2f OculusDevice::eyeToSourceUVOffset(int eyeNum) const
 
 float OculusDevice::aspectRatio(int eyeNum) const {
 	return float(m_eyeRenderDesc[eyeNum].DistortedViewport.Size.w) / float(m_eyeRenderDesc[eyeNum].DistortedViewport.Size.h);
+}
+
+void OculusDevice::beginFrameTiming(unsigned int frameIndex) {
+	m_frameTiming = ovrHmd_BeginFrameTiming(m_hmdDevice, frameIndex);
+}
+
+void OculusDevice::endFrameTiming() {
+	ovrHmd_EndFrameTiming(m_hmdDevice);
 }

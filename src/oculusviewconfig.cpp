@@ -99,6 +99,10 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 		osg::notify(osg::NOTICE) << "Error, GraphicsWindow has not been created successfully" << std::endl;
 		return;
 	}
+	
+	// Attach a callback to detect swap
+	osg::ref_ptr<OculusSwapCallback> swapCallback = new OculusSwapCallback(m_device);
+	gc->setSwapCallback(swapCallback);
 
 	osg::ref_ptr<osg::Camera> camera = view.getCamera();
 	camera->setName("Main");
@@ -181,8 +185,17 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	// Connect main camera to node callback that get HMD orientation
 	if (m_useOrientations) {
 		camera->setDataVariance(osg::Object::DYNAMIC);
-		camera->setUpdateCallback(new OculusViewConfigOrientationCallback(cameraRTTLeft, cameraRTTRight, m_device));
+		camera->setUpdateCallback(new OculusViewConfigOrientationCallback(cameraRTTLeft, cameraRTTRight, m_device, swapCallback));
 	}
+}
+
+void  OculusSwapCallback::swapBuffersImplementation(osg::GraphicsContext *gc) {
+	// Run the default system swapBufferImplementation
+	gc->swapBuffersImplementation();
+	// End frame timing when swap buffer is done
+	m_device->endFrameTiming();
+	// Start a new frame with incremented frame index
+	m_device->beginFrameTiming(++m_frameIndex);
 }
 
 void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::NodeVisitor* nv)
@@ -191,7 +204,7 @@ void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::Node
 	osg::View* view = mainCamera->getView();
 
 	if (view) {
-		osg::Quat orient = m_device.get()->getOrientation();
+		osg::Quat orient = m_device.get()->getOrientation(m_swapCallback->frameIndex());
 		// Nasty hack to update the view offset for each of the slave cameras
 		// There doesn't seem to be an accessor for this, fortunately the offsets are public
 		view->findSlaveForCamera(m_cameraRTTLeft.get())->_viewOffset.setRotate(orient);

@@ -53,13 +53,27 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		osg::ref_ptr<OculusDevice> m_device;
 };
 
+class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
+public:
+	OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
+	void swapBuffersImplementation(osg::GraphicsContext *gc);
+	int frameIndex() const { return m_frameIndex; }
+private:
+	osg::observer_ptr<OculusDevice> m_device;
+	int m_frameIndex;
+};
+
 class OculusViewConfigOrientationCallback :  public osg::NodeCallback {
 	public:
-		OculusViewConfigOrientationCallback(osg::ref_ptr<osg::Camera> rttLeft, osg::ref_ptr<osg::Camera> rttRight, osg::observer_ptr<OculusDevice> device) : m_cameraRTTLeft(rttLeft), m_cameraRTTRight(rttRight), m_device(device) {};
+		OculusViewConfigOrientationCallback(osg::ref_ptr<osg::Camera> rttLeft, 
+			osg::ref_ptr<osg::Camera> rttRight, 
+			osg::observer_ptr<OculusDevice> device, 
+			osg::observer_ptr<OculusSwapCallback> swapCallback) : m_cameraRTTLeft(rttLeft), m_cameraRTTRight(rttRight), m_device(device), m_swapCallback(swapCallback) {};
 		virtual void operator() (osg::Node* node, osg::NodeVisitor* nv);
 	protected:
 		osg::observer_ptr<osg::Camera> m_cameraRTTLeft, m_cameraRTTRight;
 		osg::observer_ptr<OculusDevice> m_device;
+		osg::observer_ptr<OculusSwapCallback> m_swapCallback;
 };
 
 #endif /* _OSG_OCULUSVIEWCONFIG_H_ */

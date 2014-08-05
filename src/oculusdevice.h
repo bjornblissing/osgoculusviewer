@@ -43,13 +43,15 @@ class OculusDevice : public osg::Referenced {
 		void setNearClip(float nearClip) { m_nearClip = nearClip; }
 		void setFarClip(float farclip) { m_farClip = farclip; }
 
-		void resetSensorOrientation();
-		osg::Quat getOrientation() const;
+		void resetSensorOrientation() const;
+		osg::Quat getOrientation(unsigned int frameIndex=0);
 		
 		osg::Geode* distortionMesh(int eyeNum, osg::Program* program, int x, int y, int w, int h);
 		osg::Vec2f eyeToSourceUVScale(int eyeNum) const;
 		osg::Vec2f eyeToSourceUVOffset(int eyeNum) const;
 
+		void beginFrameTiming(unsigned int frameIndex=0);
+		void endFrameTiming();
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
 		float aspectRatio(int eyeNum) const;
@@ -59,11 +61,13 @@ class OculusDevice : public osg::Referenced {
 		ovrSizei m_renderTargetSize;
 		ovrEyeRenderDesc m_eyeRenderDesc[2];
 		ovrVector2f m_UVScaleOffset[2][2];
+		ovrFrameTiming m_frameTiming;
 
 		osg::Matrixf m_leftEyeProjectionMatrix;
 		osg::Matrixf m_rightEyeProjectionMatrix;
 		osg::Vec3f m_leftEyeAdjust;
 		osg::Vec3f m_rightEyeAdjust;
+		
 
 		float m_nearClip;
 		float m_farClip;
