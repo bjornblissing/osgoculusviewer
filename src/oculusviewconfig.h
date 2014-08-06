@@ -40,6 +40,7 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 
 		osg::Camera* createRTTCamera(osg::Texture* tex, osg::GraphicsContext* gc) const;
 		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
+		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, int eyeNum) const;
 
 		bool m_configured;
 		bool m_useOrientations;
