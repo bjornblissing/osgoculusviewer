@@ -78,6 +78,8 @@ OculusDevice::OculusDevice() : m_hmdDevice(0),
 		ovrHmd_ConfigureTracking(m_hmdDevice, ovrTrackingCap_Orientation |
 			ovrTrackingCap_MagYawCorrection |
 			ovrTrackingCap_Position, 0);
+
+		beginFrameTiming();
 	}
 }
 
