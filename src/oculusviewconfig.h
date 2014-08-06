@@ -50,7 +50,6 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		float m_customScaleFactor;
 		float m_nearClip;
 		float m_farClip;
-		float m_predictionDelta;
 		osg::Node::NodeMask m_sceneNodeMask;
 
 		osg::ref_ptr<OculusDevice> m_device;
