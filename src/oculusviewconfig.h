@@ -38,7 +38,7 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		~OculusViewConfig() {};
 
 		osg::Camera* createRTTCamera(osg::Texture* tex, osg::GraphicsContext* gc) const;
-		osg::Camera* createHUDCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
+		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
 
 		bool m_configured;
 		bool m_useOrientations;
@@ -51,6 +51,15 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		osg::Node::NodeMask m_sceneNodeMask;
 
 		osg::ref_ptr<OculusDevice> m_device;
+};
+
+class WarpCameraPreDrawCallback : public osg::Camera::DrawCallback
+{
+public:
+	WarpCameraPreDrawCallback(osg::ref_ptr<OculusDevice> device) : m_device(device) {}
+	virtual void operator()(osg::RenderInfo& renderInfo) const;
+protected:
+	osg::observer_ptr<OculusDevice> m_device;
 };
 
 class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {

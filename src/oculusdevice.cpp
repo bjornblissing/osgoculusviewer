@@ -284,6 +284,11 @@ void OculusDevice::beginFrameTiming(unsigned int frameIndex) {
 	m_frameTiming = ovrHmd_BeginFrameTiming(m_hmdDevice, frameIndex);
 }
 
-void OculusDevice::endFrameTiming() {
+void OculusDevice::endFrameTiming() const {
 	ovrHmd_EndFrameTiming(m_hmdDevice);
+}
+
+void OculusDevice::waitTillTime() const {
+	// Wait till time-warp point to reduce latency.
+	ovr_WaitTillTime(m_frameTiming.TimewarpPointSeconds);
 }

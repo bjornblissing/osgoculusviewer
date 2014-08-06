@@ -51,7 +51,8 @@ class OculusDevice : public osg::Referenced {
 		osg::Vec2f eyeToSourceUVOffset(int eyeNum) const;
 
 		void beginFrameTiming(unsigned int frameIndex=0);
-		void endFrameTiming();
+		void endFrameTiming() const;
+		void waitTillTime() const;
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
 		float aspectRatio(int eyeNum) const;

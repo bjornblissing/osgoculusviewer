@@ -40,7 +40,7 @@ osg::Camera* OculusViewConfig::createRTTCamera(osg::Texture* texture, osg::Graph
 	return camera.release();
 }
 
-osg::Camera* OculusViewConfig::createHUDCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const
+osg::Camera* OculusViewConfig::createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const
 {
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
 	camera->setClearColor(osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
@@ -132,10 +132,10 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	cameraRTTLeft->setCullMask(m_sceneNodeMask);
 	cameraRTTRight->setCullMask(m_sceneNodeMask);
 	
-	// Create HUD camera
-	osg::ref_ptr<osg::Camera> cameraHUD = createHUDCamera(0.0, 1.0, 0.0, 1.0, gc);
-	cameraHUD->setName("OrthoCamera");
-	cameraHUD->setViewport(new osg::Viewport(0, 0, m_device->hScreenResolution(), m_device->vScreenResolution()));
+	// Create warp ortho camera
+	osg::ref_ptr<osg::Camera> cameraWarp = createWarpOrthoCamera(0.0, 1.0, 0.0, 1.0, gc);
+	cameraWarp->setName("WarpOrtho");
+	cameraWarp->setViewport(new osg::Viewport(0, 0, m_device->hScreenResolution(), m_device->vScreenResolution()));
 
 	// Set up shaders from the Oculus SDK documentation
 	osg::ref_ptr<osg::Program> program = new osg::Program;
@@ -148,10 +148,13 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 
 	// Create distortionMesh for each camera
 	osg::ref_ptr<osg::Geode> leftDistortionMesh = m_device->distortionMesh(0, program, 0, 0, textureWidth, textureHeight);
-	cameraHUD->addChild(leftDistortionMesh);
+	cameraWarp->addChild(leftDistortionMesh);
 
 	osg::ref_ptr<osg::Geode> rightDistortionMesh = m_device->distortionMesh(1, program, textureWidth, 0, textureWidth, textureHeight);
-	cameraHUD->addChild(rightDistortionMesh);
+	cameraWarp->addChild(rightDistortionMesh);
+
+	// Add pre draw camera to handle time warp
+	cameraWarp->setPreDrawCallback(new WarpCameraPreDrawCallback(m_device));
 
 	// Attach shaders to each distortion mesh
 	osg::StateSet* leftEyeStateSet = leftDistortionMesh->getOrCreateStateSet();
@@ -178,8 +181,8 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 		m_device->viewMatrixRight(),
 		true);
 
-	// Add HUD camera as slave
-	view.addSlave(cameraHUD, false);
+	// Add warp camera as slave
+	view.addSlave(cameraWarp, false);
 	view.setName("Oculus");
 
 	// Connect main camera to node callback that get HMD orientation
@@ -187,6 +190,12 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 		camera->setDataVariance(osg::Object::DYNAMIC);
 		camera->setUpdateCallback(new OculusViewConfigOrientationCallback(cameraRTTLeft, cameraRTTRight, m_device, swapCallback));
 	}
+}
+
+void WarpCameraPreDrawCallback::operator()(osg::RenderInfo&) const
+{
+	// Wait till time - warp point to reduce latency.
+	m_device->waitTillTime();
 }
 
 void  OculusSwapCallback::swapBuffersImplementation(osg::GraphicsContext *gc) {
