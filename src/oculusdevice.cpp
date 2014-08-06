@@ -11,7 +11,9 @@
 
 
 OculusDevice::OculusDevice() : m_hmdDevice(0),
-	m_nearClip(0.01f), m_farClip(10000.0f)
+	m_nearClip(0.01f), m_farClip(10000.0f),
+	m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
+	m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f))
 {
 	ovr_Initialize();
 	
@@ -168,11 +170,8 @@ osg::Matrix OculusDevice::viewMatrixRight() const
 	return viewMatrix;
 }
 
-osg::Quat OculusDevice::getOrientation(unsigned int frameIndex)
+void OculusDevice::updatePose(unsigned int frameIndex)
 {
-	// Create identity quaternion
-	osg::Quat osgQuat(0.0f, 0.0f, 0.0f, 1.0f);
-
 	// Ask the API for the times when this frame is expected to be displayed.
 	m_frameTiming = ovrHmd_GetFrameTiming(m_hmdDevice, frameIndex);
 
@@ -181,11 +180,9 @@ osg::Quat OculusDevice::getOrientation(unsigned int frameIndex)
 	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked)) {
 		ovrPoseStatef headpose = ts.HeadPose;
 		ovrPosef pose = headpose.ThePose;
-		ovrQuatf quat = pose.Orientation;
-		osgQuat.set(quat.x, quat.y, quat.z, -quat.w);
+		m_position.set(pose.Position.x, pose.Position.y, pose.Position.z);
+		m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
 	}
-
-	return osgQuat;
 }
 
 void OculusDevice::resetSensorOrientation() const {

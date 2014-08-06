@@ -44,7 +44,10 @@ class OculusDevice : public osg::Referenced {
 		void setFarClip(float farclip) { m_farClip = farclip; }
 
 		void resetSensorOrientation() const;
-		osg::Quat getOrientation(unsigned int frameIndex=0);
+		void updatePose(unsigned int frameIndex = 0);
+		
+		osg::Vec3 position() const { return m_position; }
+		osg::Quat orientation() const { return m_orientation;  }
 		
 		osg::Geode* distortionMesh(int eyeNum, osg::Program* program, int x, int y, int w, int h);
 		osg::Vec2f eyeToSourceUVScale(int eyeNum) const;
@@ -68,7 +71,9 @@ class OculusDevice : public osg::Referenced {
 		osg::Matrixf m_rightEyeProjectionMatrix;
 		osg::Vec3f m_leftEyeAdjust;
 		osg::Vec3f m_rightEyeAdjust;
-		
+
+		osg::Vec3 m_position;
+		osg::Quat m_orientation;
 
 		float m_nearClip;
 		float m_farClip;

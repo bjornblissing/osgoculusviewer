@@ -213,11 +213,19 @@ void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::Node
 	osg::View* view = mainCamera->getView();
 
 	if (view) {
-		osg::Quat orient = m_device.get()->getOrientation(m_swapCallback->frameIndex());
+		m_device.get()->updatePose(m_swapCallback->frameIndex());
+		osg::Vec3 position = m_device.get()->position();
+		osg::Quat orientation = m_device.get()->orientation();
+		osg::Matrix viewOffsetLeft = m_device.get()->viewMatrixLeft();
+		osg::Matrix viewOffsetRight = m_device.get()->viewMatrixRight();
+		viewOffsetLeft.preMultTranslate(position);
+		viewOffsetRight.preMultTranslate(position);
+		viewOffsetLeft.postMultRotate(orientation);
+		viewOffsetRight.postMultRotate(orientation);
 		// Nasty hack to update the view offset for each of the slave cameras
 		// There doesn't seem to be an accessor for this, fortunately the offsets are public
-		view->findSlaveForCamera(m_cameraRTTLeft.get())->_viewOffset.setRotate(orient);
-		view->findSlaveForCamera(m_cameraRTTRight.get())->_viewOffset.setRotate(orient);
+		view->findSlaveForCamera(m_cameraRTTLeft.get())->_viewOffset = viewOffsetLeft;
+		view->findSlaveForCamera(m_cameraRTTRight.get())->_viewOffset = viewOffsetRight;
 	}
 
 	traverse(node, nv);
