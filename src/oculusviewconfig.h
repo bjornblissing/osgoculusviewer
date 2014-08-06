@@ -18,6 +18,7 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 			m_useChromaticAberrationCorrection(true),
 			m_useOrientations(true),
 			m_useCustomScaleFactor(false),
+			m_useTimeWarp(true),
 			m_customScaleFactor(1.0f),
 			m_nearClip(0.01f),
 			m_farClip(10000.0f),
@@ -43,6 +44,7 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		bool m_configured;
 		bool m_useOrientations;
 		bool m_useChromaticAberrationCorrection;
+		bool m_useTimeWarp;
 		bool m_useCustomScaleFactor;
 		float m_customScaleFactor;
 		float m_nearClip;
@@ -76,13 +78,29 @@ class OculusViewConfigOrientationCallback :  public osg::NodeCallback {
 	public:
 		OculusViewConfigOrientationCallback(osg::ref_ptr<osg::Camera> rttLeft, 
 			osg::ref_ptr<osg::Camera> rttRight, 
-			osg::observer_ptr<OculusDevice> device, 
-			osg::observer_ptr<OculusSwapCallback> swapCallback) : m_cameraRTTLeft(rttLeft), m_cameraRTTRight(rttRight), m_device(device), m_swapCallback(swapCallback) {};
+			osg::ref_ptr<OculusDevice> device,
+			osg::ref_ptr<OculusSwapCallback> swapCallback) : m_cameraRTTLeft(rttLeft), m_cameraRTTRight(rttRight), m_device(device), m_swapCallback(swapCallback) {};
 		virtual void operator() (osg::Node* node, osg::NodeVisitor* nv);
 	protected:
 		osg::observer_ptr<osg::Camera> m_cameraRTTLeft, m_cameraRTTRight;
 		osg::observer_ptr<OculusDevice> m_device;
 		osg::observer_ptr<OculusSwapCallback> m_swapCallback;
+};
+
+class EyeRotationCallback : public osg::Uniform::Callback
+{
+public:
+	enum Mode
+	{
+		START,
+		END
+	};
+	EyeRotationCallback(Mode mode, osg::ref_ptr<OculusDevice> device, int eyeNum) : m_mode(mode), m_device(device), m_eyeNum(eyeNum) {}
+	virtual void operator()	(osg::Uniform* uniform, osg::NodeVisitor* nv);
+protected:
+	Mode m_mode;
+	osg::observer_ptr<OculusDevice> m_device;
+	unsigned int m_eyeNum;
 };
 
 #endif /* _OSG_OCULUSVIEWCONFIG_H_ */

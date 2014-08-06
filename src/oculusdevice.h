@@ -52,10 +52,12 @@ class OculusDevice : public osg::Referenced {
 		osg::Geode* distortionMesh(int eyeNum, osg::Program* program, int x, int y, int w, int h);
 		osg::Vec2f eyeToSourceUVScale(int eyeNum) const;
 		osg::Vec2f eyeToSourceUVOffset(int eyeNum) const;
+		osg::Matrixf eyeRotationStart(int eyeNum) const;
+		osg::Matrixf eyeRotationEnd(int eyeNum) const;
 
 		void beginFrameTiming(unsigned int frameIndex=0);
 		void endFrameTiming() const;
-		void waitTillTime() const;
+		void waitTillTime();
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
 		float aspectRatio(int eyeNum) const;
@@ -66,6 +68,8 @@ class OculusDevice : public osg::Referenced {
 		ovrEyeRenderDesc m_eyeRenderDesc[2];
 		ovrVector2f m_UVScaleOffset[2][2];
 		ovrFrameTiming m_frameTiming;
+		ovrPosef m_headPose[2];
+		ovrMatrix4f m_timeWarpMatrices[2][2];
 
 		osg::Matrixf m_leftEyeProjectionMatrix;
 		osg::Matrixf m_rightEyeProjectionMatrix;

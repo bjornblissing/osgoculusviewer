@@ -140,7 +140,13 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	// Set up shaders from the Oculus SDK documentation
 	osg::ref_ptr<osg::Program> program = new osg::Program;
 	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
-	vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.vert"));
+
+	if (m_useTimeWarp) {
+		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh_with_timewarp.vert"));
+	} else {
+		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.vert"));
+	}
+
 	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
 	fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.frag"));
 	program->addShader(vertexShader);
@@ -163,6 +169,16 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	leftEyeStateSet->addUniform(new osg::Uniform("Texture", 0));
 	leftEyeStateSet->addUniform(new osg::Uniform("EyeToSourceUVScale", m_device->eyeToSourceUVScale(0)));
 	leftEyeStateSet->addUniform(new osg::Uniform("EyeToSourceUVOffset", m_device->eyeToSourceUVOffset(0)));
+	
+	// Uniforms needed for time warp
+	if (m_useTimeWarp) {
+		osg::ref_ptr<osg::Uniform> eyeRotationStart = new osg::Uniform("EyeRotationStart", m_device->eyeRotationStart(0));
+		osg::ref_ptr<osg::Uniform> eyeRotationEnd = new osg::Uniform("EyeRotationEnd", m_device->eyeRotationEnd(0));
+		leftEyeStateSet->addUniform(eyeRotationStart);
+		leftEyeStateSet->addUniform(eyeRotationEnd);
+		eyeRotationStart->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::START, m_device, 0));
+		eyeRotationEnd->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::END, m_device, 0));
+	}
 
 	osg::StateSet* rightEyeStateSet = rightDistortionMesh->getOrCreateStateSet();
 	rightEyeStateSet->setTextureAttributeAndModes(0, textureRight, osg::StateAttribute::ON);
@@ -170,6 +186,16 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	rightEyeStateSet->addUniform(new osg::Uniform("Texture", 0));
 	rightEyeStateSet->addUniform(new osg::Uniform("EyeToSourceUVScale", m_device->eyeToSourceUVScale(1)));
 	rightEyeStateSet->addUniform(new osg::Uniform("EyeToSourceUVOffset", m_device->eyeToSourceUVOffset(1)));
+
+	// Uniforms needed for time warp
+	if (m_useTimeWarp) {
+		osg::ref_ptr<osg::Uniform> eyeRotationStart = new osg::Uniform("EyeRotationStart", m_device->eyeRotationStart(1));
+		osg::ref_ptr<osg::Uniform> eyeRotationEnd = new osg::Uniform("EyeRotationEnd", m_device->eyeRotationEnd(1));
+		rightEyeStateSet->addUniform(eyeRotationStart);
+		rightEyeStateSet->addUniform(eyeRotationEnd);
+		eyeRotationStart->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::START, m_device, 1));
+		eyeRotationEnd->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::END, m_device, 1));
+	}
 
 	// Add RTT cameras as slaves, specifying offsets for the projection
 	view.addSlave(cameraRTTLeft, 
@@ -229,4 +255,13 @@ void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::Node
 	}
 
 	traverse(node, nv);
+}
+
+void EyeRotationCallback::operator() (osg::Uniform* uniform, osg::NodeVisitor*) {
+	if (m_mode == START) {
+		uniform->set(m_device->eyeRotationStart(m_eyeNum));
+	}
+	else if (m_mode == END) {
+		uniform->set(m_device->eyeRotationEnd(m_eyeNum));
+	}
 }

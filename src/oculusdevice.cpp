@@ -182,6 +182,12 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 		ovrPosef pose = headpose.ThePose;
 		m_position.set(pose.Position.x, pose.Position.y, pose.Position.z);
 		m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
+
+		// Get head pose for both eyes (used for time warp
+		for (int eyeIndex = 0; eyeIndex < ovrEye_Count; ++eyeIndex) {
+			ovrEyeType eye = m_hmdDevice->EyeRenderOrder[eyeIndex];
+			m_headPose[eye] = ovrHmd_GetEyePose(m_hmdDevice, eye);
+		}
 	}
 }
 
@@ -264,15 +270,39 @@ osg::Geode* OculusDevice::distortionMesh(int eyeNum, osg::Program* program, int 
 	return geode.release();
 }
 
-osg::Vec2f OculusDevice::eyeToSourceUVScale(int eyeNum) const
-{
+osg::Vec2f OculusDevice::eyeToSourceUVScale(int eyeNum) const {
 	osg::Vec2f uvScale(m_UVScaleOffset[eyeNum][0].x, m_UVScaleOffset[eyeNum][0].y);
 	return uvScale;
 }
-osg::Vec2f OculusDevice::eyeToSourceUVOffset(int eyeNum) const
-{
+osg::Vec2f OculusDevice::eyeToSourceUVOffset(int eyeNum) const {
 	osg::Vec2f uvOffset(m_UVScaleOffset[eyeNum][1].x, m_UVScaleOffset[eyeNum][1].y);
 	return uvOffset;
+}
+
+osg::Matrixf OculusDevice::eyeRotationStart(int eyeNum) const {
+	osg::Matrixf rotationStart;
+
+	ovrMatrix4f rotationMatrix = m_timeWarpMatrices[eyeNum][0];
+	// Transpose matrix
+	rotationStart.set(rotationMatrix.M[0][0], rotationMatrix.M[1][0], rotationMatrix.M[2][0], rotationMatrix.M[3][0],
+		rotationMatrix.M[0][1], rotationMatrix.M[1][1], rotationMatrix.M[2][1], rotationMatrix.M[3][1],
+		rotationMatrix.M[0][2], rotationMatrix.M[1][2], rotationMatrix.M[2][2], rotationMatrix.M[3][2],
+		rotationMatrix.M[0][3], rotationMatrix.M[1][3], rotationMatrix.M[2][3], rotationMatrix.M[3][3]);
+	
+	return rotationStart;
+}
+
+osg::Matrixf OculusDevice::eyeRotationEnd(int eyeNum) const {
+	osg::Matrixf rotationEnd;
+	
+	ovrMatrix4f rotationMatrix = m_timeWarpMatrices[eyeNum][1];
+	// Transpose matrix
+	rotationEnd.set(rotationMatrix.M[0][0], rotationMatrix.M[1][0], rotationMatrix.M[2][0], rotationMatrix.M[3][0],
+		rotationMatrix.M[0][1], rotationMatrix.M[1][1], rotationMatrix.M[2][1], rotationMatrix.M[3][1],
+		rotationMatrix.M[0][2], rotationMatrix.M[1][2], rotationMatrix.M[2][2], rotationMatrix.M[3][2],
+		rotationMatrix.M[0][3], rotationMatrix.M[1][3], rotationMatrix.M[2][3], rotationMatrix.M[3][3]);
+
+	return rotationEnd;
 }
 
 float OculusDevice::aspectRatio(int eyeNum) const {
@@ -287,7 +317,12 @@ void OculusDevice::endFrameTiming() const {
 	ovrHmd_EndFrameTiming(m_hmdDevice);
 }
 
-void OculusDevice::waitTillTime() const {
+void OculusDevice::waitTillTime() {
 	// Wait till time-warp point to reduce latency.
 	ovr_WaitTillTime(m_frameTiming.TimewarpPointSeconds);
+
+	// Get time warp properties
+	for (int eyeIndex = 0; eyeIndex < ovrEye_Count; ++eyeIndex) {
+		ovrHmd_GetEyeTimewarpMatrices(m_hmdDevice, (ovrEyeType)eyeIndex, m_headPose[eyeIndex], m_timeWarpMatrices[eyeIndex]);
+	}
 }
