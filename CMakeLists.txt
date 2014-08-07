@@ -22,7 +22,7 @@ IF (WIN32)
 	ENDIF(NOT OSG_DIR)
 	
 	# Where to find OpenSceneGraph third party dependencies
-	SET(OSG_THIRD_PARTY_DIR CACHE PATH "Path where to find the OpenSceneGraph third party dependencies")
+	SET(OSG_THIRD_PARTY_DIR $ENV{OSG_THIRD_PARTY_DIR} CACHE PATH "Path where to find the OpenSceneGraph third party dependencies")
 	IF(NOT OSG_THIRD_PARTY_DIR)
 		MESSAGE(FATAL_ERROR "Error: OpenSceneGraph 3rd Party Directory not found.")
 	ENDIF(NOT OSG_THIRD_PARTY_DIR)
