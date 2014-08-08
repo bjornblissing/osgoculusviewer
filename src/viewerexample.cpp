@@ -49,7 +49,6 @@ int main( int argc, char** argv )
 
 	// Open the HMD
 	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice();
-	oculusDevice->setCustomScaleFactor(1.25f);
 
 	// Create screen with match the Oculus Rift resolution
 	osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
@@ -77,8 +76,8 @@ int main( int argc, char** argv )
 	traits->screenNum = si.screenNum;
 	traits->displayNum = si.displayNum;
 	traits->windowDecoration = false;
-	traits->x = 0;
-	traits->y = 0;
+	traits->x = oculusDevice->windowPos().x();
+	traits->y = oculusDevice->windowPos().y();
 	traits->width = oculusDevice->hScreenResolution();
 	traits->height = oculusDevice->vScreenResolution();
 	traits->doubleBuffer = true;
@@ -111,7 +110,6 @@ int main( int argc, char** argv )
 	loadedModel->setNodeMask(sceneNodeMask);
 
 	osg::ref_ptr<HMDCamera> hmd_camera = new HMDCamera(&viewer, oculusDevice);
-	hmd_camera->setChromaticAberrationCorrection(true);
 	hmd_camera->setSceneNodeMask(sceneNodeMask);
 	hmd_camera->addChild(loadedModel);
 	viewer.setSceneData(hmd_camera);

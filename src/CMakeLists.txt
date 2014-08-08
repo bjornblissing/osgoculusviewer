@@ -6,12 +6,14 @@ SET(TARGET_TARGETNAME_COMPOSITE_VIEWER OculusCompositeViewerExample)
 
 # Source files for library
 SET(TARGET_SRC
+	hmdcamera.cpp
 	oculusdevice.cpp
 	oculuseventhandler.cpp
 	oculusviewconfig.cpp
 )
 # Header files for library
 SET(TARGET_H
+	hmdcamera.h
 	oculusdevice.h
 	oculuseventhandler.h
 	oculusviewconfig.h

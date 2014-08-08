@@ -55,25 +55,6 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		osg::ref_ptr<OculusDevice> m_device;
 };
 
-class WarpCameraPreDrawCallback : public osg::Camera::DrawCallback
-{
-public:
-	WarpCameraPreDrawCallback(osg::ref_ptr<OculusDevice> device) : m_device(device) {}
-	virtual void operator()(osg::RenderInfo& renderInfo) const;
-protected:
-	osg::observer_ptr<OculusDevice> m_device;
-};
-
-class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
-public:
-	OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
-	void swapBuffersImplementation(osg::GraphicsContext *gc);
-	int frameIndex() const { return m_frameIndex; }
-private:
-	osg::observer_ptr<OculusDevice> m_device;
-	int m_frameIndex;
-};
-
 class OculusViewConfigOrientationCallback :  public osg::NodeCallback {
 	public:
 		OculusViewConfigOrientationCallback(osg::ref_ptr<osg::Camera> rttLeft, 
@@ -85,22 +66,6 @@ class OculusViewConfigOrientationCallback :  public osg::NodeCallback {
 		osg::observer_ptr<osg::Camera> m_cameraRTTLeft, m_cameraRTTRight;
 		osg::observer_ptr<OculusDevice> m_device;
 		osg::observer_ptr<OculusSwapCallback> m_swapCallback;
-};
-
-class EyeRotationCallback : public osg::Uniform::Callback
-{
-public:
-	enum Mode
-	{
-		START,
-		END
-	};
-	EyeRotationCallback(Mode mode, osg::ref_ptr<OculusDevice> device, OculusDevice::Eye eye) : m_mode(mode), m_device(device), m_eye(eye) {}
-	virtual void operator()	(osg::Uniform* uniform, osg::NodeVisitor* nv);
-protected:
-	Mode m_mode;
-	osg::observer_ptr<OculusDevice> m_device;
-	OculusDevice::Eye m_eye;
 };
 
 #endif /* _OSG_OCULUSVIEWCONFIG_H_ */

@@ -92,4 +92,39 @@ class OculusDevice : public osg::Referenced {
 		OculusDevice(const OculusDevice&); // Do not allow copy
 };
 
+class WarpCameraPreDrawCallback : public osg::Camera::DrawCallback
+{
+public:
+	WarpCameraPreDrawCallback(osg::ref_ptr<OculusDevice> device) : m_device(device) {}
+	virtual void operator()(osg::RenderInfo& renderInfo) const;
+protected:
+	osg::observer_ptr<OculusDevice> m_device;
+};
+
+class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
+public:
+	OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
+	void swapBuffersImplementation(osg::GraphicsContext *gc);
+	int frameIndex() const { return m_frameIndex; }
+private:
+	osg::observer_ptr<OculusDevice> m_device;
+	int m_frameIndex;
+};
+
+class EyeRotationCallback : public osg::Uniform::Callback
+{
+public:
+	enum Mode
+	{
+		START,
+		END
+	};
+	EyeRotationCallback(Mode mode, osg::observer_ptr<OculusDevice> device, OculusDevice::Eye eye) : m_mode(mode), m_device(device), m_eye(eye) {}
+	virtual void operator()	(osg::Uniform* uniform, osg::NodeVisitor* nv);
+protected:
+	Mode m_mode;
+	osg::observer_ptr<OculusDevice> m_device;
+	OculusDevice::Eye m_eye;
+};
+
 #endif /* _OSG_OCULUSDEVICE_H_ */

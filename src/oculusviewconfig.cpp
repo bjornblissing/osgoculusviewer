@@ -208,21 +208,6 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	}
 }
 
-void WarpCameraPreDrawCallback::operator()(osg::RenderInfo&) const
-{
-	// Wait till time - warp point to reduce latency.
-	m_device->waitTillTime();
-}
-
-void  OculusSwapCallback::swapBuffersImplementation(osg::GraphicsContext *gc) {
-	// Run the default system swapBufferImplementation
-	gc->swapBuffersImplementation();
-	// End frame timing when swap buffer is done
-	m_device->endFrameTiming();
-	// Start a new frame with incremented frame index
-	m_device->beginFrameTiming(++m_frameIndex);
-}
-
 void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::NodeVisitor* nv)
 {
 	osg::Camera* mainCamera = static_cast<osg::Camera*>(node);
@@ -247,11 +232,3 @@ void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::Node
 	traverse(node, nv);
 }
 
-void EyeRotationCallback::operator() (osg::Uniform* uniform, osg::NodeVisitor*) {
-	if (m_mode == START) {
-		uniform->set(m_device->eyeRotationStart(m_eye));
-	}
-	else if (m_mode == END) {
-		uniform->set(m_device->eyeRotationEnd(m_eye));
-	}
-}

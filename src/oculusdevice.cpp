@@ -342,3 +342,27 @@ void OculusDevice::waitTillTime() {
 		ovrHmd_GetEyeTimewarpMatrices(m_hmdDevice, (ovrEyeType)eyeIndex, m_headPose[eyeIndex], m_timeWarpMatrices[eyeIndex]);
 	}
 }
+
+void WarpCameraPreDrawCallback::operator()(osg::RenderInfo&) const
+{
+	// Wait till time - warp point to reduce latency.
+	m_device->waitTillTime();
+}
+
+void OculusSwapCallback::swapBuffersImplementation(osg::GraphicsContext *gc) {
+	// Run the default system swapBufferImplementation
+	gc->swapBuffersImplementation();
+	// End frame timing when swap buffer is done
+	m_device->endFrameTiming();
+	// Start a new frame with incremented frame index
+	m_device->beginFrameTiming(++m_frameIndex);
+}
+
+void EyeRotationCallback::operator() (osg::Uniform* uniform, osg::NodeVisitor*) {
+	if (m_mode == START) {
+		uniform->set(m_device->eyeRotationStart(m_eye));
+	}
+	else if (m_mode == END) {
+		uniform->set(m_device->eyeRotationEnd(m_eye));
+	}
+}
