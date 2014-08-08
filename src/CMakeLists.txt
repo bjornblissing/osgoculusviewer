@@ -1,115 +1,90 @@
 # Target name
 SET(TARGET_LIBRARYNAME OsgOculus)
-SET(TARGET_LIBRARYNAME_DEPRECATED OsgOculus_deprecated)
-SET(TARGET_TARGETNAME OsgOculusViewer)
-SET(TARGET_TARGETNAME_DEPRECATED OsgOculusViewer_deprecated)
+SET(TARGET_TARGETNAME_VIEW_CONFIG OculusViewConfigExample)
+SET(TARGET_TARGETNAME_VIEWER OculusViewerExample)
+SET(TARGET_TARGETNAME_COMPOSITE_VIEWER OculusCompositeViewerExample)
 
-# Target source files
+# Source files for library
 SET(TARGET_SRC
 	oculusdevice.cpp
 	oculuseventhandler.cpp
 	oculusviewconfig.cpp
 )
-# Target header files
+# Header files for library
 SET(TARGET_H
 	oculusdevice.h
 	oculuseventhandler.h
 	oculusviewconfig.h
 )
 
-# Target source files
-SET(TARGET_DEPRECATED_SRC
-	oculusdevice.cpp
-	hmdcamera.cpp
-)
-# Target header files
-SET(TARGET_DEPRECATED_H
-	oculusdevice.cpp
-	hmdcamera.h
-)
+# Add view config if available
+IF (USE_VIEW_CONFIG)
+	SET(TARGET_SRC ${TARGET_SRC}
+		oculusviewconfig.cpp
+	)
+	
+	SET(TARGET_H ${TARGET_H}
+		oculusviewconfig.h
+	)
+ENDIF()
 
 #####################################################################
 # Create library
 #####################################################################
 
-IF(USE_VIEW_CONFIG)
-	ADD_LIBRARY(${TARGET_LIBRARYNAME} ${TARGET_SRC} ${TARGET_H})
+ADD_LIBRARY(${TARGET_LIBRARYNAME} ${TARGET_SRC} ${TARGET_H})
 	
-	#####################################################################
-	# Linker options
-	#####################################################################
+#####################################################################
+# Linker options
+#####################################################################
 
-	# Link to open gl libs
-	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OPENGL_LIBRARIES} )
+# Link to open gl libs
+TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OPENGL_LIBRARIES} )
 
-	# Link to OpenSceneGraph libs
-	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OPENSCENEGRAPH_LIBRARIES} )
+# Link to OpenSceneGraph libs
+TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OPENSCENEGRAPH_LIBRARIES} )
 
-	# Link to Oculus libs
-	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OCULUS_SDK_LIBRARIES}	)
+# Link to Oculus libs
+TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OCULUS_SDK_LIBRARIES}	)
 
-	# Link to libraries needed for Oculus on Visual Studio
-	IF(MSVC)
-		TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} winmm.lib ws2_32.lib)
-	ENDIF(MSVC)
+# Link to libraries needed for Oculus on Visual Studio
+IF(MSVC)
+	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} winmm.lib ws2_32.lib)
+ENDIF(MSVC)
 
-	# Link to libraries needed for Oculus on Linux
-	IF(UNIX)
-	    # Oculus SDK dependencies for Mac OSX:
-	    IF (APPLE)
-			TARGET_LINK_LIBRARIES (
-				${TARGET_LIBRARYNAME}
-				${CORE_FOUNDATION}
-				${CORE_GRAPHICS}
-				${IOKIT}
-			)
-	    ELSE(APPLE)
-		    TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} pthread udev X11 Xinerama)
-    	ENDIF(APPLE)
-	ENDIF(UNIX)
+# Link to libraries needed for Oculus on Linux and Mac
+IF(UNIX)
+	# Oculus SDK dependencies for Mac OSX
+	IF (APPLE)
+		TARGET_LINK_LIBRARIES (
+			${TARGET_LIBRARYNAME}
+			${CORE_FOUNDATION}
+			${CORE_GRAPHICS}
+			${IOKIT}
+		)
+	ELSE(APPLE)
+		# Oculus SDK dependencies for Linux
+		TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} pthread udev X11 Xinerama)
+	ENDIF(APPLE)
+ENDIF(UNIX)
+
+#####################################################################
+# Create executable
+#####################################################################
+IF(BUILD_EXAMPLES)
+	ADD_EXECUTABLE(${TARGET_TARGETNAME_VIEWER} viewerexample.cpp)
+	TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME_VIEWER} ${TARGET_LIBRARYNAME})
+
+	ADD_EXECUTABLE(${TARGET_TARGETNAME_COMPOSITE_VIEWER} compositeviewerexample.cpp)
+	TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME_COMPOSITE_VIEWER} ${TARGET_LIBRARYNAME})
+
+	IF (USE_VIEW_CONFIG)
+		ADD_EXECUTABLE(${TARGET_TARGETNAME_VIEW_CONFIG} viewconfigexample.cpp)
+		TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME_VIEW_CONFIG} ${TARGET_LIBRARYNAME})
+	ENDIF()
 	
-	#####################################################################
-	# Create executable
-	#####################################################################
-	IF(BUILD_EXAMPLE)
-		ADD_EXECUTABLE(${TARGET_TARGETNAME} osgoculusviewer.cpp)
-		TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME} ${TARGET_LIBRARYNAME})
-	ENDIF(BUILD_EXAMPLE)
-ENDIF()
+ENDIF(BUILD_EXAMPLES)
 
-IF (BUILD_DEPRECATED)
-	ADD_LIBRARY(${TARGET_LIBRARYNAME_DEPRECATED} ${TARGET_DEPRECATED_SRC} ${TARGET_DEPRECATED_H})
-	#####################################################################
-	# Linker options
-	#####################################################################
-
-	# Link to open gl libs
-	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME_DEPRECATED} ${OPENGL_LIBRARIES} )
-
-	# Link to OpenSceneGraph libs
-	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME_DEPRECATED} ${OPENSCENEGRAPH_LIBRARIES} )
-
-	# Link to Oculus libs
-	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME_DEPRECATED} ${OCULUS_SDK_LIBRARIES}	)
-
-	# Link to libraries needed for Oculus on Windows
-	IF(WIN32)
-		TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME_DEPRECATED} winmm.lib )
-	ENDIF(WIN32)
-
-	# Link to libraries needed for Oculus on Linux
-	IF(UNIX)
-		TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME_DEPRECATED} pthread udev X11 Xinerama)
-	ENDIF(UNIX)
-	
-	#####################################################################
-	# Create executable
-	#####################################################################
-	IF(BUILD_EXAMPLE)
-		ADD_EXECUTABLE(${TARGET_TARGETNAME_DEPRECATED} osgoculusviewer_deprecated.cpp)
-		TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME_DEPRECATED} ${TARGET_LIBRARYNAME_DEPRECATED})
-	ENDIF(BUILD_EXAMPLE)
-ENDIF()
 
 ####################################################################
 # Copy shaders if we are doing out of source builds
@@ -149,13 +124,12 @@ IF(MSVC)
 
 		# For visual studio 2010 (MSVC10), 2012 (MSVC11) and 2013 (MSVC12)
 		IF(MSVC10 OR MSVC11 OR MSVC12)
+			CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEWER}.vcxproj.user @ONLY)
+			CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_COMPOSITE_VIEWER}.vcxproj.user @ONLY)
 			IF (USE_VIEW_CONFIG)
-				CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME}.vcxproj.user @ONLY)
+				CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEW_CONFIG}.vcxproj.user @ONLY)
 			ENDIF()
-			IF (BUILD_DEPRECATED)
-				CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_DEPRECATED}.vcxproj.user @ONLY)
-			ENDIF()
+			
 		ENDIF()
-
 	ENDIF (OPENSCENEGRAPH_FOUND)
 ENDIF(MSVC)

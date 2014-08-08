@@ -21,7 +21,7 @@ OPTION(CMAKE_USE_RELATIVE_PATHS "If true, cmake will use relative paths in makef
 MARK_AS_ADVANCED(CMAKE_USE_RELATIVE_PATHS)
 
 # Build example viewer
-OPTION(BUILD_EXAMPLE "Enable to build viewer example" ON)
+OPTION(BUILD_EXAMPLES "Enable to build viewer examples" ON)
 
 
 IF (WIN32)
@@ -87,15 +87,9 @@ ENDIF(VISUAL_STUDIO_EXPRESS)
 # osgViewer::ViewConfig concept requires osg 3.2 or later
 IF(NOT OPENSCENEGRAPH_VERSION VERSION_EQUAL 3.2.0 AND 
 NOT OPENSCENEGRAPH_VERSION VERSION_GREATER 3.2.0)
-	#SET (USE_VIEW_CONFIG OFF)
-	#SET (BUILD_DEPRECATED ON)
-	MESSAGE(FATAL_ERROR "Error: Currently only supporting OpenSceneGraph 3.2.0 or later.")
+	SET (USE_VIEW_CONFIG OFF)
 ELSE()
 	SET (USE_VIEW_CONFIG ON)
-	OPTION(BUILD_DEPRECATED "Enable to build deprecated version as well" OFF)
-	IF (BUILD_DEPRECATED)
-		MESSAGE(FATAL_ERROR "Error: Only supports Viewer Config.")
-	ENDIF()
 ENDIF()
 
 ###############################################################################
@@ -137,7 +131,7 @@ IF(UNIX)
 	IF(CMAKE_COMPILER_IS_GNUCC)
 		ADD_DEFINITIONS(-Wall -ansi -pedantic -Wextra)
 		IF (WARNINGS_AS_ERRORS)
-			ADD_DEFINITIONS(-Werror)		
+			ADD_DEFINITIONS(-Werror)
 		ENDIF(WARNINGS_AS_ERRORS)
 	ENDIF(CMAKE_COMPILER_IS_GNUCC)
 	IF (APPLE)
