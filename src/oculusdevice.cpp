@@ -143,7 +143,7 @@ osg::Matrix OculusDevice::projectionMatrixRight() const
 osg::Matrix OculusDevice::projectionOffsetMatrixLeft() const
 {
 	osg::Matrix projectionOffsetMatrix;
-	float offset = m_leftEyeProjectionMatrix(2, 0) * aspectRatio(0); // Ugly hack to extract projection offset
+	float offset = m_leftEyeProjectionMatrix(2, 0) * aspectRatio(LEFT); // Ugly hack to extract projection offset
 	projectionOffsetMatrix.makeTranslate(osg::Vec3(offset, 0.0, 0.0));//
 
 	return projectionOffsetMatrix;
@@ -152,7 +152,7 @@ osg::Matrix OculusDevice::projectionOffsetMatrixLeft() const
 osg::Matrix OculusDevice::projectionOffsetMatrixRight() const
 {
 	osg::Matrix projectionOffsetMatrix;
-	float offset = m_rightEyeProjectionMatrix(2, 0) * aspectRatio(1); // Ugly hack to extract projection offset
+	float offset = m_rightEyeProjectionMatrix(2, 0) * aspectRatio(RIGHT); // Ugly hack to extract projection offset
 	projectionOffsetMatrix.makeTranslate(osg::Vec3(offset, 0.0, 0.0));
 	return projectionOffsetMatrix;
 }
@@ -195,11 +195,24 @@ void OculusDevice::resetSensorOrientation() const {
 	ovrHmd_RecenterPose(m_hmdDevice);
 }
 
-osg::Geode* OculusDevice::distortionMesh(int eyeNum, osg::Program* program, int x, int y, int w, int h) {
+int OculusDevice::renderOrder(Eye eye) const {
+	for (int eyeIndex = 0; eyeIndex < ovrEye_Count; ++eyeIndex) {
+		ovrEyeType ovrEye = m_hmdDevice->EyeRenderOrder[eyeIndex];
+		if (ovrEye == ovrEye_Left && eye == LEFT) {
+			return eyeIndex;
+		}
+		if (ovrEye == ovrEye_Right && eye == RIGHT) {
+			return eyeIndex;
+		}
+	}
+	return 0;
+}
+
+osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, int y, int w, int h) {
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode;
 	// Allocate & generate distortion mesh vertices.
 	ovrDistortionMesh meshData;
-	ovrHmd_CreateDistortionMesh(m_hmdDevice, m_eyeRenderDesc[eyeNum].Eye, m_eyeRenderDesc[eyeNum].Fov, ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp, &meshData);
+	ovrHmd_CreateDistortionMesh(m_hmdDevice, m_eyeRenderDesc[eye].Eye, m_eyeRenderDesc[eye].Fov, ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp, &meshData);
 	
 	// Now parse the vertex data and create a render ready vertex buffer from it
 	ovrDistortionVertex* ov = meshData.pVertexData;
@@ -265,24 +278,24 @@ osg::Geode* OculusDevice::distortionMesh(int eyeNum, osg::Program* program, int 
 	eyeRenderViewport.Pos.y = y;
 	eyeRenderViewport.Size.w = w;
 	eyeRenderViewport.Size.h = h;
-	ovrHmd_GetRenderScaleAndOffset(m_eyeRenderDesc[eyeNum].Fov, m_renderTargetSize, eyeRenderViewport, m_UVScaleOffset[eyeNum]);
+	ovrHmd_GetRenderScaleAndOffset(m_eyeRenderDesc[eye].Fov, m_renderTargetSize, eyeRenderViewport, m_UVScaleOffset[eye]);
 	geode->addDrawable(geometry);
 	return geode.release();
 }
 
-osg::Vec2f OculusDevice::eyeToSourceUVScale(int eyeNum) const {
-	osg::Vec2f uvScale(m_UVScaleOffset[eyeNum][0].x, m_UVScaleOffset[eyeNum][0].y);
+osg::Vec2f OculusDevice::eyeToSourceUVScale(Eye eye) const {
+	osg::Vec2f uvScale(m_UVScaleOffset[eye][0].x, m_UVScaleOffset[eye][0].y);
 	return uvScale;
 }
-osg::Vec2f OculusDevice::eyeToSourceUVOffset(int eyeNum) const {
-	osg::Vec2f uvOffset(m_UVScaleOffset[eyeNum][1].x, m_UVScaleOffset[eyeNum][1].y);
+osg::Vec2f OculusDevice::eyeToSourceUVOffset(Eye eye) const {
+	osg::Vec2f uvOffset(m_UVScaleOffset[eye][1].x, m_UVScaleOffset[eye][1].y);
 	return uvOffset;
 }
 
-osg::Matrixf OculusDevice::eyeRotationStart(int eyeNum) const {
+osg::Matrixf OculusDevice::eyeRotationStart(Eye eye) const {
 	osg::Matrixf rotationStart;
 
-	ovrMatrix4f rotationMatrix = m_timeWarpMatrices[eyeNum][0];
+	ovrMatrix4f rotationMatrix = m_timeWarpMatrices[eye][0];
 	// Transpose matrix
 	rotationStart.set(rotationMatrix.M[0][0], rotationMatrix.M[1][0], rotationMatrix.M[2][0], rotationMatrix.M[3][0],
 		rotationMatrix.M[0][1], rotationMatrix.M[1][1], rotationMatrix.M[2][1], rotationMatrix.M[3][1],
@@ -292,10 +305,10 @@ osg::Matrixf OculusDevice::eyeRotationStart(int eyeNum) const {
 	return rotationStart;
 }
 
-osg::Matrixf OculusDevice::eyeRotationEnd(int eyeNum) const {
+osg::Matrixf OculusDevice::eyeRotationEnd(Eye eye) const {
 	osg::Matrixf rotationEnd;
 	
-	ovrMatrix4f rotationMatrix = m_timeWarpMatrices[eyeNum][1];
+	ovrMatrix4f rotationMatrix = m_timeWarpMatrices[eye][1];
 	// Transpose matrix
 	rotationEnd.set(rotationMatrix.M[0][0], rotationMatrix.M[1][0], rotationMatrix.M[2][0], rotationMatrix.M[3][0],
 		rotationMatrix.M[0][1], rotationMatrix.M[1][1], rotationMatrix.M[2][1], rotationMatrix.M[3][1],
@@ -305,8 +318,8 @@ osg::Matrixf OculusDevice::eyeRotationEnd(int eyeNum) const {
 	return rotationEnd;
 }
 
-float OculusDevice::aspectRatio(int eyeNum) const {
-	return float(m_eyeRenderDesc[eyeNum].DistortedViewport.Size.w) / float(m_eyeRenderDesc[eyeNum].DistortedViewport.Size.h);
+float OculusDevice::aspectRatio(Eye eye) const {
+	return float(m_eyeRenderDesc[eye].DistortedViewport.Size.w) / float(m_eyeRenderDesc[eye].DistortedViewport.Size.h);
 }
 
 void OculusDevice::beginFrameTiming(unsigned int frameIndex) {

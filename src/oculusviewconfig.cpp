@@ -17,7 +17,7 @@
 #include "oculusviewconfig.h"
 #include "oculusdevice.h"
 
-osg::Camera* OculusViewConfig::createRTTCamera(osg::Texture* texture, osg::GraphicsContext* gc) const
+osg::Camera* OculusViewConfig::createRTTCamera(osg::Texture* texture, osg::GraphicsContext* gc, OculusDevice::Eye eye) const
 {
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
 	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
@@ -25,7 +25,7 @@ osg::Camera* OculusViewConfig::createRTTCamera(osg::Texture* texture, osg::Graph
 	camera->setDrawBuffer(GL_FRONT);
 	camera->setReadBuffer(GL_FRONT);
 	camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER_OBJECT );
-	camera->setRenderOrder(osg::Camera::PRE_RENDER);
+	camera->setRenderOrder(osg::Camera::PRE_RENDER, (int) m_device->renderOrder(eye));
 	camera->setAllowEventFocus(false);
 	camera->setGraphicsContext(gc);
 	camera->setReferenceFrame(osg::Camera::RELATIVE_RF);
@@ -54,21 +54,21 @@ osg::Camera* OculusViewConfig::createWarpOrthoCamera(double left, double right, 
 	return camera.release();
 }
 
-void OculusViewConfig::applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, int eyeNum) const {
+void OculusViewConfig::applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const {
 	stateSet->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
 	stateSet->setAttributeAndModes(program, osg::StateAttribute::ON);
 	stateSet->addUniform(new osg::Uniform("Texture", 0));
-	stateSet->addUniform(new osg::Uniform("EyeToSourceUVScale", m_device->eyeToSourceUVScale(eyeNum)));
-	stateSet->addUniform(new osg::Uniform("EyeToSourceUVOffset", m_device->eyeToSourceUVOffset(eyeNum)));
+	stateSet->addUniform(new osg::Uniform("EyeToSourceUVScale", m_device->eyeToSourceUVScale(eye)));
+	stateSet->addUniform(new osg::Uniform("EyeToSourceUVOffset", m_device->eyeToSourceUVOffset(eye)));
 
 	// Uniforms needed for time warp
 	if (m_useTimeWarp) {
-		osg::ref_ptr<osg::Uniform> eyeRotationStart = new osg::Uniform("EyeRotationStart", m_device->eyeRotationStart(eyeNum));
-		osg::ref_ptr<osg::Uniform> eyeRotationEnd = new osg::Uniform("EyeRotationEnd", m_device->eyeRotationEnd(eyeNum));
+		osg::ref_ptr<osg::Uniform> eyeRotationStart = new osg::Uniform("EyeRotationStart", m_device->eyeRotationStart(eye));
+		osg::ref_ptr<osg::Uniform> eyeRotationEnd = new osg::Uniform("EyeRotationEnd", m_device->eyeRotationEnd(eye));
 		stateSet->addUniform(eyeRotationStart);
 		stateSet->addUniform(eyeRotationEnd);
-		eyeRotationStart->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::START, m_device, eyeNum));
-		eyeRotationEnd->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::END, m_device, eyeNum));
+		eyeRotationStart->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::START, m_device, eye));
+		eyeRotationEnd->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::END, m_device, eye));
 	}
 }
 
@@ -143,8 +143,8 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	textureRight->setTextureSize( textureWidth, textureHeight );
 	textureRight->setInternalFormat( GL_RGBA );
 	// Create RTT cameras and attach textures
-	osg::ref_ptr<osg::Camera> cameraRTTLeft = createRTTCamera(textureLeft, gc);
-	osg::ref_ptr<osg::Camera> cameraRTTRight = createRTTCamera(textureRight, gc);
+	osg::ref_ptr<osg::Camera> cameraRTTLeft = createRTTCamera(textureLeft, gc, OculusDevice::Eye::LEFT);
+	osg::ref_ptr<osg::Camera> cameraRTTRight = createRTTCamera(textureRight, gc, OculusDevice::Eye::RIGHT);
 	cameraRTTLeft->setName("LeftRTT");
 	cameraRTTRight->setName("RightRTT");
 	cameraRTTLeft->setCullMask(m_sceneNodeMask);
@@ -171,10 +171,10 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	program->addShader(fragmentShader);
 
 	// Create distortionMesh for each camera
-	osg::ref_ptr<osg::Geode> leftDistortionMesh = m_device->distortionMesh(0, program, 0, 0, textureWidth, textureHeight);
+	osg::ref_ptr<osg::Geode> leftDistortionMesh = m_device->distortionMesh(OculusDevice::Eye::LEFT, program, 0, 0, textureWidth, textureHeight);
 	cameraWarp->addChild(leftDistortionMesh);
 
-	osg::ref_ptr<osg::Geode> rightDistortionMesh = m_device->distortionMesh(1, program, textureWidth, 0, textureWidth, textureHeight);
+	osg::ref_ptr<osg::Geode> rightDistortionMesh = m_device->distortionMesh(OculusDevice::Eye::RIGHT, program, textureWidth, 0, textureWidth, textureHeight);
 	cameraWarp->addChild(rightDistortionMesh);
 
 	// Add pre draw camera to handle time warp
@@ -184,8 +184,8 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	osg::StateSet* leftEyeStateSet = leftDistortionMesh->getOrCreateStateSet();
 	osg::StateSet* rightEyeStateSet = rightDistortionMesh->getOrCreateStateSet();
 
-	applyShaderParameters(leftEyeStateSet, program.get(), textureLeft.get(), 0);
-	applyShaderParameters(rightEyeStateSet, program.get(), textureRight.get(), 1);
+	applyShaderParameters(leftEyeStateSet, program.get(), textureLeft.get(), OculusDevice::Eye::LEFT);
+	applyShaderParameters(rightEyeStateSet, program.get(), textureRight.get(), OculusDevice::Eye::RIGHT);
 
 	// Add RTT cameras as slaves, specifying offsets for the projection
 	view.addSlave(cameraRTTLeft, 
@@ -249,9 +249,9 @@ void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::Node
 
 void EyeRotationCallback::operator() (osg::Uniform* uniform, osg::NodeVisitor*) {
 	if (m_mode == START) {
-		uniform->set(m_device->eyeRotationStart(m_eyeNum));
+		uniform->set(m_device->eyeRotationStart(m_eye));
 	}
 	else if (m_mode == END) {
-		uniform->set(m_device->eyeRotationEnd(m_eyeNum));
+		uniform->set(m_device->eyeRotationEnd(m_eye));
 	}
 }

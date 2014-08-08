@@ -38,9 +38,9 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 	protected:
 		~OculusViewConfig() {};
 
-		osg::Camera* createRTTCamera(osg::Texture* tex, osg::GraphicsContext* gc) const;
+		osg::Camera* createRTTCamera(osg::Texture* tex, osg::GraphicsContext* gc, OculusDevice::Eye eye) const;
 		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
-		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, int eyeNum) const;
+		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const;
 
 		bool m_configured;
 		bool m_useOrientations;
@@ -95,12 +95,12 @@ public:
 		START,
 		END
 	};
-	EyeRotationCallback(Mode mode, osg::ref_ptr<OculusDevice> device, int eyeNum) : m_mode(mode), m_device(device), m_eyeNum(eyeNum) {}
+	EyeRotationCallback(Mode mode, osg::ref_ptr<OculusDevice> device, OculusDevice::Eye eye) : m_mode(mode), m_device(device), m_eye(eye) {}
 	virtual void operator()	(osg::Uniform* uniform, osg::NodeVisitor* nv);
 protected:
 	Mode m_mode;
 	osg::observer_ptr<OculusDevice> m_device;
-	unsigned int m_eyeNum;
+	OculusDevice::Eye m_eye;
 };
 
 #endif /* _OSG_OCULUSVIEWCONFIG_H_ */

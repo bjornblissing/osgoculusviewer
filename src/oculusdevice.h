@@ -19,6 +19,12 @@
 class OculusDevice : public osg::Referenced {
 
 	public:
+		enum Eye
+		{
+			LEFT = 0,
+			RIGHT = 1,
+			COUNT = 2
+		};
 		OculusDevice();
 
 		unsigned int hScreenResolution() const;
@@ -49,18 +55,19 @@ class OculusDevice : public osg::Referenced {
 		osg::Vec3 position() const { return m_position; }
 		osg::Quat orientation() const { return m_orientation;  }
 		
-		osg::Geode* distortionMesh(int eyeNum, osg::Program* program, int x, int y, int w, int h);
-		osg::Vec2f eyeToSourceUVScale(int eyeNum) const;
-		osg::Vec2f eyeToSourceUVOffset(int eyeNum) const;
-		osg::Matrixf eyeRotationStart(int eyeNum) const;
-		osg::Matrixf eyeRotationEnd(int eyeNum) const;
+		int renderOrder(Eye eye) const;
+		osg::Geode* distortionMesh(Eye eye, osg::Program* program, int x, int y, int w, int h);
+		osg::Vec2f eyeToSourceUVScale(Eye eye) const;
+		osg::Vec2f eyeToSourceUVOffset(Eye eye) const;
+		osg::Matrixf eyeRotationStart(Eye eye) const;
+		osg::Matrixf eyeRotationEnd(Eye eye) const;
 
 		void beginFrameTiming(unsigned int frameIndex=0);
 		void endFrameTiming() const;
 		void waitTillTime();
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
-		float aspectRatio(int eyeNum) const;
+		float aspectRatio(Eye eye) const;
 
 		ovrHmd m_hmdDevice;
 		ovrSizei m_resolution;
