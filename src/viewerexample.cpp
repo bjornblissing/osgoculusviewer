@@ -23,7 +23,7 @@
 #include <osgViewer/ViewerEventHandlers>
 
 #include "oculusdevice.h"
-#include "hmdcamera.h"
+#include "oculusviewer.h"
 
 int main( int argc, char** argv )
 {
@@ -109,7 +109,7 @@ int main( int argc, char** argv )
 	osg::Node::NodeMask sceneNodeMask = loadedModel->getNodeMask() & ~0x1;
 	loadedModel->setNodeMask(sceneNodeMask);
 
-	osg::ref_ptr<HMDCamera> hmd_camera = new HMDCamera(&viewer, oculusDevice);
+	osg::ref_ptr<OculusViewer> hmd_camera = new OculusViewer(&viewer, oculusDevice);
 	hmd_camera->setSceneNodeMask(sceneNodeMask);
 	hmd_camera->addChild(loadedModel);
 	viewer.setSceneData(hmd_camera);

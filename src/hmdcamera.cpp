@@ -1,5 +1,5 @@
 /*
- * HMDCamera.cpp
+ * oculusviewer.cpp
  *
  *  Created on: Jun 30, 2013
  *      Author: Jan Ciger
@@ -15,11 +15,11 @@
 
 #include <osgViewer/View>
 
-#include "hmdcamera.h"
+#include "oculusviewer.h"
 #include "oculusdevice.h"
 
 
-HMDCamera::HMDCamera(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev) : osg::Group(),
+OculusViewer::OculusViewer(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev) : osg::Group(),
 	m_configured(false),
 	m_useChromaticAberrationCorrection(false),
 	m_useTimeWarp(true),
@@ -32,12 +32,7 @@ HMDCamera::HMDCamera(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev) : os
 {
 }
 
-
-HMDCamera::~HMDCamera()
-{
-}
-
-void HMDCamera::traverse(osg::NodeVisitor& nv)
+void OculusViewer::traverse(osg::NodeVisitor& nv)
 {
 	if (!m_configured) {
 		configure();
@@ -61,7 +56,7 @@ void HMDCamera::traverse(osg::NodeVisitor& nv)
 	osg::Group::traverse(nv);
 }
 
-osg::Camera* HMDCamera::createRTTCamera(osg::Texture* texture, osg::GraphicsContext* gc, OculusDevice::Eye eye) const
+osg::Camera* OculusViewer::createRTTCamera(osg::Texture* texture, osg::GraphicsContext* gc, OculusDevice::Eye eye) const
 {
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
 	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
@@ -84,7 +79,7 @@ osg::Camera* HMDCamera::createRTTCamera(osg::Texture* texture, osg::GraphicsCont
 	return camera.release();
 }
 
-osg::Camera* HMDCamera::createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const
+osg::Camera* OculusViewer::createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const
 {
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
 	camera->setClearColor(osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
@@ -98,7 +93,7 @@ osg::Camera* HMDCamera::createWarpOrthoCamera(double left, double right, double 
 	return camera.release();
 }
 
-void HMDCamera::applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const {
+void OculusViewer::applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const {
 	stateSet->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
 	stateSet->setAttributeAndModes(program, osg::StateAttribute::ON);
 	stateSet->addUniform(new osg::Uniform("Texture", 0));
@@ -116,7 +111,7 @@ void HMDCamera::applyShaderParameters(osg::StateSet* stateSet, osg::Program* pro
 	}
 }
 
-void HMDCamera::configure()
+void OculusViewer::configure()
 {
 	m_device->setNearClip(m_nearClip);
 	m_device->setFarClip(m_farClip);

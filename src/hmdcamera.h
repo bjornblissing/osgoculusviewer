@@ -1,12 +1,12 @@
 /*
- * HMDCamera.h
+ * oculusviewer.h
  *
  *  Created on: Jun 30, 2013
  *      Author: Jan Ciger
  */
 
-#ifndef _OSG_HMDCAMERA_H_
-#define _OSG_HMDCAMERA_H_
+#ifndef _OSG_OCULUSVIEWER_H_
+#define _OSG_OCULUSVIEWER_H_
 
 #include <osg/Group>
 
@@ -17,13 +17,13 @@ namespace osgViewer {
 	class NodeVisitor;
 }
 
-class HMDCamera: public osg::Group {
+class OculusViewer : public osg::Group {
 	public:
-		HMDCamera(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev);
+		OculusViewer(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev);
 		virtual void traverse(osg::NodeVisitor& nv);
 		void setSceneNodeMask(osg::Node::NodeMask nodeMask) { m_sceneNodeMask = nodeMask; }
 	protected:
-		~HMDCamera();
+		~OculusViewer() {};
 		virtual void configure();
 
 		osg::Camera* createRTTCamera(osg::Texture* tex, osg::GraphicsContext* gc, OculusDevice::Eye eye) const;
@@ -45,4 +45,4 @@ class HMDCamera: public osg::Group {
 		osg::Node::NodeMask m_sceneNodeMask;
 };
 
-#endif /* _OSG_HMDCAMERA_H_ */
+#endif /* _OSG_OCULUSVIEWER_H_ */
