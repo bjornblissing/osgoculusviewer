@@ -27,6 +27,7 @@ OculusDevice::OculusDevice() : m_hmdDevice(0),
 	if (!m_hmdDevice) {
 		osg::notify(osg::WARN) << "Warning: No device could be found. Creating emulated device " << std::endl;
 		m_hmdDevice = ovrHmd_CreateDebug(ovrHmd_DK1);
+		ovrHmd_ResetFrameTiming(m_hmdDevice, 0);
 	}
 
 	if (m_hmdDevice) {
