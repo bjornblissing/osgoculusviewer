@@ -55,7 +55,17 @@ IF(USE_VIEW_CONFIG)
 
 	# Link to libraries needed for Oculus on Linux
 	IF(UNIX)
-		TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} pthread udev X11 Xinerama)
+	    # Oculus SDK dependencies for Mac OSX:
+	    IF (APPLE)
+			TARGET_LINK_LIBRARIES (
+				${TARGET_LIBRARYNAME}
+				${CORE_FOUNDATION}
+				${CORE_GRAPHICS}
+				${IOKIT}
+			)
+	    ELSE(APPLE)
+		    TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} pthread udev X11 Xinerama)
+    	ENDIF(APPLE)
 	ENDIF(UNIX)
 	
 	#####################################################################
