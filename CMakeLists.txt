@@ -65,6 +65,13 @@ FIND_PACKAGE( OpenGL REQUIRED )
 FIND_PACKAGE( OpenSceneGraph REQUIRED osgViewer osgDB osgGA)
 FIND_PACKAGE( OculusSDK REQUIRED )
 
+# Oculus SDK dependencies for Mac OSX:
+IF (APPLE)
+    FIND_LIBRARY (CORE_FOUNDATION CoreFoundation)
+    FIND_LIBRARY (CORE_GRAPHICS CoreGraphics)
+    FIND_LIBRARY (IOKIT IOKit)
+ENDIF (APPLE)
+
 INCLUDE_DIRECTORIES(BEFORE
     ${OPENGL_INCLUDE_DIR}
     ${OPENSCENEGRAPH_INCLUDE_DIR}
@@ -133,6 +140,13 @@ IF(UNIX)
 			ADD_DEFINITIONS(-Werror)		
 		ENDIF(WARNINGS_AS_ERRORS)
 	ENDIF(CMAKE_COMPILER_IS_GNUCC)
+	IF (APPLE)
+		# set standard lib, clang defaults to c++0x
+		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++98")
+		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libstdc++")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98 -stdlib=libstdc++ -Wno-overloaded-virtual -Wno-conversion")
+		set(WARNING_CFLAGS "")
+	ENDIF()		
 ENDIF(UNIX)
 
 ###############################################################################
