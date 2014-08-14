@@ -180,7 +180,7 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked)) {
 		ovrPoseStatef headpose = ts.HeadPose;
 		ovrPosef pose = headpose.ThePose;
-		m_position.set(pose.Position.x, pose.Position.y, pose.Position.z);
+		m_position.set(-pose.Position.x, -pose.Position.y, -pose.Position.z);
 		m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
 
 		// Get head pose for both eyes (used for time warp
