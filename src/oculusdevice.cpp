@@ -42,8 +42,8 @@ OculusDevice::OculusDevice() : m_hmdDevice(0),
 		// Get more details about the HMD.
 		m_resolution = m_hmdDevice->Resolution;
 		
-		// Compute recommended rendertexture size
-		float pixelsPerDisplayPixel = 1.0f; // Decrease this value to scale the size on render texture on lower performance hardware. Values above 1.0 is unnessesary.
+		// Compute recommended render texture size
+		float pixelsPerDisplayPixel = 1.0f; // Decrease this value to scale the size on render texture on lower performance hardware. Values above 1.0 is unnecessary.
 
 		ovrSizei recommenedLeftTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0], pixelsPerDisplayPixel);
 		ovrSizei recommenedRightTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1], pixelsPerDisplayPixel);
@@ -71,7 +71,7 @@ OculusDevice::OculusDevice() : m_hmdDevice(0),
 			leftEyeProjectionMatrix.M[0][3], leftEyeProjectionMatrix.M[1][3], leftEyeProjectionMatrix.M[2][3], leftEyeProjectionMatrix.M[3][3]);
 
 		ovrMatrix4f rightEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[1].Fov, m_nearClip, m_farClip, isRightHanded);
-		// Transpose matrix	
+		// Transpose matrix
 		m_rightEyeProjectionMatrix.set(rightEyeProjectionMatrix.M[0][0], rightEyeProjectionMatrix.M[1][0], rightEyeProjectionMatrix.M[2][0], rightEyeProjectionMatrix.M[3][0],
 			rightEyeProjectionMatrix.M[0][1], rightEyeProjectionMatrix.M[1][1], rightEyeProjectionMatrix.M[2][1], rightEyeProjectionMatrix.M[3][1],
 			rightEyeProjectionMatrix.M[0][2], rightEyeProjectionMatrix.M[1][2], rightEyeProjectionMatrix.M[2][2], rightEyeProjectionMatrix.M[3][2],
@@ -126,9 +126,8 @@ unsigned int OculusDevice::vRenderTargetSize() const
 osg::Matrix OculusDevice::projectionMatrixCenter() const
 {
 	osg::Matrix projectionMatrixCenter;
-	projectionMatrixCenter = m_leftEyeProjectionMatrix;
-	projectionMatrixCenter(2, 0) = 0; // Ugly hack to make left projection matrix into a center projection matrix
-	return projectionMatrixCenter * osg::Matrix::scale(osg::Vec3(0.5, 1.0, 1.0)); // Scale for correct aspect ratio
+	projectionMatrixCenter = m_leftEyeProjectionMatrix.operator*(0.5)+m_rightEyeProjectionMatrix.operator*(0.5);
+	return projectionMatrixCenter;
 }
 
 osg::Matrix OculusDevice::projectionMatrixLeft() const
@@ -144,19 +143,19 @@ osg::Matrix OculusDevice::projectionMatrixRight() const
 osg::Matrix OculusDevice::projectionOffsetMatrixLeft() const
 {
 	osg::Matrix projectionOffsetMatrix;
-	float offset = m_leftEyeProjectionMatrix(2, 0) * aspectRatio(LEFT); // Ugly hack to extract projection offset
-	projectionOffsetMatrix.makeTranslate(osg::Vec3(offset, 0.0, 0.0));//
-
+	float offset = m_leftEyeProjectionMatrix(2, 0);
+	projectionOffsetMatrix.makeTranslate(osg::Vec3(-offset, 0.0, 0.0));
 	return projectionOffsetMatrix;
 }
 
 osg::Matrix OculusDevice::projectionOffsetMatrixRight() const
 {
 	osg::Matrix projectionOffsetMatrix;
-	float offset = m_rightEyeProjectionMatrix(2, 0) * aspectRatio(RIGHT); // Ugly hack to extract projection offset
-	projectionOffsetMatrix.makeTranslate(osg::Vec3(offset, 0.0, 0.0));
+	float offset = m_rightEyeProjectionMatrix(2, 0);
+	projectionOffsetMatrix.makeTranslate(osg::Vec3(-offset, 0.0, 0.0));
 	return projectionOffsetMatrix;
 }
+
 osg::Matrix OculusDevice::viewMatrixLeft() const
 {
 	osg::Matrix viewMatrix;
@@ -279,7 +278,10 @@ osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, 
 	eyeRenderViewport.Pos.y = y;
 	eyeRenderViewport.Size.w = w;
 	eyeRenderViewport.Size.h = h;
-	ovrHmd_GetRenderScaleAndOffset(m_eyeRenderDesc[eye].Fov, m_renderTargetSize, eyeRenderViewport, m_UVScaleOffset[eye]);
+	ovrSizei renderTargetSize;
+	renderTargetSize.w = m_renderTargetSize.w / 2;
+	renderTargetSize.h = m_renderTargetSize.h;
+	ovrHmd_GetRenderScaleAndOffset(m_eyeRenderDesc[eye].Fov, renderTargetSize, eyeRenderViewport, m_UVScaleOffset[eye]);
 	geode->addDrawable(geometry);
 	return geode.release();
 }

@@ -174,15 +174,15 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	osg::ref_ptr<osg::Geode> leftDistortionMesh = m_device->distortionMesh(OculusDevice::LEFT, program, 0, 0, textureWidth, textureHeight);
 	cameraWarp->addChild(leftDistortionMesh);
 
-	osg::ref_ptr<osg::Geode> rightDistortionMesh = m_device->distortionMesh(OculusDevice::RIGHT, program, textureWidth, 0, textureWidth, textureHeight);
+	osg::ref_ptr<osg::Geode> rightDistortionMesh = m_device->distortionMesh(OculusDevice::RIGHT, program, 0, 0, textureWidth, textureHeight);
 	cameraWarp->addChild(rightDistortionMesh);
 
 	// Add pre draw camera to handle time warp
 	cameraWarp->setPreDrawCallback(new WarpCameraPreDrawCallback(m_device));
 
 	// Attach shaders to each distortion mesh
-	osg::StateSet* leftEyeStateSet = leftDistortionMesh->getOrCreateStateSet();
-	osg::StateSet* rightEyeStateSet = rightDistortionMesh->getOrCreateStateSet();
+	osg::ref_ptr<osg::StateSet> leftEyeStateSet = leftDistortionMesh->getOrCreateStateSet();
+	osg::ref_ptr<osg::StateSet> rightEyeStateSet = rightDistortionMesh->getOrCreateStateSet();
 
 	applyShaderParameters(leftEyeStateSet, program.get(), textureLeft.get(), OculusDevice::LEFT);
 	applyShaderParameters(rightEyeStateSet, program.get(), textureRight.get(), OculusDevice::RIGHT);
