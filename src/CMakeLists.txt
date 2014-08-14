@@ -104,7 +104,7 @@ ENDIF()
 ####################################################################
 # Copy shaders if we are doing out of source builds
 #####################################################################
-STRING(COMPARE NOTEQUAL ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} CMAKE_OUT_OF_SOURCE_BUILD)
+
 IF (CMAKE_OUT_OF_SOURCE_BUILD)
 	CONFIGURE_FILE(warp_mesh.vert warp_mesh.vert COPYONLY)
 	CONFIGURE_FILE(warp_mesh_with_timewarp.vert warp_mesh_with_timewarp.vert COPYONLY)

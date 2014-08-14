@@ -6,8 +6,18 @@ PROJECT(OsgOculusViewer)
 
 SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-# Show relative paths options
-OPTION(CMAKE_USE_RELATIVE_PATHS "If true, cmake will use relative paths in makefiles and projects." ON)
+# Check if we are doing out of source builds
+STRING(COMPARE NOTEQUAL ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} CMAKE_OUT_OF_SOURCE_BUILD)
+
+# Relative paths can be trouble when doing out of source builds
+IF(CMAKE_OUT_OF_SOURCE_BUILD)
+	SET(DEFAULT_RELATIVE_PATHS OFF)
+ELSE()
+	SET(DEFAULT_RELATIVE_PATHS ON)
+ENDIF()
+
+# Show relative paths options 
+OPTION(CMAKE_USE_RELATIVE_PATHS "If true, cmake will use relative paths in makefiles and projects." ${DEFAULT_RELATIVE_PATHS})
 MARK_AS_ADVANCED(CMAKE_USE_RELATIVE_PATHS)
 
 # Build example viewer
