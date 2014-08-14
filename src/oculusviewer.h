@@ -26,10 +26,6 @@ class OculusViewer : public osg::Group {
 		~OculusViewer() {};
 		virtual void configure();
 
-		osg::Camera* createRTTCamera(osg::Texture* tex, osg::GraphicsContext* gc, OculusDevice::Eye eye) const;
-		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
-		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const;
-
 		bool m_configured;
 		bool m_useChromaticAberrationCorrection;
 		bool m_useTimeWarp;

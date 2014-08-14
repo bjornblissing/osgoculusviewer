@@ -16,7 +16,7 @@ bool OculusEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActio
 			switch(ea.getKey())
 			{
 			case osgGA::GUIEventAdapter::KEY_R:
-				m_oculusViewConfig->resetSensorOrientation();
+				m_oculusDevice->resetSensorOrientation();
 				return osgGA::GUIEventHandler::handle(ea, ad);
 				break;
 			default:

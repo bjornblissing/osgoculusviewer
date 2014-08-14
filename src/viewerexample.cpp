@@ -1,5 +1,5 @@
 /*
- * main.cpp
+ * viewerexample.cpp
  *
  *  Created on: Jul 03, 2013
  *      Author: Bjorn Blissing
@@ -22,8 +22,10 @@
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
 
-#include "oculusdevice.h"
 #include "oculusviewer.h"
+#include "oculusdevice.h"
+#include "oculuseventhandler.h"
+
 
 int main( int argc, char** argv )
 {
@@ -50,39 +52,8 @@ int main( int argc, char** argv )
 	// Open the HMD
 	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice();
 
-	// Create screen with match the Oculus Rift resolution
-	osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
-
-	if (!wsi) {
-		osg::notify(osg::NOTICE)<<"Error, no WindowSystemInterface available, cannot create windows."<<std::endl;
-		return 1;
-	}
-
-	// Get the screen identifiers set in environment variable DISPLAY
-	osg::GraphicsContext::ScreenIdentifier si;
-	si.readDISPLAY();
-
-	// If displayNum has not been set, reset it to 0.
-	if (si.displayNum < 0) si.displayNum = 0;
-
-	// If screenNum has not been set, reset it to 0.
-	if (si.screenNum < 0) si.screenNum = 0;
-
-	unsigned int width, height;
-	wsi->getScreenResolution(si, width, height);
-
-	osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
-	traits->hostName = si.hostName;
-	traits->screenNum = si.screenNum;
-	traits->displayNum = si.displayNum;
-	traits->windowDecoration = false;
-	traits->x = oculusDevice->windowPos().x();
-	traits->y = oculusDevice->windowPos().y();
-	traits->width = oculusDevice->hScreenResolution();
-	traits->height = oculusDevice->vScreenResolution();
-	traits->doubleBuffer = true;
-	traits->sharedContext = 0;
-	traits->vsync = true; // VSync should always be enabled for Oculus Rift applications
+	// Get the suggested context traits
+	osg::ref_ptr<osg::GraphicsContext::Traits> traits = oculusDevice->graphicsContextTraits();
 
 	// Create a graphic context based on our desired traits
 	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits);
@@ -109,12 +80,14 @@ int main( int argc, char** argv )
 	osg::Node::NodeMask sceneNodeMask = loadedModel->getNodeMask() & ~0x1;
 	loadedModel->setNodeMask(sceneNodeMask);
 
-	osg::ref_ptr<OculusViewer> hmd_camera = new OculusViewer(&viewer, oculusDevice);
-	hmd_camera->setSceneNodeMask(sceneNodeMask);
-	hmd_camera->addChild(loadedModel);
-	viewer.setSceneData(hmd_camera);
+	osg::ref_ptr<OculusViewer> oculusViewer = new OculusViewer(&viewer, oculusDevice);
+	oculusViewer->setSceneNodeMask(sceneNodeMask);
+	oculusViewer->addChild(loadedModel);
+	viewer.setSceneData(oculusViewer);
 	// Add statistics handler
 	viewer.addEventHandler(new osgViewer::StatsHandler);
+	// Add Oculus Keyboard Handler to only one view
+	viewer.addEventHandler(new OculusEventHandler(oculusDevice));
 	// Start Viewer
 	viewer.run();
 	return 0;

@@ -1,5 +1,5 @@
 /*
- * main.cpp
+ * viewconfigexample.cpp
  *
  *  Created on: Jul 03, 2013
  *      Author: Bjorn Blissing
@@ -38,8 +38,6 @@ int main( int argc, char** argv )
 	osgViewer::Viewer viewer(arguments);
 	// Add statistics handler
 	viewer.addEventHandler(new osgViewer::StatsHandler);
-	// Add Oculus keyboard handler
-	viewer.addEventHandler(new OculusEventHandler(oculusViewConfig));
 	// Apply view config
 	viewer.apply(oculusViewConfig);
 	// Add loaded model to viewer

@@ -38,10 +38,6 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 	protected:
 		~OculusViewConfig() {};
 
-		osg::Camera* createRTTCamera(osg::Texture* tex, osg::GraphicsContext* gc, OculusDevice::Eye eye) const;
-		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
-		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const;
-
 		bool m_configured;
 		bool m_useOrientations;
 		bool m_useChromaticAberrationCorrection;
