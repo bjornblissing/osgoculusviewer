@@ -13,4 +13,4 @@ void main()
    gl_FragColor.g = oColor.g * texture2D(Texture, oTexCoord1).g;
    gl_FragColor.b = oColor.b * texture2D(Texture, oTexCoord2).b;
    gl_FragColor.a = 1.0;
-};
+}

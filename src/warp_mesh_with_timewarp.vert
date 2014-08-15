@@ -57,4 +57,4 @@ void main()
    oTexCoord2 = SrcCoordB;
    oTexCoord2.y = 1.0-oTexCoord2.y;
    oColor = vec4(Color.r, Color.r, Color.r, Color.r);              // Used for vignette fade.
-};
+}
