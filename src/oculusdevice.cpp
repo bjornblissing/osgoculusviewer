@@ -19,7 +19,8 @@ OculusDevice::OculusDevice(float nearClip, float farClip, bool useTimewarp) : m_
 	ovr_Initialize();
 	
 	// Enumerate HMD devices
-	int hmd_ovrHmd_Detect();
+	int numberOfDevices = ovrHmd_Detect();
+	osg::notify(osg::DEBUG_INFO) << "Number of connected devices: " << numberOfDevices << std::endl;
 
 	// Get first available HMD
 	m_hmdDevice = ovrHmd_Create(0);
