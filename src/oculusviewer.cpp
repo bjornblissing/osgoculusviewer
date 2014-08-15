@@ -2,7 +2,7 @@
  * oculusviewer.cpp
  *
  *  Created on: Jun 30, 2013
- *      Author: Jan Ciger
+ *      Author: Jan Ciger & Björn Blissing
  */
 
 #include "oculusviewer.h"
@@ -11,19 +11,6 @@
 #include <osgDB/FileUtils>
 
 #include <osgViewer/View>
-
-OculusViewer::OculusViewer(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev) : osg::Group(),
-	m_configured(false),
-	m_useChromaticAberrationCorrection(false),
-	m_useTimeWarp(true),
-	m_useCustomScaleFactor(false),
-	m_customScaleFactor(1.0f),
-	m_nearClip(0.01f),
-	m_farClip(10000.0f),
-	m_view(view),
-	m_device(dev)
-{
-}
 
 void OculusViewer::traverse(osg::NodeVisitor& nv)
 {
@@ -51,9 +38,6 @@ void OculusViewer::traverse(osg::NodeVisitor& nv)
 
 void OculusViewer::configure()
 {
-	m_device->setNearClip(m_nearClip);
-	m_device->setFarClip(m_farClip);
-
 	osg::ref_ptr<osg::GraphicsContext> gc =  m_view->getCamera()->getGraphicsContext();
 	
 	// Attach a callback to detect swap
@@ -78,8 +62,8 @@ void OculusViewer::configure()
 	textureRight->setTextureSize(textureWidth, textureHeight);
 	textureRight->setInternalFormat(GL_RGBA);
 	// Create RTT cameras and attach textures
-	m_cameraRTTLeft = m_device->createRTTCamera(textureLeft, gc, OculusDevice::Eye::LEFT);
-	m_cameraRTTRight = m_device->createRTTCamera(textureRight, gc, OculusDevice::Eye::RIGHT);
+	m_cameraRTTLeft = m_device->createRTTCameraForContext(textureLeft, gc, OculusDevice::Eye::LEFT);
+	m_cameraRTTRight = m_device->createRTTCameraForContext(textureRight, gc, OculusDevice::Eye::RIGHT);
 	m_cameraRTTLeft->setName("LeftRTT");
 	m_cameraRTTRight->setName("RightRTT");
 	m_cameraRTTLeft->setCullMask(m_sceneNodeMask);
@@ -94,7 +78,7 @@ void OculusViewer::configure()
 	osg::ref_ptr<osg::Program> program = new osg::Program;
 	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
 
-	if (m_useTimeWarp) {
+	if (m_device->useTimewarp()) {
 		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh_with_timewarp.vert"));
 	} else {
 		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.vert"));

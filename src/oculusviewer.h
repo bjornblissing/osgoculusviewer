@@ -2,7 +2,7 @@
  * oculusviewer.h
  *
  *  Created on: Jun 30, 2013
- *      Author: Jan Ciger
+ *      Author: Jan Ciger & Björn Blissing
  */
 
 #ifndef _OSG_OCULUSVIEWER_H_
@@ -12,14 +12,20 @@
 
 #include "oculusdevice.h"
 
+// Forward declaration
 namespace osgViewer {
 	class View;
-	class NodeVisitor;
 }
 
 class OculusViewer : public osg::Group {
 	public:
-		OculusViewer(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev);
+		OculusViewer(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev) : osg::Group(), 
+			m_configured(false), 
+			m_view(view), 
+			m_cameraRTTLeft(0), m_cameraRTTRight(0), 
+			m_device(dev), 
+			m_swapCallback(0),
+			m_sceneNodeMask(0x1) {};
 		virtual void traverse(osg::NodeVisitor& nv);
 		void setSceneNodeMask(osg::Node::NodeMask nodeMask) { m_sceneNodeMask = nodeMask; }
 	protected:
@@ -27,12 +33,6 @@ class OculusViewer : public osg::Group {
 		virtual void configure();
 
 		bool m_configured;
-		bool m_useChromaticAberrationCorrection;
-		bool m_useTimeWarp;
-		bool m_useCustomScaleFactor;
-		float m_customScaleFactor;
-		float m_nearClip;
-		float m_farClip;
 
 		osg::observer_ptr<osgViewer::View> m_view;
 		osg::observer_ptr<osg::Camera> m_cameraRTTLeft, m_cameraRTTRight;

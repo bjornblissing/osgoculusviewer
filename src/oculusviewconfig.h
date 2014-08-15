@@ -15,37 +15,17 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 	public:
 		OculusViewConfig() : osgViewer::ViewConfig(),
 			m_configured(false),
-			m_useChromaticAberrationCorrection(true),
-			m_useOrientations(true),
-			m_useCustomScaleFactor(false),
-			m_useTimeWarp(true),
-			m_customScaleFactor(1.0f),
-			m_nearClip(0.01f),
-			m_farClip(10000.0f),
 			m_sceneNodeMask(0x1),
 			m_device(0) {
-			m_device = new OculusDevice;
+			m_device = new OculusDevice(0.01f, 10000.0f, true);
 		}
-		void setEnableOrientationsFromHMD(bool useOrientations) { m_useOrientations = useOrientations; }
-		void setEnableChromaticAberrationCorrection(bool correctionEnabled) { m_useChromaticAberrationCorrection = correctionEnabled; }
-		void setNearClip(float nearClip) { m_nearClip = nearClip; }
-		void setFarClip(float farclip) { m_farClip = farclip; }
 		void resetSensorOrientation() { if (m_device) m_device->resetSensorOrientation(); }
-		void setUseDefaultScaleFactor(bool useDefault) { m_useCustomScaleFactor = !useDefault; }
-		void setCustomScaleFactor(const float& customScaleFactor) { m_useCustomScaleFactor = true; m_customScaleFactor = customScaleFactor; }
 		void setSceneNodeMask(osg::Node::NodeMask nodeMask) { m_sceneNodeMask = nodeMask; }
 		virtual void configure(osgViewer::View& view) const;
 	protected:
 		~OculusViewConfig() {};
 
 		bool m_configured;
-		bool m_useOrientations;
-		bool m_useChromaticAberrationCorrection;
-		bool m_useTimeWarp;
-		bool m_useCustomScaleFactor;
-		float m_customScaleFactor;
-		float m_nearClip;
-		float m_farClip;
 		osg::Node::NodeMask m_sceneNodeMask;
 
 		osg::ref_ptr<OculusDevice> m_device;

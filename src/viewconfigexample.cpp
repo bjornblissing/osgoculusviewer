@@ -7,8 +7,6 @@
 
 #include <osgDB/ReadFile>
 #include <osgGA/TrackballManipulator>
-#include <osgViewer/Viewer>
-#include <osgViewer/ViewerEventHandlers>
 
 #include "oculuseventhandler.h"
 #include "oculusviewconfig.h"

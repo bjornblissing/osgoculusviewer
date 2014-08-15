@@ -10,7 +10,8 @@
 
 #include <osgViewer/ViewerEventHandlers>
 
-#include "oculusdevice.h"
+// Forward declaration
+class OculusDevice;
 
 class OculusEventHandler : public osgGA::GUIEventHandler
 {

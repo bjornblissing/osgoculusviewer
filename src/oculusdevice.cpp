@@ -10,8 +10,9 @@
 #include <osg/Geometry>
 
 
-OculusDevice::OculusDevice() : m_hmdDevice(0),
-	m_nearClip(0.01f), m_farClip(10000.0f),
+OculusDevice::OculusDevice(float nearClip, float farClip, bool useTimewarp) : m_hmdDevice(0),
+	m_nearClip(nearClip), m_farClip(farClip),
+	m_useTimeWarp(useTimewarp),
 	m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
 	m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f))
 {
@@ -94,22 +95,12 @@ OculusDevice::~OculusDevice()
 
 unsigned int OculusDevice::hScreenResolution() const
 {
-	if (m_hmdDevice) {
-		return m_hmdDevice->Resolution.w;
-	}
-	
-	// Default value from dev kit 1
-	return 1280;
+	return m_hmdDevice->Resolution.w;
 }
 
 unsigned int OculusDevice::vScreenResolution() const
 {
-	if (m_hmdDevice) {
-		return m_hmdDevice->Resolution.h;
-	}
-
-	// Default value from dev kit 1
-	return 800;
+	return m_hmdDevice->Resolution.h;
 }
 
 
@@ -208,7 +199,7 @@ int OculusDevice::renderOrder(Eye eye) const {
 	return 0;
 }
 
-osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, int y, int w, int h) {
+osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, int y, int w, int h, bool splitViewport) {
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode;
 	// Allocate & generate distortion mesh vertices.
 	ovrDistortionMesh meshData;
@@ -224,7 +215,19 @@ osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, 
 
 	for (unsigned vertNum = 0; vertNum < meshData.VertexCount; ++vertNum)
 	{
-		positionArray->push_back(osg::Vec2f(ov[vertNum].ScreenPosNDC.x, ov[vertNum].ScreenPosNDC.y));
+		if (splitViewport) {
+			// Positions need to be scaled and translated if we are using one viewport per eye
+			if (eye == LEFT) {
+				positionArray->push_back(osg::Vec2f(2 * ov[vertNum].ScreenPosNDC.x + 1.0, ov[vertNum].ScreenPosNDC.y));
+			}
+			else if (eye == RIGHT) {
+				positionArray->push_back(osg::Vec2f(2 * ov[vertNum].ScreenPosNDC.x - 1.0, ov[vertNum].ScreenPosNDC.y));
+			}
+		}
+		else {
+			positionArray->push_back(osg::Vec2f(ov[vertNum].ScreenPosNDC.x, ov[vertNum].ScreenPosNDC.y));
+		}
+		
 		colorArray->push_back(osg::Vec4f(ov[vertNum].VignetteFactor, ov[vertNum].VignetteFactor, ov[vertNum].VignetteFactor, ov[vertNum].TimeWarpFactor));
 		textureRArray->push_back(osg::Vec2f(ov[vertNum].TanEyeAnglesR.x, ov[vertNum].TanEyeAnglesR.y));
 		textureGArray->push_back(osg::Vec2f(ov[vertNum].TanEyeAnglesG.x, ov[vertNum].TanEyeAnglesG.y));
@@ -270,89 +273,6 @@ osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, 
 	program->addBindAttribLocation("TexCoord2", texCoord2Loc);
 	geometry->setVertexAttribArray(texCoord2Loc, textureBArray);
 	geometry->setVertexAttribBinding(texCoord2Loc, osg::Geometry::BIND_PER_VERTEX);
-
-
-	// Compute UV scale and offset
-	ovrRecti eyeRenderViewport;
-	eyeRenderViewport.Pos.x = x;
-	eyeRenderViewport.Pos.y = y;
-	eyeRenderViewport.Size.w = w;
-	eyeRenderViewport.Size.h = h;
-	ovrSizei renderTargetSize;
-	renderTargetSize.w = m_renderTargetSize.w / 2;
-	renderTargetSize.h = m_renderTargetSize.h;
-	ovrHmd_GetRenderScaleAndOffset(m_eyeRenderDesc[eye].Fov, renderTargetSize, eyeRenderViewport, m_UVScaleOffset[eye]);
-	geode->addDrawable(geometry);
-	return geode.release();
-}
-
-osg::Geode* OculusDevice::distortionMeshComposite(Eye eye, osg::Program* program, int x, int y, int w, int h) {
-	osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-	// Allocate & generate distortion mesh vertices.
-	ovrDistortionMesh meshData;
-	ovrHmd_CreateDistortionMesh(m_hmdDevice, m_eyeRenderDesc[eye].Eye, m_eyeRenderDesc[eye].Fov, ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp, &meshData);
-
-	// Now parse the vertex data and create a render ready vertex buffer from it
-	ovrDistortionVertex* ov = meshData.pVertexData;
-	osg::Vec2Array* positionArray = new osg::Vec2Array;
-	osg::Vec4Array* colorArray = new osg::Vec4Array;
-	osg::Vec2Array* textureRArray = new osg::Vec2Array;
-	osg::Vec2Array* textureGArray = new osg::Vec2Array;
-	osg::Vec2Array* textureBArray = new osg::Vec2Array;
-
-	for (unsigned vertNum = 0; vertNum < meshData.VertexCount; ++vertNum)
-	{
-		if (eye == LEFT) {
-			positionArray->push_back(osg::Vec2f(2 * ov[vertNum].ScreenPosNDC.x+1.0, ov[vertNum].ScreenPosNDC.y));
-		} else if (eye == RIGHT) {
-			positionArray->push_back(osg::Vec2f(2 * ov[vertNum].ScreenPosNDC.x-1.0, ov[vertNum].ScreenPosNDC.y));
-		}
-		colorArray->push_back(osg::Vec4f(ov[vertNum].VignetteFactor, ov[vertNum].VignetteFactor, ov[vertNum].VignetteFactor, ov[vertNum].TimeWarpFactor));
-		textureRArray->push_back(osg::Vec2f(ov[vertNum].TanEyeAnglesR.x, ov[vertNum].TanEyeAnglesR.y));
-		textureGArray->push_back(osg::Vec2f(ov[vertNum].TanEyeAnglesG.x, ov[vertNum].TanEyeAnglesG.y));
-		textureBArray->push_back(osg::Vec2f(ov[vertNum].TanEyeAnglesB.x, ov[vertNum].TanEyeAnglesB.y));
-	}
-
-	// Get triangle indicies 
-	osg::UShortArray* indexArray = new osg::UShortArray;
-	unsigned short* index = meshData.pIndexData;
-	for (unsigned indexNum = 0; indexNum < meshData.IndexCount; ++indexNum) {
-		indexArray->push_back(index[indexNum]);
-	}
-
-	// Deallocate the mesh data
-	ovrHmd_DestroyDistortionMesh(&meshData);
-
-	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
-	osg::ref_ptr<osg::DrawElementsUShort> drawElement = new osg::DrawElementsUShort(osg::PrimitiveSet::TRIANGLES, indexArray->size(), (GLushort*)indexArray->getDataPointer());
-	geometry->addPrimitiveSet(drawElement);
-
-	GLuint positionLoc = 0;
-	GLuint colorLoc = 1;
-	GLuint texCoord0Loc = 2;
-	GLuint texCoord1Loc = 3;
-	GLuint texCoord2Loc = 4;
-
-	program->addBindAttribLocation("Position", positionLoc);
-	geometry->setVertexAttribArray(positionLoc, positionArray);
-	geometry->setVertexAttribBinding(positionLoc, osg::Geometry::BIND_PER_VERTEX);
-
-	program->addBindAttribLocation("Color", colorLoc);
-	geometry->setVertexAttribArray(colorLoc, colorArray);
-	geometry->setVertexAttribBinding(colorLoc, osg::Geometry::BIND_PER_VERTEX);
-
-	program->addBindAttribLocation("TexCoord0", texCoord0Loc);
-	geometry->setVertexAttribArray(texCoord0Loc, textureRArray);
-	geometry->setVertexAttribBinding(texCoord0Loc, osg::Geometry::BIND_PER_VERTEX);
-
-	program->addBindAttribLocation("TexCoord1", texCoord1Loc);
-	geometry->setVertexAttribArray(texCoord1Loc, textureGArray);
-	geometry->setVertexAttribBinding(texCoord1Loc, osg::Geometry::BIND_PER_VERTEX);
-
-	program->addBindAttribLocation("TexCoord2", texCoord2Loc);
-	geometry->setVertexAttribArray(texCoord2Loc, textureBArray);
-	geometry->setVertexAttribBinding(texCoord2Loc, osg::Geometry::BIND_PER_VERTEX);
-
 
 	// Compute UV scale and offset
 	ovrRecti eyeRenderViewport;
@@ -403,10 +323,6 @@ osg::Matrixf OculusDevice::eyeRotationEnd(Eye eye) const {
 	return rotationEnd;
 }
 
-float OculusDevice::aspectRatio(Eye eye) const {
-	return float(m_eyeRenderDesc[eye].DistortedViewport.Size.w) / float(m_eyeRenderDesc[eye].DistortedViewport.Size.h);
-}
-
 void OculusDevice::beginFrameTiming(unsigned int frameIndex) {
 	m_frameTiming = ovrHmd_BeginFrameTiming(m_hmdDevice, frameIndex);
 }
@@ -425,31 +341,23 @@ void OculusDevice::waitTillTime() {
 	}
 }
 
-osg::Camera* OculusDevice::createRTTCamera(osg::Texture* texture, osg::GraphicsContext* gc, OculusDevice::Eye eye) const
+osg::Camera* OculusDevice::createRTTCameraForContext(osg::Texture* texture, osg::GraphicsContext* gc, OculusDevice::Eye eye) const
 {
-	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
-	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
-	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	camera->setDrawBuffer(GL_FRONT);
-	camera->setReadBuffer(GL_FRONT);
-	camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
-	camera->setRenderOrder(osg::Camera::PRE_RENDER, renderOrder(eye));
-	camera->setAllowEventFocus(false);
+	osg::ref_ptr<osg::Camera> camera = createRTTCameraImplementation(texture, eye);;
 	camera->setGraphicsContext(gc);
 	camera->setReferenceFrame(osg::Camera::RELATIVE_RF);
-
-	if (texture) {
-		texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
-		texture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
-		camera->setViewport(0, 0, texture->getTextureWidth(), texture->getTextureHeight());
-		camera->attach(osg::Camera::COLOR_BUFFER, texture, 0, 0, false, 4, 4);
-	}
-
 	return camera.release();
 }
 
 osg::Camera* OculusDevice::createRTTCamera(osg::Texture* texture, OculusDevice::Eye eye) const
 {
+	osg::ref_ptr<osg::Camera> camera = createRTTCameraImplementation(texture, eye);
+	camera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
+	return camera.release();
+}
+
+osg::Camera* OculusDevice::createRTTCameraImplementation(osg::Texture* texture, OculusDevice::Eye eye) const
+{
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
 	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
 	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -458,7 +366,6 @@ osg::Camera* OculusDevice::createRTTCamera(osg::Texture* texture, OculusDevice::
 	camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
 	camera->setRenderOrder(osg::Camera::PRE_RENDER, renderOrder(eye));
 	camera->setAllowEventFocus(false);
-	camera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
 
 	if (texture) {
 		texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
@@ -469,7 +376,6 @@ osg::Camera* OculusDevice::createRTTCamera(osg::Texture* texture, OculusDevice::
 
 	return camera.release();
 }
-
 
 osg::Camera* OculusDevice::createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const
 {

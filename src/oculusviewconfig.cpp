@@ -6,24 +6,13 @@
  */
 #include "oculusviewconfig.h"
 
-#include <osg/io_utils>
-#include <osg/Texture2D>
-#include <osg/PolygonMode>
-#include <osg/Shader>
-
 #include <osgDB/ReadFile>
 #include <osgDB/FileUtils>
 
-#include <osgViewer/View>
-
-#include "oculusdevice.h"
 #include "oculuseventhandler.h"
 
 void OculusViewConfig::configure(osgViewer::View& view) const
 {
-	m_device->setNearClip(m_nearClip);
-	m_device->setFarClip(m_farClip);
-
 	// Create a graphic context based on our desired traits
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = m_device->graphicsContextTraits();
 	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits);
@@ -57,8 +46,8 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	textureRight->setTextureSize( textureWidth, textureHeight );
 	textureRight->setInternalFormat( GL_RGBA );
 	// Create RTT cameras and attach textures
-	osg::ref_ptr<osg::Camera> cameraRTTLeft = m_device->createRTTCamera(textureLeft, gc, OculusDevice::LEFT);
-	osg::ref_ptr<osg::Camera> cameraRTTRight = m_device->createRTTCamera(textureRight, gc, OculusDevice::RIGHT);
+	osg::ref_ptr<osg::Camera> cameraRTTLeft = m_device->createRTTCameraForContext(textureLeft, gc, OculusDevice::LEFT);
+	osg::ref_ptr<osg::Camera> cameraRTTRight = m_device->createRTTCameraForContext(textureRight, gc, OculusDevice::RIGHT);
 	cameraRTTLeft->setName("LeftRTT");
 	cameraRTTRight->setName("RightRTT");
 	cameraRTTLeft->setCullMask(m_sceneNodeMask);
@@ -73,7 +62,7 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	osg::ref_ptr<osg::Program> program = new osg::Program;
 	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
 
-	if (m_useTimeWarp) {
+	if (m_device->useTimewarp()) {
 		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh_with_timewarp.vert"));
 	} else {
 		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.vert"));
@@ -116,10 +105,9 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	view.setName("Oculus");
 
 	// Connect main camera to node callback that get HMD orientation
-	if (m_useOrientations) {
-		camera->setDataVariance(osg::Object::DYNAMIC);
-		camera->setUpdateCallback(new OculusViewConfigOrientationCallback(cameraRTTLeft, cameraRTTRight, m_device, swapCallback));
-	}
+	camera->setDataVariance(osg::Object::DYNAMIC);
+	camera->setUpdateCallback(new OculusViewConfigOrientationCallback(cameraRTTLeft, cameraRTTRight, m_device, swapCallback));
+
 	// Add Oculus keyboard handler
 	view.addEventHandler(new OculusEventHandler(m_device));
 }

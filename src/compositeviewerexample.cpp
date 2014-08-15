@@ -8,7 +8,6 @@
 #include "oculuseventhandler.h"
 
 #include <osgViewer/CompositeViewer>
-#include <osgViewer/ViewerEventHandlers>
 
 #include <osgDB/ReadFile>
 #include <osgDB/FileUtils>
@@ -32,8 +31,7 @@ osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, dou
 
 int main( int argc, char** argv )
 {
-	bool useTimeWarp = false;
-	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice();
+	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(0.01f, 10000.0, true);
 	// use an ArgumentParser object to manage the program arguments.
 	osg::ArgumentParser arguments(&argc,argv);
 	// read the scene from the list of file specified command line arguments.
@@ -70,7 +68,7 @@ int main( int argc, char** argv )
 	osg::ref_ptr<osg::Program> program = new osg::Program;
 	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
 
-	if (useTimeWarp) {
+	if (oculusDevice->useTimewarp()) {
 		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh_with_timewarp.vert"));
 	}
 	else {
@@ -83,9 +81,9 @@ int main( int argc, char** argv )
 	program->addShader(fragmentShader);
 
 	// Create distortionMesh for each camera
-	osg::ref_ptr<osg::Geode> leftDistortionMesh = oculusDevice->distortionMeshComposite(OculusDevice::Eye::LEFT, program, 0, 0, textureWidth, textureHeight);
+	osg::ref_ptr<osg::Geode> leftDistortionMesh = oculusDevice->distortionMesh(OculusDevice::Eye::LEFT, program, 0, 0, textureWidth, textureHeight, true);
 	leftCameraWarp->addChild(leftDistortionMesh);
-	osg::ref_ptr<osg::Geode> rightDistortionMesh = oculusDevice->distortionMeshComposite(OculusDevice::Eye::RIGHT, program, 0, 0, textureWidth, textureHeight);
+	osg::ref_ptr<osg::Geode> rightDistortionMesh = oculusDevice->distortionMesh(OculusDevice::Eye::RIGHT, program, 0, 0, textureWidth, textureHeight, true);
 	rightCameraWarp->addChild(rightDistortionMesh);
 
 	// Add pre draw camera to handle time warp

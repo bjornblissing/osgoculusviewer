@@ -11,12 +11,8 @@
 // Include the OculusVR SDK
 #include "OVR.h"
 
-#include <osg/Matrix>
-#include <osg/Vec3>
 #include <osg/Geode>
-#include <osg/Program>
 #include <osg/Texture2D>
-
 
 class OculusDevice : public osg::Referenced {
 
@@ -27,7 +23,7 @@ class OculusDevice : public osg::Referenced {
 			RIGHT = 1,
 			COUNT = 2
 		};
-		OculusDevice();
+		OculusDevice(float nearClip, float farClip, bool useTimewarp);
 
 		unsigned int hScreenResolution() const;
 		unsigned int vScreenResolution() const;
@@ -48,8 +44,9 @@ class OculusDevice : public osg::Referenced {
 		osg::Matrix viewMatrixLeft() const;
 		osg::Matrix viewMatrixRight() const;
 
-		void setNearClip(float nearClip) { m_nearClip = nearClip; }
-		void setFarClip(float farclip) { m_farClip = farclip; }
+		float nearClip() const { return m_nearClip;	}
+		float farClip() const { return m_farClip; }
+		bool useTimewarp() const { return m_useTimeWarp; }
 
 		void resetSensorOrientation() const;
 		void updatePose(unsigned int frameIndex = 0);
@@ -58,8 +55,7 @@ class OculusDevice : public osg::Referenced {
 		osg::Quat orientation() const { return m_orientation;  }
 		
 		int renderOrder(Eye eye) const;
-		osg::Geode* distortionMesh(Eye eye, osg::Program* program, int x, int y, int w, int h);
-		osg::Geode* distortionMeshComposite(Eye eye, osg::Program* program, int x, int y, int w, int h);
+		osg::Geode* distortionMesh(Eye eye, osg::Program* program, int x, int y, int w, int h, bool splitViewport=false);
 		osg::Vec2f eyeToSourceUVScale(Eye eye) const;
 		osg::Vec2f eyeToSourceUVOffset(Eye eye) const;
 		osg::Matrixf eyeRotationStart(Eye eye) const;
@@ -69,7 +65,7 @@ class OculusDevice : public osg::Referenced {
 		void endFrameTiming() const;
 		void waitTillTime();
 
-		osg::Camera* createRTTCamera(osg::Texture* tex, osg::GraphicsContext* gc, OculusDevice::Eye eye) const;
+		osg::Camera* createRTTCameraForContext(osg::Texture* tex, osg::GraphicsContext* gc, OculusDevice::Eye eye) const;
 		osg::Camera* createRTTCamera(osg::Texture* texture, OculusDevice::Eye eye) const;
 		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
 		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const;
@@ -77,7 +73,7 @@ class OculusDevice : public osg::Referenced {
 
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
-		float aspectRatio(Eye eye) const;
+		osg::Camera* createRTTCameraImplementation(osg::Texture* texture, OculusDevice::Eye eye) const;
 
 		ovrHmd m_hmdDevice;
 		ovrSizei m_resolution;
@@ -96,11 +92,12 @@ class OculusDevice : public osg::Referenced {
 		osg::Vec3 m_position;
 		osg::Quat m_orientation;
 
-		bool m_useTimeWarp;
 		float m_nearClip;
 		float m_farClip;
+		bool m_useTimeWarp;
 	private:
 		OculusDevice(const OculusDevice&); // Do not allow copy
+		OculusDevice& operator=(const OculusDevice&); // Do not allow assignment operator.
 };
 
 class WarpCameraPreDrawCallback : public osg::Camera::DrawCallback

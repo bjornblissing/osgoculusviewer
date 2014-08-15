@@ -6,6 +6,7 @@
  */
 
 #include "oculuseventhandler.h"
+#include "oculusdevice.h"
 
 bool OculusEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter& ad)
 {

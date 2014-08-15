@@ -5,25 +5,10 @@
  *      Author: Bjorn Blissing
  */
 
-#include <iostream>
-#include <osg/io_utils>
-
-#include <osg/Texture2D>
-#include <osg/Program>
-#include <osg/StateSet>
-#include <osg/Camera>
-#include <osg/Geometry>
-#include <osg/Geode>
-#include <osg/PolygonMode>
-#include <osg/MatrixTransform>
-
 #include <osgDB/ReadFile>
 #include <osgGA/TrackballManipulator>
-#include <osgViewer/Viewer>
-#include <osgViewer/ViewerEventHandlers>
 
 #include "oculusviewer.h"
-#include "oculusdevice.h"
 #include "oculuseventhandler.h"
 
 
@@ -50,7 +35,7 @@ int main( int argc, char** argv )
 	}
 
 	// Open the HMD
-	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice();
+	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(0.01f, 10000.0f, true);
 
 	// Get the suggested context traits
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = oculusDevice->graphicsContextTraits();
