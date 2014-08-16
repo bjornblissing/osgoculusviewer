@@ -65,15 +65,14 @@ class OculusDevice : public osg::Referenced {
 		void endFrameTiming() const;
 		void waitTillTime();
 
-		osg::Camera* createRTTCameraForContext(osg::Texture* tex, osg::GraphicsContext* gc, OculusDevice::Eye eye) const;
-		osg::Camera* createRTTCamera(osg::Texture* texture, OculusDevice::Eye eye) const;
+		osg::Camera* createRTTCamera(osg::Texture* texture, OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, osg::GraphicsContext* gc = 0) const;
 		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
 		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const;
 		osg::GraphicsContext::Traits* graphicsContextTraits() const;
 
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
-		osg::Camera* createRTTCameraImplementation(osg::Texture* texture, OculusDevice::Eye eye) const;
+		
 
 		ovrHmd m_hmdDevice;
 		ovrSizei m_resolution;

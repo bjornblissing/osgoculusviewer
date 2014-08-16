@@ -342,22 +342,7 @@ void OculusDevice::waitTillTime() {
 	}
 }
 
-osg::Camera* OculusDevice::createRTTCameraForContext(osg::Texture* texture, osg::GraphicsContext* gc, OculusDevice::Eye eye) const
-{
-	osg::ref_ptr<osg::Camera> camera = createRTTCameraImplementation(texture, eye);;
-	camera->setGraphicsContext(gc);
-	camera->setReferenceFrame(osg::Camera::RELATIVE_RF);
-	return camera.release();
-}
-
-osg::Camera* OculusDevice::createRTTCamera(osg::Texture* texture, OculusDevice::Eye eye) const
-{
-	osg::ref_ptr<osg::Camera> camera = createRTTCameraImplementation(texture, eye);
-	camera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
-	return camera.release();
-}
-
-osg::Camera* OculusDevice::createRTTCameraImplementation(osg::Texture* texture, OculusDevice::Eye eye) const
+osg::Camera* OculusDevice::createRTTCamera(osg::Texture* texture, OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, osg::GraphicsContext* gc) const
 {
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
 	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
@@ -367,6 +352,11 @@ osg::Camera* OculusDevice::createRTTCameraImplementation(osg::Texture* texture, 
 	camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
 	camera->setRenderOrder(osg::Camera::PRE_RENDER, renderOrder(eye));
 	camera->setAllowEventFocus(false);
+	camera->setReferenceFrame(referenceFrame);
+
+	if (gc) {
+		camera->setGraphicsContext(gc);
+	}
 
 	if (texture) {
 		texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
