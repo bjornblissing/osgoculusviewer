@@ -19,7 +19,6 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 			m_device(0) {
 			m_device = new OculusDevice(0.01f, 10000.0f, true);
 		}
-		void resetSensorOrientation() { if (m_device) m_device->resetSensorOrientation(); }
 		void setSceneNodeMask(osg::Node::NodeMask nodeMask) { m_sceneNodeMask = nodeMask; }
 		virtual void configure(osgViewer::View& view) const;
 	protected:
