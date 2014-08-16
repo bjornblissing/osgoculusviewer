@@ -14,20 +14,6 @@
 
 #include <osgGA/TrackballManipulator>
 
-osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top)
-{
-	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
-	camera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
-	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
-	camera->setClearMask(GL_DEPTH_BUFFER_BIT);
-	camera->setRenderOrder(osg::Camera::POST_RENDER);
-	camera->setAllowEventFocus(false);
-	camera->setProjectionMatrix(osg::Matrix::ortho2D(left, right, bottom, top));
-	camera->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
-	camera->setViewMatrix(osg::Matrix::identity());
-	return camera.release();
-}
-
 
 int main( int argc, char** argv )
 {
@@ -61,8 +47,8 @@ int main( int argc, char** argv )
 	rightEyeRTTCamera->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
 	rightEyeRTTCamera->addChild( loadedModel );
 	// Create HUD cameras for each eye
-	osg::ref_ptr<osg::Camera> leftCameraWarp = createWarpOrthoCamera(0.0, 1.0, 0.0, 1.0);
-	osg::ref_ptr<osg::Camera> rightCameraWarp = createWarpOrthoCamera(0.0, 1.0, 0.0, 1.0);
+	osg::ref_ptr<osg::Camera> leftCameraWarp = oculusDevice->createWarpOrthoCamera(0.0, 1.0, 0.0, 1.0);
+	osg::ref_ptr<osg::Camera> rightCameraWarp = oculusDevice->createWarpOrthoCamera(0.0, 1.0, 0.0, 1.0);
 
 	// Set up shaders from the Oculus SDK documentation
 	osg::ref_ptr<osg::Program> program = new osg::Program;

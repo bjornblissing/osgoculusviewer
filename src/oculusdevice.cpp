@@ -375,10 +375,14 @@ osg::Camera* OculusDevice::createWarpOrthoCamera(double left, double right, doub
 	camera->setClearMask(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	camera->setRenderOrder(osg::Camera::POST_RENDER);
 	camera->setAllowEventFocus(false);
-	camera->setGraphicsContext(gc);
+	
 	camera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
 	camera->setProjectionMatrix(osg::Matrix::ortho2D(left, right, bottom, top));
 	camera->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+
+	if (gc) {
+		camera->setGraphicsContext(gc);
+	}
 	return camera.release();
 }
 
