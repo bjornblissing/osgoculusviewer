@@ -14,8 +14,16 @@
 #include <osg/Geode>
 #include <osg/Texture2D>
 
-class OculusDevice : public osg::Referenced {
+// Forward declaration
+class WarpCameraPreDrawCallback;
+class OculusSwapCallback;
+class EyeRotationCallback;
 
+class OculusDevice : public osg::Referenced {
+	friend class WarpCameraPreDrawCallback;
+	friend class OculusSwapCallback;
+	friend class EyeRotationCallback;
+	
 	public:
 		enum Eye
 		{
@@ -51,17 +59,7 @@ class OculusDevice : public osg::Referenced {
 		osg::Vec3 position() const { return m_position; }
 		osg::Quat orientation() const { return m_orientation;  }
 		
-		int renderOrder(Eye eye) const;
 		osg::Geode* distortionMesh(Eye eye, osg::Program* program, int x, int y, int w, int h, bool splitViewport=false);
-		osg::Vec2f eyeToSourceUVScale(Eye eye) const;
-		osg::Vec2f eyeToSourceUVOffset(Eye eye) const;
-		osg::Matrixf eyeRotationStart(Eye eye) const;
-		osg::Matrixf eyeRotationEnd(Eye eye) const;
-
-		void beginFrameTiming(unsigned int frameIndex=0);
-		void endFrameTiming() const;
-		void waitTillTime();
-
 		osg::Camera* createRTTCamera(osg::Texture* texture, OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, osg::GraphicsContext* gc = 0) const;
 		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const;
 		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const;
@@ -69,7 +67,16 @@ class OculusDevice : public osg::Referenced {
 
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
-		
+
+		int renderOrder(Eye eye) const;
+		osg::Matrixf eyeRotationStart(Eye eye) const;
+		osg::Matrixf eyeRotationEnd(Eye eye) const;
+		osg::Vec2f eyeToSourceUVScale(Eye eye) const;
+		osg::Vec2f eyeToSourceUVOffset(Eye eye) const;
+
+		void beginFrameTiming(unsigned int frameIndex = 0);
+		void endFrameTiming() const;
+		void waitTillTime();
 
 		ovrHmd m_hmdDevice;
 		ovrSizei m_resolution;
@@ -123,12 +130,12 @@ public:
 		START,
 		END
 	};
-	EyeRotationCallback(Mode mode, const OculusDevice* device, OculusDevice::Eye eye) : m_mode(mode), m_device(device), m_eye(eye) {}
+	EyeRotationCallback(const Mode mode, const OculusDevice* device, const OculusDevice::Eye eye) : m_mode(mode), m_device(device), m_eye(eye) {}
 	virtual void operator()	(osg::Uniform* uniform, osg::NodeVisitor* nv);
 protected:
-	Mode m_mode;
+	const Mode m_mode;
 	const OculusDevice* m_device;
-	OculusDevice::Eye m_eye;
+	const OculusDevice::Eye m_eye;
 };
 
 #endif /* _OSG_OCULUSDEVICE_H_ */
