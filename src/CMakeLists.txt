@@ -24,7 +24,7 @@ IF (USE_VIEW_CONFIG)
 	SET(TARGET_SRC ${TARGET_SRC}
 		oculusviewconfig.cpp
 	)
-	
+
 	SET(TARGET_H ${TARGET_H}
 		oculusviewconfig.h
 	)
@@ -35,7 +35,7 @@ ENDIF()
 #####################################################################
 
 ADD_LIBRARY(${TARGET_LIBRARYNAME} ${TARGET_SRC} ${TARGET_H})
-	
+
 #####################################################################
 # Linker options
 #####################################################################
@@ -84,19 +84,9 @@ IF(BUILD_EXAMPLES)
 		ADD_EXECUTABLE(${TARGET_TARGETNAME_VIEW_CONFIG} viewconfigexample.cpp)
 		TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME_VIEW_CONFIG} ${TARGET_LIBRARYNAME})
 	ENDIF()
-	
+
 ENDIF(BUILD_EXAMPLES)
 
-
-####################################################################
-# Copy shaders if we are doing out of source builds
-#####################################################################
-
-IF (CMAKE_OUT_OF_SOURCE_BUILD)
-	CONFIGURE_FILE(warp_mesh.vert warp_mesh.vert COPYONLY)
-	CONFIGURE_FILE(warp_mesh_with_timewarp.vert warp_mesh_with_timewarp.vert COPYONLY)
-	CONFIGURE_FILE(warp_mesh.frag warp_mesh.frag COPYONLY)
-ENDIF()
 
 ####################################################################
 # Create user file for correct environment string
@@ -131,7 +121,7 @@ IF(MSVC)
 			IF (USE_VIEW_CONFIG)
 				CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEW_CONFIG}.vcxproj.user @ONLY)
 			ENDIF()
-			
+
 		ENDIF()
 	ENDIF (OPENSCENEGRAPH_FOUND)
 ENDIF(MSVC)

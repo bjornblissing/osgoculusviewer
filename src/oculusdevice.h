@@ -78,6 +78,10 @@ class OculusDevice : public osg::Referenced {
 		void beginFrameTiming(unsigned int frameIndex = 0);
 		void endFrameTiming() const;
 		void waitTillTime();
+		
+		static const std::string m_warpVertexShaderSource;
+		static const std::string m_warpWithTimewarpVertexShaderSource;
+		static const std::string m_warpFragmentShaderSource;
 
 		ovrHmd m_hmdDevice;
 		ovrSizei m_resolution;

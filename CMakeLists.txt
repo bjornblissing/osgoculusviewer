@@ -30,19 +30,19 @@ IF (WIN32)
 	IF(NOT OSG_DIR)
 		MESSAGE(FATAL_ERROR "Error: OpenSceneGraph not found.")
 	ENDIF(NOT OSG_DIR)
-	
+
 	# Where to find OpenSceneGraph third party dependencies
 	SET(OSG_THIRD_PARTY_DIR $ENV{OSG_THIRD_PARTY_DIR} CACHE PATH "Path where to find the OpenSceneGraph third party dependencies")
 	IF(NOT OSG_THIRD_PARTY_DIR)
 		MESSAGE(FATAL_ERROR "Error: OpenSceneGraph 3rd Party Directory not found.")
 	ENDIF(NOT OSG_THIRD_PARTY_DIR)
-	
+
 	# Where to find Oculus SDK
 	SET(OCULUS_SDK_ROOT_DIR $ENV{OCULUS_SDK_ROOT_DIR} CACHE PATH "Path where to find the Oculus SDK")
 	IF(NOT OCULUS_SDK_ROOT_DIR)
 		MESSAGE(FATAL_ERROR "Error: Oculus SDK not found.")
 	ENDIF(NOT OCULUS_SDK_ROOT_DIR)
-	
+
 	IF(MSVC)
 		OPTION(VISUAL_STUDIO_EXPRESS "Building with Visual Studio Express" OFF)
 		IF(VISUAL_STUDIO_EXPRESS)
@@ -65,7 +65,7 @@ FIND_PACKAGE( OpenGL REQUIRED )
 FIND_PACKAGE( OpenSceneGraph REQUIRED osgViewer osgDB osgGA)
 FIND_PACKAGE( OculusSDK REQUIRED )
 
-# Oculus SDK dependencies for Mac OSX:
+# Oculus SDK dependencies for Mac OSX
 IF (APPLE)
     FIND_LIBRARY (CORE_FOUNDATION CoreFoundation)
     FIND_LIBRARY (CORE_GRAPHICS CoreGraphics)
@@ -99,23 +99,18 @@ IF(MSVC)
 	# Make sure we use minimal windows.h library without min max macros
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D \"WIN32_LEAN_AND_MEAN\"")
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D \"NOMINMAX\"")
-	
+
 	# Use Link Time Code Generation
 	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG")
-	
+
 	# Add ATL libraries for Visual Studio Express builds
 	IF(VISUAL_STUDIO_EXPRESS)
 		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LIBPATH:${ATL_LIBRARY_DIR}")
 	ENDIF(VISUAL_STUDIO_EXPRESS)
 
-    IF(MSVC80)
-		# Detech 64-bit portability Issues
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wp64")
-    ENDIF(MSVC80)
-	
 	OPTION(BUILD_MULTI_PROCESSOR_COMPILATION "Use multiple processors when compiling" ON)
 	MARK_AS_ADVANCED(BUILD_MULTI_PROCESSOR_COMPILATION)
-	
+
 	IF(BUILD_MULTI_PROCESSOR_COMPILATION)
 		# Set multi processor build
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
@@ -140,7 +135,7 @@ IF(UNIX)
 		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libstdc++")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98 -stdlib=libstdc++ -Wno-overloaded-virtual -Wno-conversion")
 		set(WARNING_CFLAGS "")
-	ENDIF()		
+	ENDIF()
 ENDIF(UNIX)
 
 ###############################################################################

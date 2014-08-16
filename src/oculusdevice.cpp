@@ -8,8 +8,123 @@
 #include "oculusdevice.h"
 
 #include <osg/Geometry>
-#include <osgDB/FileUtils>
 
+const std::string OculusDevice::m_warpVertexShaderSource(
+	"#version 110\n"
+
+	"uniform vec2 EyeToSourceUVScale;\n"
+	"uniform vec2 EyeToSourceUVOffset;\n"
+
+	"attribute vec2 Position;\n"
+	"attribute vec4 Color;\n"
+	"attribute vec2 TexCoord0;\n"
+	"attribute vec2 TexCoord1;\n"
+	"attribute vec2 TexCoord2;\n"
+
+	"varying vec4 oColor;\n"
+	"varying vec2 oTexCoord0;\n"
+	"varying vec2 oTexCoord1;\n"
+	"varying vec2 oTexCoord2;\n"
+
+	"void main()\n"
+	"{\n"
+	"   gl_Position.x = Position.x;\n"
+	"   gl_Position.y = Position.y;\n"
+	"   gl_Position.z = 0.5;\n"
+	"   gl_Position.w = 1.0;\n"
+	"   // Vertex inputs are in TanEyeAngle space for the R,G,B channels (i.e. after chromatic aberration and distortion).\n"
+	"   // Scale them into the correct [0-1],[0-1] UV lookup space (depending on eye)\n"
+	"   oTexCoord0 = TexCoord0 * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
+	"   oTexCoord0.y = 1.0-oTexCoord0.y;\n"
+	"   oTexCoord1 = TexCoord1 * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
+	"   oTexCoord1.y = 1.0-oTexCoord1.y;\n"
+	"   oTexCoord2 = TexCoord2 * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
+	"   oTexCoord2.y = 1.0-oTexCoord2.y;\n"
+	"   oColor = Color; // Used for vignette fade.\n"
+	"}\n"
+);
+
+const std::string OculusDevice::m_warpWithTimewarpVertexShaderSource(
+	"#version 110\n"
+
+	"uniform vec2 EyeToSourceUVScale;\n"
+	"uniform vec2 EyeToSourceUVOffset;\n"
+	"uniform mat4 EyeRotationStart;\n"
+	"uniform mat4 EyeRotationEnd;\n"
+
+	"attribute vec2 Position;\n"
+	"attribute vec4 Color;\n"
+	"attribute vec2 TexCoord0;\n"
+	"attribute vec2 TexCoord1;\n"
+	"attribute vec2 TexCoord2;\n"
+
+	"varying vec4 oColor;\n"
+	"varying vec2 oTexCoord0;\n"
+	"varying vec2 oTexCoord1;\n"
+	"varying vec2 oTexCoord2;\n"
+
+	"void main()\n"
+	"{\n"
+	"   gl_Position.x = Position.x;\n"
+	"   gl_Position.y = Position.y;\n"
+	"   gl_Position.z = 0.0;\n"
+	"   gl_Position.w = 1.0;\n"
+
+	"    // Vertex inputs are in TanEyeAngle space for the R,G,B channels (i.e. after chromatic aberration and distortion).\n"
+	"    // These are now real world vectors in direction(x, y, 1) relative to the eye of the HMD.\n"
+	"   vec3 TanEyeAngleR = vec3 ( TexCoord0.x, TexCoord0.y, 1.0 );\n"
+	"   vec3 TanEyeAngleG = vec3 ( TexCoord1.x, TexCoord1.y, 1.0 );\n"
+	"   vec3 TanEyeAngleB = vec3 ( TexCoord2.x, TexCoord2.y, 1.0 );\n"
+
+	"   mat3 EyeRotation;\n"
+	"   EyeRotation[0] = mix ( EyeRotationStart[0], EyeRotationEnd[0], Color.a ).xyz;\n"
+	"   EyeRotation[1] = mix ( EyeRotationStart[1], EyeRotationEnd[1], Color.a ).xyz;\n"
+	"   EyeRotation[2] = mix ( EyeRotationStart[2], EyeRotationEnd[2], Color.a ).xyz;\n"
+	"   vec3 TransformedR   = EyeRotation * TanEyeAngleR;\n"
+	"   vec3 TransformedG   = EyeRotation * TanEyeAngleG;\n"
+	"   vec3 TransformedB   = EyeRotation * TanEyeAngleB;\n"
+
+	"    // Project them back onto the Z=1 plane of the rendered images.\n"
+	"   float RecipZR = 1.0 / TransformedR.z;\n"
+	"   float RecipZG = 1.0 / TransformedG.z;\n"
+	"   float RecipZB = 1.0 / TransformedB.z;\n"
+	"   vec2 FlattenedR = vec2 ( TransformedR.x * RecipZR, TransformedR.y * RecipZR );\n"
+	"   vec2 FlattenedG = vec2 ( TransformedG.x * RecipZG, TransformedG.y * RecipZG );\n"
+	"   vec2 FlattenedB = vec2 ( TransformedB.x * RecipZB, TransformedB.y * RecipZB );\n"
+
+	"    // These are now still in TanEyeAngle space.\n"
+	"    // Scale them into the correct [0-1],[0-1] UV lookup space (depending on eye)\n"
+	"   vec2 SrcCoordR = FlattenedR * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
+	"   vec2 SrcCoordG = FlattenedG * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
+	"   vec2 SrcCoordB = FlattenedB * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
+	"   oTexCoord0 = SrcCoordR;\n"
+	"   oTexCoord0.y = 1.0-oTexCoord0.y;\n"
+	"   oTexCoord1 = SrcCoordG;\n"
+	"   oTexCoord1.y = 1.0-oTexCoord1.y;\n"
+	"   oTexCoord2 = SrcCoordB;\n"
+	"   oTexCoord2.y = 1.0-oTexCoord2.y;\n"
+	"   oColor = vec4(Color.r, Color.r, Color.r, Color.r); // Used for vignette fade.\n"
+	"}\n"
+);
+
+const std::string OculusDevice::m_warpFragmentShaderSource(
+	"#version 110\n"
+	"    \n"
+	"uniform sampler2D Texture;\n"
+	"    \n"
+	"varying vec4 oColor;\n"
+	"varying vec2 oTexCoord0;\n"
+	"varying vec2 oTexCoord1;\n"
+	"varying vec2 oTexCoord2;\n"
+	"    \n"
+	"void main()\n"
+	"{\n"
+	"   gl_FragColor.r = oColor.r * texture2D(Texture, oTexCoord0).r;\n"
+	"   gl_FragColor.g = oColor.g * texture2D(Texture, oTexCoord1).g;\n"
+	"   gl_FragColor.b = oColor.b * texture2D(Texture, oTexCoord2).b;\n"
+	"   gl_FragColor.a = 1.0;\n"
+	"}\n"
+);
 
 OculusDevice::OculusDevice(float nearClip, float farClip, bool useTimewarp) : m_hmdDevice(0),
 	m_nearClip(nearClip), m_farClip(farClip),
@@ -393,14 +508,14 @@ osg::Program* OculusDevice::createShaderProgram() const {
 	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
 
 	if (m_useTimeWarp) {
-		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh_with_timewarp.vert"));
+		vertexShader->setShaderSource(m_warpWithTimewarpVertexShaderSource);
 	}
 	else {
-		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.vert"));
+		vertexShader->setShaderSource(m_warpVertexShaderSource);
 	}
 
 	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-	fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.frag"));
+	fragmentShader->setShaderSource(m_warpFragmentShaderSource);
 	program->addShader(vertexShader);
 	program->addShader(fragmentShader);
 	return program.release();
