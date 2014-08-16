@@ -8,6 +8,7 @@
 #include "oculusdevice.h"
 
 #include <osg/Geometry>
+#include <osgDB/FileUtils>
 
 
 OculusDevice::OculusDevice(float nearClip, float farClip, bool useTimewarp) : m_hmdDevice(0),
@@ -384,6 +385,25 @@ osg::Camera* OculusDevice::createWarpOrthoCamera(double left, double right, doub
 		camera->setGraphicsContext(gc);
 	}
 	return camera.release();
+}
+
+osg::Program* OculusDevice::createShaderProgram() const {
+	// Set up shaders from the Oculus SDK documentation
+	osg::ref_ptr<osg::Program> program = new osg::Program;
+	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
+
+	if (m_useTimeWarp) {
+		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh_with_timewarp.vert"));
+	}
+	else {
+		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.vert"));
+	}
+
+	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
+	fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.frag"));
+	program->addShader(vertexShader);
+	program->addShader(fragmentShader);
+	return program.release();
 }
 
 void OculusDevice::applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const {

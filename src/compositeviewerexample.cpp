@@ -10,8 +10,6 @@
 #include <osgViewer/CompositeViewer>
 
 #include <osgDB/ReadFile>
-#include <osgDB/FileUtils>
-
 #include <osgGA/TrackballManipulator>
 
 
@@ -50,21 +48,8 @@ int main( int argc, char** argv )
 	osg::ref_ptr<osg::Camera> leftCameraWarp = oculusDevice->createWarpOrthoCamera(0.0, 1.0, 0.0, 1.0);
 	osg::ref_ptr<osg::Camera> rightCameraWarp = oculusDevice->createWarpOrthoCamera(0.0, 1.0, 0.0, 1.0);
 
-	// Set up shaders from the Oculus SDK documentation
-	osg::ref_ptr<osg::Program> program = new osg::Program;
-	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
-
-	if (oculusDevice->useTimewarp()) {
-		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh_with_timewarp.vert"));
-	}
-	else {
-		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.vert"));
-	}
-
-	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-	fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.frag"));
-	program->addShader(vertexShader);
-	program->addShader(fragmentShader);
+	// Create shader program
+	osg::ref_ptr<osg::Program> program = oculusDevice->createShaderProgram();
 
 	// Create distortionMesh for each camera
 	osg::ref_ptr<osg::Geode> leftDistortionMesh = oculusDevice->distortionMesh(OculusDevice::Eye::LEFT, program, 0, 0, textureWidth, textureHeight, true);

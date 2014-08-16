@@ -7,9 +7,6 @@
 
 #include "oculusviewer.h"
 
-#include <osgDB/ReadFile>
-#include <osgDB/FileUtils>
-
 #include <osgViewer/View>
 
 void OculusViewer::traverse(osg::NodeVisitor& nv)
@@ -74,20 +71,8 @@ void OculusViewer::configure()
 	cameraWarp->setName("WarpOrtho");
 	cameraWarp->setViewport(new osg::Viewport(0, 0, m_device->screenResolutionWidth(), m_device->screenResolutionHeight()));
 
-	// Set up shaders from the Oculus SDK documentation
-	osg::ref_ptr<osg::Program> program = new osg::Program;
-	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
-
-	if (m_device->useTimewarp()) {
-		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh_with_timewarp.vert"));
-	} else {
-		vertexShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.vert"));
-	}
-
-	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-	fragmentShader->loadShaderSourceFromFile(osgDB::findDataFile("warp_mesh.frag"));
-	program->addShader(vertexShader);
-	program->addShader(fragmentShader);
+	// Create shader program
+	osg::ref_ptr<osg::Program> program = m_device->createShaderProgram();
 
 	// Create distortionMesh for each camera
 	osg::ref_ptr<osg::Geode> leftDistortionMesh = m_device->distortionMesh(OculusDevice::Eye::LEFT, program, 0, 0, textureWidth, textureHeight);
