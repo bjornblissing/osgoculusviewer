@@ -94,23 +94,23 @@ OculusDevice::~OculusDevice()
 	ovr_Shutdown();
 }
 
-unsigned int OculusDevice::hScreenResolution() const
+unsigned int OculusDevice::screenResolutionWidth() const
 {
 	return m_hmdDevice->Resolution.w;
 }
 
-unsigned int OculusDevice::vScreenResolution() const
+unsigned int OculusDevice::screenResolutionHeight() const
 {
 	return m_hmdDevice->Resolution.h;
 }
 
 
-unsigned int OculusDevice::hRenderTargetSize() const
+unsigned int OculusDevice::renderTargetWidth() const
 {
 	return m_renderTargetSize.w;
 }
 
-unsigned int OculusDevice::vRenderTargetSize() const
+unsigned int OculusDevice::renderTargetHeight() const
 {
 	return m_renderTargetSize.h;
 }
@@ -427,10 +427,10 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
 	traits->screenNum = si.screenNum;
 	traits->displayNum = si.displayNum;
 	traits->windowDecoration = false;
-	traits->x = windowPos().x();
-	traits->y = windowPos().y();
-	traits->width = hScreenResolution();
-	traits->height = vScreenResolution();
+	traits->x = m_hmdDevice->WindowsPos.x;
+	traits->y = m_hmdDevice->WindowsPos.y;
+	traits->width = screenResolutionWidth();
+	traits->height = screenResolutionHeight();
 	traits->doubleBuffer = true;
 	traits->sharedContext = 0;
 	traits->vsync = true; // VSync should always be enabled for Oculus Rift applications

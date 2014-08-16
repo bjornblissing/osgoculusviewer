@@ -44,8 +44,8 @@ int main( int argc, char** argv )
 	if (!loadedModel) return 0;
 
 	// Calculate the texture size
-	const int textureWidth = oculusDevice->hRenderTargetSize()/2;
-	const int textureHeight = oculusDevice->vRenderTargetSize();
+	const int textureWidth = oculusDevice->renderTargetWidth()/2;
+	const int textureHeight = oculusDevice->renderTargetHeight();
 	// Setup textures for the RTT cameras
 	osg::ref_ptr<osg::Texture2D> textureLeft = new osg::Texture2D;
 	textureLeft->setTextureSize(textureWidth, textureHeight);
@@ -131,7 +131,7 @@ int main( int argc, char** argv )
 	leftView->setSceneData(leftRoot);
 	leftView->getCamera()->setName("LeftEyeCamera");
 	leftView->getCamera()->setClearColor(osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
-	leftView->getCamera()->setViewport(new osg::Viewport(0, 0, oculusDevice->hScreenResolution() / 2, oculusDevice->vScreenResolution()));
+	leftView->getCamera()->setViewport(new osg::Viewport(0, 0, oculusDevice->screenResolutionWidth() / 2, oculusDevice->screenResolutionHeight()));
 	leftView->getCamera()->setGraphicsContext(gc);
 	// Add statistics view to only one view
 	leftView->addEventHandler(new osgViewer::StatsHandler);
@@ -144,7 +144,7 @@ int main( int argc, char** argv )
 	rightView->setSceneData(rightRoot);
 	rightView->getCamera()->setClearColor(osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	rightView->getCamera()->setName("RightEyeCamera");
-	rightView->getCamera()->setViewport(new osg::Viewport(oculusDevice->hScreenResolution() / 2, 0, oculusDevice->hScreenResolution() / 2, oculusDevice->vScreenResolution()));
+	rightView->getCamera()->setViewport(new osg::Viewport(oculusDevice->screenResolutionWidth() / 2, 0, oculusDevice->screenResolutionWidth() / 2, oculusDevice->screenResolutionHeight()));
 	rightView->getCamera()->setGraphicsContext(gc);
 	rightView->setCameraManipulator(cameraManipulator);
 

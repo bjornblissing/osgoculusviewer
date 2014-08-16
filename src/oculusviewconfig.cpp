@@ -34,8 +34,8 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
 	// Disable automatic computation of near and far plane on main camera, will propagate to slave cameras
 	camera->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
-	const int textureWidth  = m_device->hRenderTargetSize()/2;
-	const int textureHeight = m_device->vRenderTargetSize();
+	const int textureWidth  = m_device->renderTargetWidth()/2;
+	const int textureHeight = m_device->renderTargetHeight();
 	// master projection matrix
 	camera->setProjectionMatrix(m_device->projectionMatrixCenter());
 	// Create textures for RTT cameras
@@ -56,7 +56,7 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	// Create warp ortho camera
 	osg::ref_ptr<osg::Camera> cameraWarp = m_device->createWarpOrthoCamera(0.0, 1.0, 0.0, 1.0, gc);
 	cameraWarp->setName("WarpOrtho");
-	cameraWarp->setViewport(new osg::Viewport(0, 0, m_device->hScreenResolution(), m_device->vScreenResolution()));
+	cameraWarp->setViewport(new osg::Viewport(0, 0, m_device->screenResolutionWidth(), m_device->screenResolutionHeight()));
 
 	// Set up shaders from the Oculus SDK documentation
 	osg::ref_ptr<osg::Program> program = new osg::Program;

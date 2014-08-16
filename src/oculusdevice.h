@@ -25,14 +25,11 @@ class OculusDevice : public osg::Referenced {
 		};
 		OculusDevice(float nearClip, float farClip, bool useTimewarp);
 
-		unsigned int hScreenResolution() const;
-		unsigned int vScreenResolution() const;
+		unsigned int screenResolutionWidth() const;
+		unsigned int screenResolutionHeight() const;
 
-		unsigned int hRenderTargetSize() const;
-		unsigned int vRenderTargetSize() const;
-
-		int displayId() const { return m_hmdDevice->DisplayId; }
-		osg::Vec2i windowPos() const { return osg::Vec2i(m_hmdDevice->WindowsPos.x, m_hmdDevice->WindowsPos.y);  }
+		unsigned int renderTargetWidth() const;
+		unsigned int renderTargetHeight() const;
 
 		osg::Matrix projectionMatrixCenter() const;
 		osg::Matrix projectionMatrixLeft() const;
