@@ -13,11 +13,11 @@
 
 class OculusViewConfig : public osgViewer::ViewConfig {
 	public:
-		OculusViewConfig() : osgViewer::ViewConfig(),
+		OculusViewConfig(float nearClip=0.01f, float farClip=10000.0f, bool useTimewarp=true) : osgViewer::ViewConfig(),
 			m_configured(false),
 			m_sceneNodeMask(0x1),
 			m_device(0) {
-			m_device = new OculusDevice(0.01f, 10000.0f, true);
+			m_device = new OculusDevice(nearClip, farClip, useTimewarp);
 		}
 		void setSceneNodeMask(osg::Node::NodeMask nodeMask) { m_sceneNodeMask = nodeMask; }
 		virtual void configure(osgViewer::View& view) const;

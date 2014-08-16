@@ -29,7 +29,10 @@ int main( int argc, char** argv )
 	loadedModel->setNodeMask(sceneNodeMask);
 		 
 	// Create Oculus View Config
-	osg::ref_ptr<OculusViewConfig> oculusViewConfig = new OculusViewConfig;
+	float nearClip = 0.01f;
+	float farClip = 10000.0f;
+	bool useTimewarp = true;
+	osg::ref_ptr<OculusViewConfig> oculusViewConfig = new OculusViewConfig(nearClip, farClip, useTimewarp);
 	// Set the node mask used for scene
 	oculusViewConfig->setSceneNodeMask(sceneNodeMask);
 	// Create viewer
