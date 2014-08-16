@@ -20,7 +20,7 @@ ENDIF()
 OPTION(CMAKE_USE_RELATIVE_PATHS "If true, cmake will use relative paths in makefiles and projects." ${DEFAULT_RELATIVE_PATHS})
 MARK_AS_ADVANCED(CMAKE_USE_RELATIVE_PATHS)
 
-# Build example viewer
+# Build example viewers
 OPTION(BUILD_EXAMPLES "Enable to build viewer examples" ON)
 
 
