@@ -59,8 +59,8 @@ void OculusViewer::configure()
 	textureRight->setTextureSize(textureWidth, textureHeight);
 	textureRight->setInternalFormat(GL_RGBA);
 	// Create RTT cameras and attach textures
-	m_cameraRTTLeft = m_device->createRTTCamera(textureLeft, OculusDevice::Eye::LEFT, osg::Camera::RELATIVE_RF, gc);
-	m_cameraRTTRight = m_device->createRTTCamera(textureRight, OculusDevice::Eye::RIGHT, osg::Camera::RELATIVE_RF, gc);
+	m_cameraRTTLeft = m_device->createRTTCamera(textureLeft, OculusDevice::LEFT, osg::Camera::RELATIVE_RF, gc);
+	m_cameraRTTRight = m_device->createRTTCamera(textureRight, OculusDevice::RIGHT, osg::Camera::RELATIVE_RF, gc);
 	m_cameraRTTLeft->setName("LeftRTT");
 	m_cameraRTTRight->setName("RightRTT");
 	m_cameraRTTLeft->setCullMask(m_sceneNodeMask);
@@ -75,10 +75,10 @@ void OculusViewer::configure()
 	osg::ref_ptr<osg::Program> program = m_device->createShaderProgram();
 
 	// Create distortionMesh for each camera
-	osg::ref_ptr<osg::Geode> leftDistortionMesh = m_device->distortionMesh(OculusDevice::Eye::LEFT, program, 0, 0, textureWidth, textureHeight);
+	osg::ref_ptr<osg::Geode> leftDistortionMesh = m_device->distortionMesh(OculusDevice::LEFT, program, 0, 0, textureWidth, textureHeight);
 	cameraWarp->addChild(leftDistortionMesh);
 
-	osg::ref_ptr<osg::Geode> rightDistortionMesh = m_device->distortionMesh(OculusDevice::Eye::RIGHT, program, 0, 0, textureWidth, textureHeight);
+	osg::ref_ptr<osg::Geode> rightDistortionMesh = m_device->distortionMesh(OculusDevice::RIGHT, program, 0, 0, textureWidth, textureHeight);
 	cameraWarp->addChild(rightDistortionMesh);
 
 	// Add pre draw camera to handle time warp
@@ -88,8 +88,8 @@ void OculusViewer::configure()
 	osg::StateSet* leftEyeStateSet = leftDistortionMesh->getOrCreateStateSet();
 	osg::StateSet* rightEyeStateSet = rightDistortionMesh->getOrCreateStateSet();
 
-	m_device->applyShaderParameters(leftEyeStateSet, program.get(), textureLeft.get(), OculusDevice::Eye::LEFT);
-	m_device->applyShaderParameters(rightEyeStateSet, program.get(), textureRight.get(), OculusDevice::Eye::RIGHT);
+	m_device->applyShaderParameters(leftEyeStateSet, program.get(), textureLeft.get(), OculusDevice::LEFT);
+	m_device->applyShaderParameters(rightEyeStateSet, program.get(), textureRight.get(), OculusDevice::RIGHT);
 
 	// Add RTT cameras as slaves, specifying offsets for the projection
 	m_view->addSlave(m_cameraRTTLeft.get(),

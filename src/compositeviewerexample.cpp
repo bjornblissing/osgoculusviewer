@@ -55,9 +55,9 @@ int main( int argc, char** argv )
 	osg::ref_ptr<osg::Program> program = oculusDevice->createShaderProgram();
 
 	// Create distortionMesh for each camera
-	osg::ref_ptr<osg::Geode> leftDistortionMesh = oculusDevice->distortionMesh(OculusDevice::Eye::LEFT, program, 0, 0, textureWidth, textureHeight, true);
+	osg::ref_ptr<osg::Geode> leftDistortionMesh = oculusDevice->distortionMesh(OculusDevice::LEFT, program, 0, 0, textureWidth, textureHeight, true);
 	leftCameraWarp->addChild(leftDistortionMesh);
-	osg::ref_ptr<osg::Geode> rightDistortionMesh = oculusDevice->distortionMesh(OculusDevice::Eye::RIGHT, program, 0, 0, textureWidth, textureHeight, true);
+	osg::ref_ptr<osg::Geode> rightDistortionMesh = oculusDevice->distortionMesh(OculusDevice::RIGHT, program, 0, 0, textureWidth, textureHeight, true);
 	rightCameraWarp->addChild(rightDistortionMesh);
 
 	// Add pre draw camera to handle time warp
@@ -68,8 +68,8 @@ int main( int argc, char** argv )
 	osg::ref_ptr<osg::StateSet> leftEyeStateSet = leftDistortionMesh->getOrCreateStateSet();
 	osg::ref_ptr<osg::StateSet> rightEyeStateSet = rightDistortionMesh->getOrCreateStateSet();
 
-	oculusDevice->applyShaderParameters(leftEyeStateSet, program, textureLeft, OculusDevice::Eye::LEFT);
-	oculusDevice->applyShaderParameters(rightEyeStateSet, program, textureRight, OculusDevice::Eye::RIGHT);
+	oculusDevice->applyShaderParameters(leftEyeStateSet, program, textureLeft, OculusDevice::LEFT);
+	oculusDevice->applyShaderParameters(rightEyeStateSet, program, textureRight, OculusDevice::RIGHT);
 
 	// Create Trackball manipulator
 	osg::ref_ptr<osgGA::CameraManipulator> cameraManipulator = new osgGA::TrackballManipulator;

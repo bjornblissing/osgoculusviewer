@@ -43,8 +43,8 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	textureRight->setTextureSize( textureWidth, textureHeight );
 	textureRight->setInternalFormat( GL_RGBA );
 	// Create RTT cameras and attach textures
-	osg::ref_ptr<osg::Camera> cameraRTTLeft = m_device->createRTTCamera(textureLeft, OculusDevice::Eye::LEFT, osg::Camera::RELATIVE_RF, gc);
-	osg::ref_ptr<osg::Camera> cameraRTTRight = m_device->createRTTCamera(textureRight, OculusDevice::Eye::RIGHT, osg::Camera::RELATIVE_RF, gc);
+	osg::ref_ptr<osg::Camera> cameraRTTLeft = m_device->createRTTCamera(textureLeft, OculusDevice::LEFT, osg::Camera::RELATIVE_RF, gc);
+	osg::ref_ptr<osg::Camera> cameraRTTRight = m_device->createRTTCamera(textureRight, OculusDevice::RIGHT, osg::Camera::RELATIVE_RF, gc);
 	cameraRTTLeft->setName("LeftRTT");
 	cameraRTTRight->setName("RightRTT");
 	cameraRTTLeft->setCullMask(m_sceneNodeMask);
