@@ -135,7 +135,7 @@ public:
 		START,
 		END
 	};
-	EyeRotationCallback(const Mode mode, const OculusDevice* device, const OculusDevice::Eye eye) : m_mode(mode), m_device(device), m_eye(eye) {}
+	EyeRotationCallback(const Mode mode, const OculusDevice* device, const OculusDevice::Eye& eye) : m_mode(mode), m_device(device), m_eye(eye) {}
 	virtual void operator()	(osg::Uniform* uniform, osg::NodeVisitor* nv);
 protected:
 	const Mode m_mode;
