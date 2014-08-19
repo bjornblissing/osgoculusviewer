@@ -1,5 +1,5 @@
 /*
- * main.cpp
+ * viewconfigexample.cpp
  *
  *  Created on: Jul 03, 2013
  *      Author: Bjorn Blissing
@@ -7,8 +7,6 @@
 
 #include <osgDB/ReadFile>
 #include <osgGA/TrackballManipulator>
-#include <osgViewer/Viewer>
-#include <osgViewer/ViewerEventHandlers>
 
 #include "oculuseventhandler.h"
 #include "oculusviewconfig.h"
@@ -31,15 +29,16 @@ int main( int argc, char** argv )
 	loadedModel->setNodeMask(sceneNodeMask);
 		 
 	// Create Oculus View Config
-	osg::ref_ptr<OculusViewConfig> oculusViewConfig = new OculusViewConfig;
+	float nearClip = 0.01f;
+	float farClip = 10000.0f;
+	bool useTimewarp = true;
+	osg::ref_ptr<OculusViewConfig> oculusViewConfig = new OculusViewConfig(nearClip, farClip, useTimewarp);
 	// Set the node mask used for scene
 	oculusViewConfig->setSceneNodeMask(sceneNodeMask);
 	// Create viewer
 	osgViewer::Viewer viewer(arguments);
 	// Add statistics handler
 	viewer.addEventHandler(new osgViewer::StatsHandler);
-	// Add Oculus keyboard handler
-	viewer.addEventHandler(new OculusEventHandler(oculusViewConfig));
 	// Apply view config
 	viewer.apply(oculusViewConfig);
 	// Add loaded model to viewer

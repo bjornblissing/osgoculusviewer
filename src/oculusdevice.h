@@ -8,74 +8,139 @@
 #ifndef _OSG_OCULUSDEVICE_H_
 #define _OSG_OCULUSDEVICE_H_
 
-#include <OVR.h>
-#include <osg/Matrix>
+// Include the OculusVR SDK
+#include "OVR.h"
 
+#include <osg/Geode>
+#include <osg/Texture2D>
+
+// Forward declaration
+class WarpCameraPreDrawCallback;
+class OculusSwapCallback;
+class EyeRotationCallback;
 
 class OculusDevice : public osg::Referenced {
-
+	friend class WarpCameraPreDrawCallback;
+	friend class OculusSwapCallback;
+	friend class EyeRotationCallback;
+	
 	public:
-		OculusDevice();
-
-		enum EyeSide {
-			CENTER_EYE	= 0,
-			LEFT_EYE	= 1,
-			RIGHT_EYE	= 2
+		enum Eye
+		{
+			LEFT = 0,
+			RIGHT = 1,
+			COUNT = 2
 		};
+		OculusDevice(float nearClip, float farClip, bool useTimewarp);
 
-		unsigned int hScreenResolution() const;
-		unsigned int vScreenResolution() const;
-		float hScreenSize() const;
-		float vScreenSize() const;
-		float vScreenCenter() const;
-		float eyeToScreenDistance() const;
-		float lensSeparationDistance() const;
-		float interpupillaryDistance() const;
+		unsigned int screenResolutionWidth() const;
+		unsigned int screenResolutionHeight() const;
 
-		osg::Matrix viewMatrix(EyeSide eye = CENTER_EYE) const;
-		osg::Matrix projectionMatrix(EyeSide eye = CENTER_EYE) const;
-		osg::Matrix projectionOffsetMatrix(EyeSide eye = CENTER_EYE) const;
-		osg::Matrix projectionCenterMatrix() const;
+		unsigned int renderTargetWidth() const;
+		unsigned int renderTargetHeight() const;
 
-		osg::Vec2f lensCenter(EyeSide eye = CENTER_EYE) const;
-		osg::Vec2f screenCenter() const;
-		osg::Vec4f warpParameters() const;
-		osg::Vec4f chromAbParameters() const;
-		osg::Vec2f scale() const;
-		osg::Vec2f scaleIn() const;
+		osg::Matrix projectionMatrixCenter() const;
+		osg::Matrix projectionMatrixLeft() const;
+		osg::Matrix projectionMatrixRight() const;
 
-		float scaleFactor() const { return distortionScale(); }
+		osg::Matrix projectionOffsetMatrixLeft() const;
+		osg::Matrix projectionOffsetMatrixRight() const;
 
-		float aspectRatio() const {  return float (hScreenResolution()/2) / float (vScreenResolution()); }
-		osg::Quat getOrientation() const;
+		osg::Matrix viewMatrixLeft() const;
+		osg::Matrix viewMatrixRight() const;
 
-		void setNearClip(float nearClip) { m_nearClip = nearClip; }
-		void setFarClip(float farclip) { m_farClip = farclip; }
+		float nearClip() const { return m_nearClip;	}
+		float farClip() const { return m_farClip; }
+		bool useTimewarp() const { return m_useTimeWarp; }
 
-		void setSensorPredictionEnabled(bool prediction);
-		void setSensorPredictionDelta(float delta) { m_predictionDelta = delta; }
-		void setCustomScaleFactor(const float& customScaleFactor) { m_useCustomScaleFactor = true; m_customScaleFactor = customScaleFactor; }
-
-		void resetSensorOrientation() { if (m_sensorFusion) m_sensorFusion->Reset(); }
+		void resetSensorOrientation() const;
+		void updatePose(unsigned int frameIndex = 0);
+		
+		osg::Vec3 position() const { return m_position; }
+		osg::Quat orientation() const { return m_orientation;  }
+		
+		osg::Geode* distortionMesh(Eye eye, osg::Program* program, int x, int y, int w, int h, bool splitViewport=false);
+		osg::Camera* createRTTCamera(osg::Texture* texture, OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, osg::GraphicsContext* gc = 0) const;
+		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc=0) const;
+		osg::Program* createShaderProgram() const;
+		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const;
+		osg::GraphicsContext::Traits* graphicsContextTraits() const;
 
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
-		float viewCenter() const { return hScreenSize() * 0.25f; }
-		float halfIPD() const { return interpupillaryDistance() * 0.5f; }
-		float distortionScale() const;
 
-		OVR::Ptr<OVR::DeviceManager> m_deviceManager;
-		OVR::Ptr<OVR::HMDDevice> m_hmdDevice;
-		OVR::Ptr<OVR::SensorDevice> m_sensor;
-		OVR::HMDInfo* m_hmdInfo;
-		OVR::SensorFusion* m_sensorFusion;
-		bool m_useCustomScaleFactor;
-		float m_customScaleFactor;
+		int renderOrder(Eye eye) const;
+		osg::Matrixf eyeRotationStart(Eye eye) const;
+		osg::Matrixf eyeRotationEnd(Eye eye) const;
+		osg::Vec2f eyeToSourceUVScale(Eye eye) const;
+		osg::Vec2f eyeToSourceUVOffset(Eye eye) const;
+
+		void beginFrameTiming(unsigned int frameIndex = 0);
+		void endFrameTiming() const;
+		void waitTillTime();
+		
+		static const std::string m_warpVertexShaderSource;
+		static const std::string m_warpWithTimewarpVertexShaderSource;
+		static const std::string m_warpFragmentShaderSource;
+
+		ovrHmd m_hmdDevice;
+		ovrSizei m_resolution;
+		ovrSizei m_renderTargetSize;
+		ovrEyeRenderDesc m_eyeRenderDesc[2];
+		ovrVector2f m_UVScaleOffset[2][2];
+		ovrFrameTiming m_frameTiming;
+		ovrPosef m_headPose[2];
+		ovrMatrix4f m_timeWarpMatrices[2][2];
+
+		osg::Matrixf m_leftEyeProjectionMatrix;
+		osg::Matrixf m_rightEyeProjectionMatrix;
+		osg::Vec3f m_leftEyeAdjust;
+		osg::Vec3f m_rightEyeAdjust;
+
+		osg::Vec3 m_position;
+		osg::Quat m_orientation;
+
 		float m_nearClip;
 		float m_farClip;
-		float m_predictionDelta;
+		bool m_useTimeWarp;
 	private:
 		OculusDevice(const OculusDevice&); // Do not allow copy
+		OculusDevice& operator=(const OculusDevice&); // Do not allow assignment operator.
+};
+
+class WarpCameraPreDrawCallback : public osg::Camera::DrawCallback
+{
+public:
+	WarpCameraPreDrawCallback(osg::ref_ptr<OculusDevice> device) : m_device(device) {}
+	virtual void operator()(osg::RenderInfo& renderInfo) const;
+protected:
+	osg::observer_ptr<OculusDevice> m_device;
+};
+
+class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
+public:
+	OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
+	void swapBuffersImplementation(osg::GraphicsContext *gc);
+	int frameIndex() const { return m_frameIndex; }
+private:
+	osg::observer_ptr<OculusDevice> m_device;
+	int m_frameIndex;
+};
+
+class EyeRotationCallback : public osg::Uniform::Callback
+{
+public:
+	enum Mode
+	{
+		START,
+		END
+	};
+	EyeRotationCallback(const Mode mode, const OculusDevice* device, const OculusDevice::Eye& eye) : m_mode(mode), m_device(device), m_eye(eye) {}
+	virtual void operator()	(osg::Uniform* uniform, osg::NodeVisitor* nv);
+protected:
+	const Mode m_mode;
+	const OculusDevice* m_device;
+	const OculusDevice::Eye m_eye;
 };
 
 #endif /* _OSG_OCULUSDEVICE_H_ */
