@@ -42,16 +42,6 @@ IF (WIN32)
 	IF(NOT OCULUS_SDK_ROOT_DIR)
 		MESSAGE(FATAL_ERROR "Error: Oculus SDK not found.")
 	ENDIF(NOT OCULUS_SDK_ROOT_DIR)
-
-	IF(MSVC)
-		OPTION(VISUAL_STUDIO_EXPRESS "Building with Visual Studio Express" OFF)
-		IF(VISUAL_STUDIO_EXPRESS)
-			# If building with Visual Studio Express we must specify location of ATL include directory and libraries
-			# These are not included in then Visual Studio Express install, but must be installed separately via Windows Driver Kit
-			SET(ATL_INCLUDE_DIR CACHE PATH "Path where to find the ATL include directory")
-			SET(ATL_LIBRARY_DIR CACHE PATH "Path where to find the ATL libries directory")
-		ENDIF(VISUAL_STUDIO_EXPRESS)
-	ENDIF(MSVC)
 ENDIF(WIN32)
 
 #Solution
@@ -102,11 +92,6 @@ IF(MSVC)
 
 	# Use Link Time Code Generation
 	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG")
-
-	# Add ATL libraries for Visual Studio Express builds
-	IF(VISUAL_STUDIO_EXPRESS)
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LIBPATH:${ATL_LIBRARY_DIR}")
-	ENDIF(VISUAL_STUDIO_EXPRESS)
 
 	OPTION(BUILD_MULTI_PROCESSOR_COMPILATION "Use multiple processors when compiling" ON)
 	MARK_AS_ADVANCED(BUILD_MULTI_PROCESSOR_COMPILATION)
