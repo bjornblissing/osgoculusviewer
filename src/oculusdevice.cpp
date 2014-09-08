@@ -360,6 +360,8 @@ osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, 
 	ovrHmd_DestroyDistortionMesh(&meshData);
 	
 	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
+	geometry->setUseDisplayList( false );
+	geometry->setUseVertexBufferObjects(true);
 	osg::ref_ptr<osg::DrawElementsUShort> drawElement = new osg::DrawElementsUShort(osg::PrimitiveSet::TRIANGLES, indexArray->size(), (GLushort*) indexArray->getDataPointer());
 	geometry->addPrimitiveSet(drawElement);
 
