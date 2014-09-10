@@ -11,7 +11,6 @@ SET(TARGET_SRC
 	oculusdevice.cpp
 	oculusdevicesdk.cpp
 	oculuseventhandler.cpp
-	oculusviewconfig.cpp
 )
 # Header files for library
 SET(TARGET_H
@@ -19,7 +18,6 @@ SET(TARGET_H
 	oculusdevice.h
 	oculusdevicesdk.h
 	oculuseventhandler.h
-	oculusviewconfig.h
 )
 
 # Add view config if available
