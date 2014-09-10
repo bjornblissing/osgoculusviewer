@@ -9,14 +9,12 @@ SET(TARGET_SRC
 	oculusviewer.cpp
 	oculusdevice.cpp
 	oculuseventhandler.cpp
-	oculusviewconfig.cpp
 )
 # Header files for library
 SET(TARGET_H
 	oculusviewer.h
 	oculusdevice.h
 	oculuseventhandler.h
-	oculusviewconfig.h
 )
 
 # Add view config if available
