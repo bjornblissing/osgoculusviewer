@@ -31,7 +31,7 @@ class OculusDevice : public osg::Referenced {
 			RIGHT = 1,
 			COUNT = 2
 		};
-		OculusDevice(float nearClip, float farClip, bool useTimewarp);
+		OculusDevice(float nearClip, float farClip, float pixelsPerDisplayPixel, bool useTimewarp);
 
 		unsigned int screenResolutionWidth() const;
 		unsigned int screenResolutionHeight() const;

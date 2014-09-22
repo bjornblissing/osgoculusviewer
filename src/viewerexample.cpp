@@ -37,8 +37,9 @@ int main( int argc, char** argv )
 	// Open the HMD
 	float nearClip = 0.01f;
 	float farClip = 10000.0f;
+	float pixelsPerDisplayPixel = 1.0;
 	bool useTimewarp = true;
-	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, useTimewarp);
+	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, useTimewarp);
 
 	// Get the suggested context traits
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = oculusDevice->graphicsContextTraits();
