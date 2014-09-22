@@ -17,8 +17,9 @@ int main( int argc, char** argv )
 {
 	float nearClip = 0.01f;
 	float farClip = 10000.0f;
+	float pixelsPerDisplayPixel = 1.0;
 	bool useTimewarp = true;
-	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, useTimewarp);
+	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, useTimewarp);
 	// use an ArgumentParser object to manage the program arguments.
 	osg::ArgumentParser arguments(&argc,argv);
 	// read the scene from the list of file specified command line arguments.

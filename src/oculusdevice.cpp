@@ -126,7 +126,7 @@ const std::string OculusDevice::m_warpFragmentShaderSource(
 	"}\n"
 );
 
-OculusDevice::OculusDevice(float nearClip, float farClip, bool useTimewarp) : m_hmdDevice(0),
+OculusDevice::OculusDevice(float nearClip, float farClip, float pixelsPerDisplayPixel, bool useTimewarp) : m_hmdDevice(0),
 	m_nearClip(nearClip), m_farClip(farClip),
 	m_useTimeWarp(useTimewarp),
 	m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
@@ -161,7 +161,9 @@ OculusDevice::OculusDevice(float nearClip, float farClip, bool useTimewarp) : m_
 		m_resolution = m_hmdDevice->Resolution;
 		
 		// Compute recommended render texture size
-		float pixelsPerDisplayPixel = 1.0f; // Decrease this value to scale the size on render texture on lower performance hardware. Values above 1.0 is unnecessary.
+		if (pixelsPerDisplayPixel > 1.0f) {
+			osg::notify(osg::WARN) << "Warning: Pixel per display pixel is set to a value higher than 1.0." << std::endl;
+		}
 
 		ovrSizei recommenedLeftTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0], pixelsPerDisplayPixel);
 		ovrSizei recommenedRightTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1], pixelsPerDisplayPixel);
