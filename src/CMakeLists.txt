@@ -3,11 +3,13 @@ SET(TARGET_LIBRARYNAME OsgOculus)
 SET(TARGET_TARGETNAME_VIEW_CONFIG OculusViewConfigExample)
 SET(TARGET_TARGETNAME_VIEWER OculusViewerExample)
 SET(TARGET_TARGETNAME_COMPOSITE_VIEWER OculusCompositeViewerExample)
+SET(TARGET_TARGETNAME_SDK_VIEWER OculusViewerSDKExample)
 
 # Source files for library
 SET(TARGET_SRC
 	oculusviewer.cpp
 	oculusdevice.cpp
+	oculusdevicesdk.cpp
 	oculuseventhandler.cpp
 	oculusviewconfig.cpp
 )
@@ -15,6 +17,7 @@ SET(TARGET_SRC
 SET(TARGET_H
 	oculusviewer.h
 	oculusdevice.h
+	oculusdevicesdk.h
 	oculuseventhandler.h
 	oculusviewconfig.h
 )
@@ -82,6 +85,8 @@ IF(BUILD_EXAMPLES)
 
 	INSTALL(TARGETS ${TARGET_TARGETNAME_VIEWER} ${TARGET_TARGETNAME_COMPOSITE_VIEWER} RUNTIME DESTINATION bin)
 
+	ADD_EXECUTABLE(${TARGET_TARGETNAME_SDK_VIEWER} viewerexamplesdk.cpp)
+	TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME_SDK_VIEWER} ${TARGET_LIBRARYNAME})
 	IF (USE_VIEW_CONFIG)
 		ADD_EXECUTABLE(${TARGET_TARGETNAME_VIEW_CONFIG} viewconfigexample.cpp)
 		TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME_VIEW_CONFIG} ${TARGET_LIBRARYNAME})
@@ -121,6 +126,7 @@ IF(MSVC)
 		IF(MSVC10 OR MSVC11 OR MSVC12)
 			CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEWER}.vcxproj.user @ONLY)
 			CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_COMPOSITE_VIEWER}.vcxproj.user @ONLY)
+			CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_SDK_VIEWER}.vcxproj.user @ONLY)
 			IF (USE_VIEW_CONFIG)
 				CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEW_CONFIG}.vcxproj.user @ONLY)
 			ENDIF()
