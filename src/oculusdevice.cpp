@@ -176,9 +176,9 @@ OculusDevice::OculusDevice(float nearClip, float farClip, float pixelsPerDisplay
 		m_eyeRenderDesc[0] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0]);
 		m_eyeRenderDesc[1] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1]);
 		
-		ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].ViewAdjust;
+		ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeViewOffset;
 		m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
-		ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].ViewAdjust;
+		ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeViewOffset;
 		m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
 
 		bool isRightHanded = true;
@@ -295,7 +295,7 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	// Get head pose for both eyes (used for time warp
 	for (int eyeIndex = 0; eyeIndex < ovrEye_Count; ++eyeIndex) {
 		ovrEyeType eye = m_hmdDevice->EyeRenderOrder[eyeIndex];
-		m_headPose[eye] = ovrHmd_GetEyePose(m_hmdDevice, eye);
+		m_headPose[eye] = ovrHmd_GetHmdPosePerEye(m_hmdDevice, eye);
 	}
 }
 
