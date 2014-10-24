@@ -174,9 +174,9 @@ void OculusDeviceSDK::configureRendering(HWND window, HDC dc, int backBufferMult
 	ovrHmd_ConfigureTracking(m_hmdDevice, sensorCaps, 0);
 	
 	// Calculate the view matrices
-	ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].ViewAdjust;
+	ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeViewOffset;
 	m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
-	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].ViewAdjust;
+	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeViewOffset;
 	m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
 
 	// Calculate projection matrices
@@ -199,7 +199,7 @@ void OculusDeviceSDK::configureRendering(HWND window, HDC dc, int backBufferMult
 	OVR::Vector2f orthoScaleLeft = OVR::Vector2f(1.0f) / OVR::Vector2f(m_eyeRenderDesc[0].PixelsPerTanAngleAtCenter);
 	OVR::Vector2f orthoScaleRight = OVR::Vector2f(1.0f) / OVR::Vector2f(m_eyeRenderDesc[1].PixelsPerTanAngleAtCenter);
 
-	ovrMatrix4f leftOrthProjection = ovrMatrix4f_OrthoSubProjection(leftEyeProjectionMatrix, orthoScaleLeft, orthoDistance, m_eyeRenderDesc[0].ViewAdjust.x);
+	ovrMatrix4f leftOrthProjection = ovrMatrix4f_OrthoSubProjection(leftEyeProjectionMatrix, orthoScaleLeft, orthoDistance, m_eyeRenderDesc[0].HmdToEyeViewOffset.x);
 	// Transpose matrix
 	m_leftEyeOrthoProjectionMatrix.set(leftOrthProjection.M[0][0], leftOrthProjection.M[1][0], leftOrthProjection.M[2][0], leftOrthProjection.M[3][0],
 		leftOrthProjection.M[0][1], leftOrthProjection.M[1][1], leftOrthProjection.M[2][1], leftOrthProjection.M[3][1],
@@ -207,7 +207,7 @@ void OculusDeviceSDK::configureRendering(HWND window, HDC dc, int backBufferMult
 		leftOrthProjection.M[0][3], leftOrthProjection.M[1][3], leftOrthProjection.M[2][3], leftOrthProjection.M[3][3]);
 
 	
-	ovrMatrix4f rightOrthProjection = ovrMatrix4f_OrthoSubProjection(rightEyeProjectionMatrix, orthoScaleRight, orthoDistance, m_eyeRenderDesc[1].ViewAdjust.x);
+	ovrMatrix4f rightOrthProjection = ovrMatrix4f_OrthoSubProjection(rightEyeProjectionMatrix, orthoScaleRight, orthoDistance, m_eyeRenderDesc[1].HmdToEyeViewOffset.x);
 	// Transpose matrix
 	m_rightEyeOrthoProjectionMatrix.set(rightOrthProjection.M[0][0], rightOrthProjection.M[1][0], rightOrthProjection.M[2][0], rightOrthProjection.M[3][0],
 		rightOrthProjection.M[0][1], rightOrthProjection.M[1][1], rightOrthProjection.M[2][1], rightOrthProjection.M[3][1],
@@ -227,8 +227,8 @@ void OculusDeviceSDK::attachToWindow(HWND window) {
 
 void OculusDeviceSDK::getEyePose() {
 	if (m_hmdDevice && m_frameBegin) {
-		m_renderPose[0] = ovrHmd_GetEyePose(m_hmdDevice, ovrEye_Left);
-		m_renderPose[1] = ovrHmd_GetEyePose(m_hmdDevice, ovrEye_Right);
+		m_renderPose[0] = ovrHmd_GetHmdPosePerEye(m_hmdDevice, ovrEye_Left);
+		m_renderPose[1] = ovrHmd_GetHmdPosePerEye(m_hmdDevice, ovrEye_Right);
 	}
 }
 
