@@ -153,8 +153,8 @@ int main( int argc, char** argv )
 		rightEyeViewMatrix = oculusDevice->viewMatrixRight();
 		// Get camera matrix from manipulator
 		cameraManipulatorViewMatrix = cameraManipulator->getInverseMatrix();
-		leftEyeRTTCamera->setViewMatrix(leftEyeViewMatrix*cameraManipulatorViewMatrix*hmdMatrix);
-		rightEyeRTTCamera->setViewMatrix(rightEyeViewMatrix*cameraManipulatorViewMatrix*hmdMatrix);
+		leftEyeRTTCamera->setViewMatrix(cameraManipulatorViewMatrix*hmdMatrix*leftEyeViewMatrix);
+		rightEyeRTTCamera->setViewMatrix(cameraManipulatorViewMatrix*hmdMatrix*rightEyeViewMatrix);
 
 		viewer.frame();
 	}
