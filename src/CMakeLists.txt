@@ -64,7 +64,14 @@ IF(UNIX)
 		)
 	ELSE(APPLE)
 		# Oculus SDK dependencies for Linux
-		TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} pthread udev X11 Xinerama)
+		TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME}
+			pthread
+			udev
+			X11
+			Xinerama
+			Xrandr
+			rt
+		)
 	ENDIF(APPLE)
 ENDIF(UNIX)
 
