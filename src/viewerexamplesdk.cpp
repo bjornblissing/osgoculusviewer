@@ -50,6 +50,8 @@ int main(int argc, char** argv)
 	if (gc.valid()) {
 		gc->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
 		gc->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// Make sure that Oculus SDK handles SwapCallbacks
+		gc->setSwapCallback(new OculusSwapCallback());
 	}
 
 	osgViewer::Viewer viewer(arguments);
