@@ -465,8 +465,11 @@ osg::Camera* OculusDevice::createRTTCamera(osg::Texture* texture, OculusDevice::
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
 	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
 	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	camera->setDrawBuffer(GL_FRONT);
-	camera->setReadBuffer(GL_FRONT);
+
+	GLenum buffer = gc->getTraits()->doubleBuffer ? GL_BACK : GL_FRONT;
+	camera->setDrawBuffer(buffer);
+	camera->setReadBuffer(buffer);
+
 	camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
 	camera->setRenderOrder(osg::Camera::PRE_RENDER, renderOrder(eye));
 	camera->setAllowEventFocus(false);
