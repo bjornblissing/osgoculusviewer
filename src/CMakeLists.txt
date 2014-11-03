@@ -68,7 +68,6 @@ IF(UNIX)
 			pthread
 			udev
 			X11
-			Xinerama
 			Xrandr
 			rt
 		)
