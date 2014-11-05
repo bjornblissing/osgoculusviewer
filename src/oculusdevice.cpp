@@ -197,7 +197,7 @@ OculusDevice::OculusDevice(float nearClip, float farClip, float pixelsPerDisplay
 			rightEyeProjectionMatrix.M[0][2], rightEyeProjectionMatrix.M[1][2], rightEyeProjectionMatrix.M[2][2], rightEyeProjectionMatrix.M[3][2],
 			rightEyeProjectionMatrix.M[0][3], rightEyeProjectionMatrix.M[1][3], rightEyeProjectionMatrix.M[2][3], rightEyeProjectionMatrix.M[3][3]);
 
-		// Start the sensor which provides the Rift’s pose and motion.
+		// Start the sensor which provides the RiftÂ’s pose and motion.
 		ovrHmd_ConfigureTracking(m_hmdDevice, ovrTrackingCap_Orientation |
 			ovrTrackingCap_MagYawCorrection |
 			ovrTrackingCap_Position, 0);
@@ -466,7 +466,7 @@ osg::Camera* OculusDevice::createRTTCamera(osg::Texture* texture, OculusDevice::
 	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
 	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	GLenum buffer = gc->getTraits()->doubleBuffer ? GL_BACK : GL_FRONT;
+	GLenum buffer = (gc && gc->getTraits()->doubleBuffer) ? GL_BACK : GL_FRONT;
 	camera->setDrawBuffer(buffer);
 	camera->setReadBuffer(buffer);
 
