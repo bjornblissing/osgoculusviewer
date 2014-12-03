@@ -21,6 +21,9 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		}
 		void setSceneNodeMask(osg::Node::NodeMask nodeMask) { m_sceneNodeMask = nodeMask; }
 		virtual void configure(osgViewer::View& view) const;
+
+      OculusDevice* getOculusDevice(){ return m_device.get(); }
+
 	protected:
 		~OculusViewConfig() {};
 
