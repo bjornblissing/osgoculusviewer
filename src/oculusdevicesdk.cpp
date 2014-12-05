@@ -156,7 +156,7 @@ void OculusDeviceSDK::configureRendering(HWND window, HDC dc, int backBufferMult
 	// Configure OpenGL
 	ovrGLConfig cfg;
 	cfg.OGL.Header.API = ovrRenderAPI_OpenGL;
-	cfg.OGL.Header.RTSize = m_resolution;
+	cfg.OGL.Header.BackBufferSize = m_resolution;
 	cfg.OGL.Header.Multisample = backBufferMultisample;
 	cfg.OGL.Window = window;
 	cfg.OGL.DC = dc;

@@ -1,9 +1,12 @@
 OsgOculusViewer
 ===============
 
+**NOTE** This is an experimental branch with the goal of having SDK based distortion rendering. **NOTE**
+
+
 An OsgViewer with support for the Oculus Rift
 
-Last tested against Oculus SDK 0.4.3 Beta
+Last compiled against Oculus SDK 0.4.4 Beta
 
 To be able to use the osgViewer::ViewConfig version you will need to use OpenSceneGraph 3.2.0 or later.
 
