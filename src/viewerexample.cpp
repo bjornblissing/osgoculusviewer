@@ -51,6 +51,9 @@ int main( int argc, char** argv )
 		return 1;
 	}
 
+	// Attach to window, needed for direct mode
+	oculusDevice->attachToWindow(gc);
+
 	if (gc.valid()) {
 		gc->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
 		gc->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

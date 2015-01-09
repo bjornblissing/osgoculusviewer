@@ -9,6 +9,10 @@
 
 #include <osg/Geometry>
 
+#ifdef _WIN32
+#include <osgViewer/api/Win32/GraphicsHandleWin32>
+#endif
+
 const std::string OculusDevice::m_warpVertexShaderSource(
 	"#version 110\n"
 
@@ -542,6 +546,28 @@ void OculusDevice::applyShaderParameters(osg::StateSet* stateSet, osg::Program* 
 		eyeRotationStart->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::START, this, eye));
 		eyeRotationEnd->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::END, this, eye));
 	}
+}
+
+bool OculusDevice::attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc) {
+	// Do not attach if we are using extended desktop
+	if(m_hmdDevice->HmdCaps & ovrHmdCap_ExtendDesktop) {
+		return false;
+	}
+
+	// Direct rendering from a window handle to the Rift
+	#ifdef _WIN32
+	osgViewer::GraphicsHandleWin32* windowsContext = dynamic_cast<osgViewer::GraphicsHandleWin32*>(gc.get());
+
+	if (windowsContext) {
+		HWND window = windowsContext->getHWND();
+		return (ovrHmd_AttachToWindow(m_hmdDevice, window, NULL, NULL) > 0) ? true : false;
+	} else {
+		osg::notify(osg::FATAL) << "Win32 Graphics Context Casting is unsuccessful" << std::endl;
+		return false;
+	}
+	#endif
+
+	return false;
 }
 
 osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {

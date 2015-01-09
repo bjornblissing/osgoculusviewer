@@ -92,6 +92,9 @@ int main( int argc, char** argv )
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = oculusDevice->graphicsContextTraits();
 	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits);
 
+	// Attach to window, needed for direct mode
+	oculusDevice->attachToWindow(gc);
+	
 	// Attach a callback to detect swap
 	osg::ref_ptr<OculusSwapCallback> swapCallback = new OculusSwapCallback(oculusDevice);
 	gc->setSwapCallback(swapCallback);

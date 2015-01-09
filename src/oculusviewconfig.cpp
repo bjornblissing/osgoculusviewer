@@ -17,6 +17,9 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 		osg::notify(osg::NOTICE) << "Error, GraphicsWindow has not been created successfully" << std::endl;
 		return;
 	}
+
+	// Attach to window, needed for direct mode
+	m_device->attachToWindow(gc);
 	
 	// Attach a callback to detect swap
 	osg::ref_ptr<OculusSwapCallback> swapCallback = new OculusSwapCallback(m_device);

@@ -64,6 +64,7 @@ class OculusDevice : public osg::Referenced {
 		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc=0) const;
 		osg::Program* createShaderProgram() const;
 		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const;
+		bool attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc);
 		osg::GraphicsContext::Traits* graphicsContextTraits() const;
 
 	protected:
