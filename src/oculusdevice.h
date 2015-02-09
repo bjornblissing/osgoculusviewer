@@ -65,6 +65,9 @@ class OculusDevice : public osg::Referenced {
 		osg::Program* createShaderProgram() const;
 		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const;
 		bool attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc);
+		void toggleMirrorToWindow();
+		void toggleLowPersistence();
+		void toggleDynamicPrediction();
 		osg::GraphicsContext::Traits* graphicsContextTraits() const;
 
 	protected:

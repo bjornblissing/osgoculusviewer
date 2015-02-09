@@ -200,6 +200,9 @@ OculusDevice::OculusDevice(float nearClip, float farClip, float pixelsPerDisplay
 			rightEyeProjectionMatrix.M[0][1], rightEyeProjectionMatrix.M[1][1], rightEyeProjectionMatrix.M[2][1], rightEyeProjectionMatrix.M[3][1],
 			rightEyeProjectionMatrix.M[0][2], rightEyeProjectionMatrix.M[1][2], rightEyeProjectionMatrix.M[2][2], rightEyeProjectionMatrix.M[3][2],
 			rightEyeProjectionMatrix.M[0][3], rightEyeProjectionMatrix.M[1][3], rightEyeProjectionMatrix.M[2][3], rightEyeProjectionMatrix.M[3][3]);
+		unsigned int hmdCaps =  ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction;
+		// Set render capabilities
+		ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
 
 		// Start the sensor which provides the Rifts pose and motion.
 		ovrHmd_ConfigureTracking(m_hmdDevice, ovrTrackingCap_Orientation |
@@ -568,6 +571,24 @@ bool OculusDevice::attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc) {
 	#endif
 
 	return false;
+}
+
+void OculusDevice::toggleMirrorToWindow() {
+	unsigned int hmdCaps =  ovrHmd_GetEnabledCaps(m_hmdDevice);
+	hmdCaps ^= ovrHmdCap_NoMirrorToWindow;
+	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
+}
+
+void OculusDevice::toggleLowPersistence() {
+	unsigned int hmdCaps =  ovrHmd_GetEnabledCaps(m_hmdDevice);
+	hmdCaps ^= ovrHmdCap_LowPersistence;
+	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
+}
+
+void OculusDevice::toggleDynamicPrediction() {
+	unsigned int hmdCaps =  ovrHmd_GetEnabledCaps(m_hmdDevice);
+	hmdCaps ^= ovrHmdCap_DynamicPrediction;
+	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
 }
 
 osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
