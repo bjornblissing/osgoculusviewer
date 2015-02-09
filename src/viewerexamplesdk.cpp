@@ -13,6 +13,9 @@
 
 int main(int argc, char** argv)
 {
+	// Initialize the Oculus Rendering Shim. Must be done before any OpenGL calls
+	ovr_InitializeRenderingShim();
+
 	// use an ArgumentParser object to manage the program arguments.
 	osg::ArgumentParser arguments(&argc, argv);
 	// read the scene from the list of file specified command line arguments.
