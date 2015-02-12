@@ -29,6 +29,11 @@ void OculusViewer::traverse(osg::NodeVisitor& nv)
 		// There doesn't seem to be an accessor for this, fortunately the offsets are public
 		m_view->findSlaveForCamera(m_cameraRTTLeft.get())->_viewOffset = viewOffsetLeft;
 		m_view->findSlaveForCamera(m_cameraRTTRight.get())->_viewOffset = viewOffsetRight;
+		
+		// Handle health and safety warning
+		if (m_warning.valid()) {
+			m_warning.get()->updatePosition(m_view->getCamera()->getInverseViewMatrix(), position, orientation);
+		}
 	}
 	osg::Group::traverse(nv);
 }
@@ -46,6 +51,11 @@ void OculusViewer::configure()
 
 	// Disable scene rendering for main camera
 	camera->setCullMask(~m_sceneNodeMask);
+
+	// Add health and safety warning
+	m_warning = new OculusHealthAndSafetyWarning;
+	m_view->addEventHandler(new OculusWarningEventHandler(m_warning));
+	this->addChild(m_warning->getGraph());
 
 	const int textureWidth = m_device->renderTargetWidth()/2;
 	const int textureHeight = m_device->renderTargetHeight();

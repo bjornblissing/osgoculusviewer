@@ -24,6 +24,10 @@ int main( int argc, char** argv )
 	// Still no loaded model, then exit
 	if (!loadedModel) return 0;
 
+	// Add nodes to root node
+	osg::ref_ptr<osg::Group> root = new osg::Group;
+	root->addChild(loadedModel);
+		
 	// Subtract at least one bit of the node mask to disable rendering for main camera
 	osg::Node::NodeMask sceneNodeMask = loadedModel->getNodeMask() & ~0x1;
 	loadedModel->setNodeMask(sceneNodeMask);
@@ -33,6 +37,8 @@ int main( int argc, char** argv )
 	float farClip = 10000.0f;
 	bool useTimewarp = true;
 	osg::ref_ptr<OculusViewConfig> oculusViewConfig = new OculusViewConfig(nearClip, farClip, useTimewarp);
+	// Add health and safety warning
+	root->addChild(oculusViewConfig->warning()->getGraph());
 	// Set the node mask used for scene
 	oculusViewConfig->setSceneNodeMask(sceneNodeMask);
 	// Create viewer
@@ -42,7 +48,7 @@ int main( int argc, char** argv )
 	// Apply view config
 	viewer.apply(oculusViewConfig);
 	// Add loaded model to viewer
-	viewer.setSceneData(loadedModel);
+	viewer.setSceneData(root);
 	// Start Viewer
 	return viewer.run();
 }

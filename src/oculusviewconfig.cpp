@@ -94,10 +94,11 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 
 	// Connect main camera to node callback that get HMD orientation
 	camera->setDataVariance(osg::Object::DYNAMIC);
-	camera->setUpdateCallback(new OculusViewConfigOrientationCallback(cameraRTTLeft, cameraRTTRight, m_device, swapCallback));
-
+	camera->setCullCallback(new OculusViewConfigOrientationCallback(cameraRTTLeft, cameraRTTRight, m_device, swapCallback, m_warning));
+	
 	// Add Oculus keyboard handler
 	view.addEventHandler(new OculusEventHandler(m_device));
+	view.addEventHandler(new OculusWarningEventHandler(m_warning));
 }
 
 void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::NodeVisitor* nv)
@@ -106,11 +107,11 @@ void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::Node
 	osg::View* view = mainCamera->getView();
 
 	if (view) {
-		m_device.get()->updatePose(m_swapCallback->frameIndex());
-		osg::Vec3 position = m_device.get()->position();
-		osg::Quat orientation = m_device.get()->orientation();
-		osg::Matrix viewOffsetLeft = m_device.get()->viewMatrixLeft();
-		osg::Matrix viewOffsetRight = m_device.get()->viewMatrixRight();
+		m_device->updatePose(m_swapCallback->frameIndex());
+		osg::Vec3 position = m_device->position();
+		osg::Quat orientation = m_device->orientation();
+		osg::Matrix viewOffsetLeft = m_device->viewMatrixLeft();
+		osg::Matrix viewOffsetRight = m_device->viewMatrixRight();
 		viewOffsetLeft.preMultRotate(orientation);
 		viewOffsetRight.preMultRotate(orientation);
 		viewOffsetLeft.preMultTranslate(position);
@@ -119,6 +120,10 @@ void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::Node
 		// There doesn't seem to be an accessor for this, fortunately the offsets are public
 		view->findSlaveForCamera(m_cameraRTTLeft.get())->_viewOffset = viewOffsetLeft;
 		view->findSlaveForCamera(m_cameraRTTRight.get())->_viewOffset = viewOffsetRight;
+		// Handle health and safety warning
+		if (m_warning.valid()) {
+			m_warning.get()->updatePosition(mainCamera->getInverseViewMatrix(), position, orientation);
+		}
 	}
 
 	traverse(node, nv);

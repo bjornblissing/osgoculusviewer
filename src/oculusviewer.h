@@ -11,6 +11,7 @@
 #include <osg/Group>
 
 #include "oculusdevice.h"
+#include "oculushealthwarning.h"
 
 // Forward declaration
 namespace osgViewer {
@@ -39,6 +40,7 @@ class OculusViewer : public osg::Group {
 		osg::observer_ptr<OculusDevice> m_device;
 		osg::ref_ptr<OculusSwapCallback> m_swapCallback;
 		osg::Node::NodeMask m_sceneNodeMask;
+		osg::ref_ptr<OculusHealthAndSafetyWarning> m_warning;
 };
 
 #endif /* _OSG_OCULUSVIEWER_H_ */
