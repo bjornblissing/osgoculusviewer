@@ -107,6 +107,7 @@ class OculusDevice : public osg::Referenced {
 		float m_nearClip;
 		float m_farClip;
 		bool m_useTimeWarp;
+		bool m_directMode;
 	private:
 		OculusDevice(const OculusDevice&); // Do not allow copy
 		OculusDevice& operator=(const OculusDevice&); // Do not allow assignment operator.

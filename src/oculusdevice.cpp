@@ -134,7 +134,8 @@ OculusDevice::OculusDevice(float nearClip, float farClip, float pixelsPerDisplay
 	m_nearClip(nearClip), m_farClip(farClip),
 	m_useTimeWarp(useTimewarp),
 	m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
-	m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f))
+	m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
+	m_directMode(false)
 {
 	ovr_Initialize();
 	
@@ -474,8 +475,10 @@ osg::Camera* OculusDevice::createRTTCamera(osg::Texture* texture, OculusDevice::
 	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	GLenum buffer = (gc && gc->getTraits()->doubleBuffer) ? GL_BACK : GL_FRONT;
-	camera->setDrawBuffer(buffer);
-	camera->setReadBuffer(buffer);
+	if (!m_directMode) {
+		camera->setDrawBuffer(buffer);
+		camera->setReadBuffer(buffer);
+	}
 
 	camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
 	camera->setRenderOrder(osg::Camera::PRE_RENDER, renderOrder(eye));
@@ -563,7 +566,8 @@ bool OculusDevice::attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc) {
 
 	if (windowsContext) {
 		HWND window = windowsContext->getHWND();
-		return (ovrHmd_AttachToWindow(m_hmdDevice, window, NULL, NULL) > 0) ? true : false;
+		m_directMode = (ovrHmd_AttachToWindow(m_hmdDevice, window, NULL, NULL) > 0) ? true : false;
+		return m_directMode;
 	} else {
 		osg::notify(osg::FATAL) << "Win32 Graphics Context Casting is unsuccessful" << std::endl;
 		return false;
