@@ -633,6 +633,16 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
 	return traits.release();
 }
 
+bool OculusDevice::getHealthAndSafetyDisplayState() {
+	ovrHSWDisplayState hswDisplayState;
+	ovrHmd_GetHSWDisplayState(m_hmdDevice, &hswDisplayState);
+	return (hswDisplayState.Displayed != 0);
+}
+
+bool OculusDevice::tryDismissHealthAndSafetyDisplay() {
+	return (ovrHmd_DismissHSWDisplay(m_hmdDevice) != 0);
+}
+
 void WarpCameraPreDrawCallback::operator()(osg::RenderInfo&) const
 {
 	// Wait till time - warp point to reduce latency.

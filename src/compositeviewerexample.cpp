@@ -37,7 +37,7 @@ int main( int argc, char** argv )
 	root->addChild(loadedModel);
 
 	// Add health and safety warning
-	osg::ref_ptr<OculusHealthAndSafetyWarning> warning = new OculusHealthAndSafetyWarning;
+	osg::ref_ptr<OculusHealthAndSafetyWarning> warning = new OculusHealthAndSafetyWarning(oculusDevice);
 	root->addChild(warning.get()->getGraph());
 
 	// Calculate the texture size

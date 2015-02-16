@@ -16,6 +16,8 @@
 // Location of image in byte stream format TGA
 #include "../Src/CAPI/Textures/healthAndSafety.tga.h"
 
+#include "oculusdevice.h"
+
 
 osg::Image* OculusHealthAndSafetyWarning::buildImageFromByteStream() {
 	std::string imageString ((char*) healthAndSafety_tga, sizeof(healthAndSafety_tga));
@@ -59,6 +61,10 @@ osg::ref_ptr<osg::Group> OculusHealthAndSafetyWarning::getGraph() {
 			stateSet->setMode(GL_LIGHTING, osg::StateAttribute::OFF); 
 			stateSet->setMode(GL_DEPTH_TEST,osg::StateAttribute::OFF);
 			stateSet->setRenderBinDetails(1, "DepthSortedBin"); 
+
+			// Start timer
+			m_device->getHealthAndSafetyDisplayState();
+
 		}
 	}
 	return m_transform->asGroup();
@@ -75,9 +81,8 @@ void OculusHealthAndSafetyWarning::updatePosition(osg::Matrix cameraMatrix, osg:
 	}
 }
 
-void OculusHealthAndSafetyWarning::tryDismissWarning(double time) {
-	// 4 seconds are the minimum required time to display the HSW
-	if (m_transform.valid() && time > 4.0) {
+void OculusHealthAndSafetyWarning::tryDismissWarning() {
+	if (m_transform.valid() && m_device->tryDismissHealthAndSafetyDisplay()) {
 		// Remove all children
 		size_t i = m_transform->getNumChildren();
 		m_transform->removeChildren(0, i);
@@ -91,17 +96,7 @@ bool OculusWarningEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::G
 	{
 	case(osgGA::GUIEventAdapter::KEYUP):
 		{
-			osg::View* view = ad.asView();
-			if (view) {
-				const osg::FrameStamp* frameStamp = view->getFrameStamp();
-				if (frameStamp) {
-					double time = frameStamp->getSimulationTime();
-					// Try dismiss warning with any key
-					if (m_warning.valid()) {
-						m_warning->tryDismissWarning(time);
-					}
-				}
-			}
+			m_warning->tryDismissWarning();
 		}
 	default:
 		return osgGA::GUIEventHandler::handle(ea, ad);

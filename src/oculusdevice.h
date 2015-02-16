@@ -69,7 +69,8 @@ class OculusDevice : public osg::Referenced {
 		void toggleLowPersistence();
 		void toggleDynamicPrediction();
 		osg::GraphicsContext::Traits* graphicsContextTraits() const;
-
+		bool getHealthAndSafetyDisplayState();
+		bool tryDismissHealthAndSafetyDisplay();
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
 

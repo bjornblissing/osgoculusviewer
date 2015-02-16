@@ -12,13 +12,14 @@
 
 // Forward declaration
 class osg::Image;
+class OculusDevice;
 
 class OculusHealthAndSafetyWarning : public osg::Referenced {
 public:
-	OculusHealthAndSafetyWarning() : m_scale(3.0), m_distance(4.0), m_transform(0) {};
+	OculusHealthAndSafetyWarning(osg::observer_ptr<OculusDevice> device) : m_scale(3.0), m_distance(4.0), m_transform(0), m_device(device) {};
 	void updatePosition(osg::Matrix cameraMatrix, osg::Vec3 position, osg::Quat orientation);
-	void tryDismissWarning(double time);
 	osg::ref_ptr<osg::Group> getGraph();
+	void tryDismissWarning();
 protected:
 	~OculusHealthAndSafetyWarning() {};
 	
@@ -26,6 +27,7 @@ protected:
 	const double m_scale;
 	const double m_distance;
 	osg::ref_ptr<osg::MatrixTransform> m_transform;
+	osg::observer_ptr<OculusDevice> m_device;
 };
 
 

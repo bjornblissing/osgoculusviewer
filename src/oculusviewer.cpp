@@ -53,7 +53,7 @@ void OculusViewer::configure()
 	camera->setCullMask(~m_sceneNodeMask);
 
 	// Add health and safety warning
-	m_warning = new OculusHealthAndSafetyWarning;
+	m_warning = new OculusHealthAndSafetyWarning(m_device);
 	m_view->addEventHandler(new OculusWarningEventHandler(m_warning));
 	this->addChild(m_warning->getGraph());
 
