@@ -131,10 +131,10 @@ const std::string OculusDevice::m_warpFragmentShaderSource(
 );
 
 OculusDevice::OculusDevice(float nearClip, float farClip, float pixelsPerDisplayPixel, bool useTimewarp) : m_hmdDevice(0),
-	m_nearClip(nearClip), m_farClip(farClip),
-	m_useTimeWarp(useTimewarp),
 	m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
 	m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
+	m_nearClip(nearClip), m_farClip(farClip),
+	m_useTimeWarp(useTimewarp),
 	m_directMode(false)
 {
 	ovr_Initialize();
