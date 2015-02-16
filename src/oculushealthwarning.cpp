@@ -1,5 +1,5 @@
 /*
- * oculushealthwarning.h
+ * oculushealthwarning.cpp
  *
  *  Created on: Feb 10, 2015
  *      Author: Bjorn Blissing
