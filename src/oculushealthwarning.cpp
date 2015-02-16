@@ -10,7 +10,6 @@
 #include <cstdint> // Needed to read type uint8_t
 
 #include <osgDB/ReadFile>
-#include <osg/Texture2D>
 #include <osg/StateAttribute>
 
 // Location of image in byte stream format TGA
