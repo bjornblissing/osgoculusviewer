@@ -138,6 +138,7 @@ OculusDevice::OculusDevice(float nearClip, float farClip, float pixelsPerDisplay
 	m_useTimeWarp(useTimewarp),
 	m_directMode(false)
 {
+	trySetProcessAsHighPriority();
 	ovr_Initialize();
 	
 	// Enumerate HMD devices
@@ -665,6 +666,15 @@ void OculusDevice::applyExtendedModeSettings() const {
 			HInstDwmapi = NULL;
 		}
 	#endif
+}
+
+void OculusDevice::trySetProcessAsHighPriority() const {
+	// Require at least 4 processors, otherwise the process could occupy the machine.
+	if(OpenThreads::GetNumberOfProcessors() >= 4) {
+		#ifdef _WIN32
+			SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+		#endif
+	}
 }
 
 
