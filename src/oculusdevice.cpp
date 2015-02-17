@@ -650,13 +650,12 @@ void OculusDevice::applyExtendedModeSettings() const {
 	#ifdef _WIN32
 		// Disable desktop composition when running extended mode to avoid judder
 		// DwmEnableComposition function deprecated in Windows 8
-		typedef HRESULT (WINAPI *PFNDWMENABLECOMPOSITIONPROC) (UINT);
-		PFNDWMENABLECOMPOSITIONPROC DwmEnableComposition;
 
 		HINSTANCE HInstDwmapi = LoadLibraryW( L"dwmapi.dll" );
 
 		if (HInstDwmapi) {
-			DwmEnableComposition = (PFNDWMENABLECOMPOSITIONPROC)GetProcAddress( HInstDwmapi, "DwmEnableComposition" );
+			typedef HRESULT (WINAPI *PFNDWMENABLECOMPOSITIONPROC) (UINT);
+			PFNDWMENABLECOMPOSITIONPROC DwmEnableComposition = (PFNDWMENABLECOMPOSITIONPROC)GetProcAddress( HInstDwmapi, "DwmEnableComposition" );
 
 			if (DwmEnableComposition) {
 				DwmEnableComposition(DWM_EC_DISABLECOMPOSITION);
