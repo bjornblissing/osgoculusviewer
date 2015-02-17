@@ -7,10 +7,11 @@
 #include "oculushealthwarning.h"
 
 #include <sstream>
-#include <cstdint> // Needed to read type uint8_t
 
 #include <osgDB/ReadFile>
 #include <osg/StateAttribute>
+
+typedef unsigned char uint8_t; // Needed to read type uint8_t
 
 // Location of image in byte stream format TGA
 #include "../Src/CAPI/Textures/healthAndSafety.tga.h"
