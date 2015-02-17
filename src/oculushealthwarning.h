@@ -8,10 +8,10 @@
 #define _OSG_OCULUSWARNING_H_
 
 #include <osg/MatrixTransform>
+#include <osg/Image>
 #include <osgViewer/ViewerEventHandlers>
 
 // Forward declaration
-class osg::Image;
 class OculusDevice;
 
 class OculusHealthAndSafetyWarning : public osg::Referenced {
