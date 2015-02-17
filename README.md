@@ -7,12 +7,6 @@ Last tested against Oculus SDK 0.4.4 Beta
 
 To be able to use the osgViewer::ViewConfig version you will need to use OpenSceneGraph 3.2.0 or later.
 
-Known issues
-------------
-
-**Windows 7**
-
-Running the application with the Rift Display Mode set as *"Extended Desktop to the HMD"* will cause judder, unless you set Windows to *Disable Desktop Composition*.
 
 License
 -------

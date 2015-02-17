@@ -83,6 +83,8 @@ class OculusDevice : public osg::Referenced {
 		void beginFrameTiming(unsigned int frameIndex = 0);
 		void endFrameTiming() const;
 		void waitTillTime();
+
+		void applyExtendedModeSettings() const;
 		
 		static const std::string m_warpVertexShaderSource;
 		static const std::string m_warpWithTimewarpVertexShaderSource;

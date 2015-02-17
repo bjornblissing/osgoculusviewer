@@ -11,6 +11,7 @@
 
 #ifdef _WIN32
 #include <osgViewer/api/Win32/GraphicsHandleWin32>
+#include <dwmapi.h> // To be able to disable desktop composition
 #endif
 
 const std::string OculusDevice::m_warpVertexShaderSource(
@@ -557,6 +558,7 @@ void OculusDevice::applyShaderParameters(osg::StateSet* stateSet, osg::Program* 
 bool OculusDevice::attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc) {
 	// Do not attach if we are using extended desktop
 	if(m_hmdDevice->HmdCaps & ovrHmdCap_ExtendDesktop) {
+		applyExtendedModeSettings();
 		return false;
 	}
 
@@ -642,6 +644,30 @@ bool OculusDevice::getHealthAndSafetyDisplayState() {
 bool OculusDevice::tryDismissHealthAndSafetyDisplay() {
 	return (ovrHmd_DismissHSWDisplay(m_hmdDevice) != 0);
 }
+
+
+void OculusDevice::applyExtendedModeSettings() const {
+	#ifdef _WIN32
+		// Disable desktop composition when running extended mode to avoid judder
+		// DwmEnableComposition function deprecated in Windows 8
+		typedef HRESULT (WINAPI *PFNDWMENABLECOMPOSITIONPROC) (UINT);
+		PFNDWMENABLECOMPOSITIONPROC DwmEnableComposition;
+
+		HINSTANCE HInstDwmapi = LoadLibraryW( L"dwmapi.dll" );
+
+		if (HInstDwmapi) {
+			DwmEnableComposition = (PFNDWMENABLECOMPOSITIONPROC)GetProcAddress( HInstDwmapi, "DwmEnableComposition" );
+
+			if (DwmEnableComposition) {
+				DwmEnableComposition(DWM_EC_DISABLECOMPOSITION);
+			}
+
+			FreeLibrary(HInstDwmapi);
+			HInstDwmapi = NULL;
+		}
+	#endif
+}
+
 
 void WarpCameraPreDrawCallback::operator()(osg::RenderInfo&) const
 {
