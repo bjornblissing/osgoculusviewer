@@ -137,6 +137,10 @@ int main( int argc, char** argv )
 	rightView->getCamera()->setGraphicsContext(gc);
 	rightView->setCameraManipulator(cameraManipulator);
 
+	// Use sky light instead of headlight to avoid light changes when head movements
+	leftView->setLightingMode(osg::View::SKY_LIGHT);
+	rightView->setLightingMode(osg::View::SKY_LIGHT);
+
 	// Realize viewer
 	if (!viewer.isRealized()) {
 		viewer.realize();

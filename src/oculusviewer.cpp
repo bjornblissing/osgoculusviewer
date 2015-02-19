@@ -111,6 +111,9 @@ void OculusViewer::configure()
 		m_device->viewMatrixRight(),
 		true);
 
+	// Use sky light instead of headlight to avoid light changes when head movements
+	m_view->setLightingMode(osg::View::SKY_LIGHT);
+
 	// Add warp camera as slave
 	m_view->addSlave(cameraWarp, false);
 	m_view->setName("Oculus");
