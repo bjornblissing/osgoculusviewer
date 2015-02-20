@@ -25,8 +25,10 @@ int main(int argc, char** argv)
 	if (!loadedModel) loadedModel = osgDB::readNodeFile("cow.osgt");
 
 	// Still no loaded model, then exit
-	if (!loadedModel) return 0;
-
+	if (!loadedModel) {
+		osg::notify(osg::NOTICE) << "Error, no loaded model and couldn't find cow.osgt" << std::endl;
+		return 0;
+	}
 	// Create Trackball manipulator
 	osg::ref_ptr<osgGA::CameraManipulator> cameraManipulator = new osgGA::TrackballManipulator;
 	const osg::BoundingSphere& bs = loadedModel->getBound();
