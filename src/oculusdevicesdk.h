@@ -47,6 +47,10 @@ class OculusDeviceSDK : public osg::Referenced {
 		unsigned int screenResolutionHeight() const;
 		unsigned int renderTargetWidth() const { return	m_renderTargetSize.w; }
 		unsigned int renderTargetHeight() const { return m_renderTargetSize.h; }
+		unsigned int getCaps() const;
+		unsigned int getDistortionCaps() const;
+		void calculateViewMatrices();
+		void calculateProjectionMatrices();
 		osg::Matrix projectionMatrixLeft() const { return m_leftEyeProjectionMatrix; }
 		osg::Matrix projectionMatrixRight() const { return m_rightEyeProjectionMatrix; }
 		osg::Matrix projectionOffsetMatrixLeft() const;
@@ -60,6 +64,7 @@ class OculusDeviceSDK : public osg::Referenced {
 		void beginFrame();
 		void endFrame();
 		void setInitialized(bool state) { m_initialized = state;  }
+		void printHMDDebugInfo();
 	protected:
 		~OculusDeviceSDK(); // Since we inherit from osg::Referenced we must make destructor protected
 		ovrHmd m_hmdDevice;

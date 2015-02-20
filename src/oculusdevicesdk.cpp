@@ -31,6 +31,97 @@ OculusDeviceSDK::OculusDeviceSDK() : m_hmdDevice(0),
 	m_positionTrackingEnabled(true)
 {}
 
+unsigned int OculusDeviceSDK::getCaps() const {
+	unsigned int hmdCaps = (m_vSyncEnabled ? 0 : ovrHmdCap_NoVSync);
+
+	if (m_isLowPersistence)
+		hmdCaps |= ovrHmdCap_LowPersistence;
+
+	// ovrHmdCap_DynamicPrediction - enables internal latency feedback
+	if (m_dynamicPrediction)
+		hmdCaps |= ovrHmdCap_DynamicPrediction;
+
+	// ovrHmdCap_DisplayOff - turns off the display
+	if (m_displaySleep)
+		hmdCaps |= ovrHmdCap_DisplayOff;
+
+	if (!m_mirrorToWindow)
+		hmdCaps |= ovrHmdCap_NoMirrorToWindow;
+	return hmdCaps;
+}
+
+unsigned int OculusDeviceSDK::getDistortionCaps() const {
+	unsigned int distortionCaps = ovrDistortionCap_Chromatic |
+			ovrDistortionCap_Vignette;
+	if (m_supportsSRGB)
+		distortionCaps |= ovrDistortionCap_SRGB;
+	if (m_pixelLuminanceOverdrive)
+		distortionCaps |= ovrDistortionCap_Overdrive;
+	if (m_timewarpEnabled)
+		distortionCaps |= ovrDistortionCap_TimeWarp;
+	if (m_timewarpNoJitEnabled)
+		distortionCaps |= ovrDistortionCap_ProfileNoTimewarpSpinWaits;
+	return distortionCaps;
+}
+
+void OculusDeviceSDK::calculateViewMatrices() {
+	// Calculate the view matrices
+	ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeViewOffset;
+	m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
+	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeViewOffset;
+	m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
+
+}
+
+void OculusDeviceSDK::calculateProjectionMatrices() {
+	// Calculate projection matrices
+	ovrMatrix4f leftEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[0].Fov, m_nearClip, m_farClip, true);
+	// Transpose matrix
+	m_leftEyeProjectionMatrix.set(leftEyeProjectionMatrix.M[0][0], leftEyeProjectionMatrix.M[1][0], leftEyeProjectionMatrix.M[2][0], leftEyeProjectionMatrix.M[3][0],
+			leftEyeProjectionMatrix.M[0][1], leftEyeProjectionMatrix.M[1][1], leftEyeProjectionMatrix.M[2][1], leftEyeProjectionMatrix.M[3][1],
+			leftEyeProjectionMatrix.M[0][2], leftEyeProjectionMatrix.M[1][2], leftEyeProjectionMatrix.M[2][2], leftEyeProjectionMatrix.M[3][2],
+			leftEyeProjectionMatrix.M[0][3], leftEyeProjectionMatrix.M[1][3], leftEyeProjectionMatrix.M[2][3], leftEyeProjectionMatrix.M[3][3]);
+
+	ovrMatrix4f rightEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[1].Fov, m_nearClip, m_farClip, true);
+	// Transpose matrix
+	m_rightEyeProjectionMatrix.set(rightEyeProjectionMatrix.M[0][0], rightEyeProjectionMatrix.M[1][0], rightEyeProjectionMatrix.M[2][0], rightEyeProjectionMatrix.M[3][0],
+			rightEyeProjectionMatrix.M[0][1], rightEyeProjectionMatrix.M[1][1], rightEyeProjectionMatrix.M[2][1], rightEyeProjectionMatrix.M[3][1],
+			rightEyeProjectionMatrix.M[0][2], rightEyeProjectionMatrix.M[1][2], rightEyeProjectionMatrix.M[2][2], rightEyeProjectionMatrix.M[3][2],
+			rightEyeProjectionMatrix.M[0][3], rightEyeProjectionMatrix.M[1][3], rightEyeProjectionMatrix.M[2][3], rightEyeProjectionMatrix.M[3][3]);
+
+	float orthoDistance = 0.8f; // 2D is 0.8 meter from camera
+
+	OVR::Vector2f orthoScaleLeft = OVR::Vector2f(1.0f) / OVR::Vector2f(m_eyeRenderDesc[0].PixelsPerTanAngleAtCenter);
+	OVR::Vector2f orthoScaleRight = OVR::Vector2f(1.0f) / OVR::Vector2f(m_eyeRenderDesc[1].PixelsPerTanAngleAtCenter);
+
+	ovrMatrix4f leftOrthProjection = ovrMatrix4f_OrthoSubProjection(leftEyeProjectionMatrix, orthoScaleLeft, orthoDistance, m_eyeRenderDesc[0].HmdToEyeViewOffset.x);
+
+	// Transpose matrix
+	m_leftEyeOrthoProjectionMatrix.set(leftOrthProjection.M[0][0], leftOrthProjection.M[1][0], leftOrthProjection.M[2][0], leftOrthProjection.M[3][0],
+			leftOrthProjection.M[0][1], leftOrthProjection.M[1][1], leftOrthProjection.M[2][1], leftOrthProjection.M[3][1],
+			leftOrthProjection.M[0][2], leftOrthProjection.M[1][2], leftOrthProjection.M[2][2], leftOrthProjection.M[3][2],
+			leftOrthProjection.M[0][3], leftOrthProjection.M[1][3], leftOrthProjection.M[2][3], leftOrthProjection.M[3][3]);
+
+
+	ovrMatrix4f rightOrthProjection = ovrMatrix4f_OrthoSubProjection(rightEyeProjectionMatrix, orthoScaleRight, orthoDistance, m_eyeRenderDesc[1].HmdToEyeViewOffset.x);
+
+	// Transpose matrix
+	m_rightEyeOrthoProjectionMatrix.set(rightOrthProjection.M[0][0], rightOrthProjection.M[1][0], rightOrthProjection.M[2][0], rightOrthProjection.M[3][0],
+			rightOrthProjection.M[0][1], rightOrthProjection.M[1][1], rightOrthProjection.M[2][1], rightOrthProjection.M[3][1],
+			rightOrthProjection.M[0][2], rightOrthProjection.M[1][2], rightOrthProjection.M[2][2], rightOrthProjection.M[3][2],
+			rightOrthProjection.M[0][3], rightOrthProjection.M[1][3], rightOrthProjection.M[2][3], rightOrthProjection.M[3][3]);
+}
+
+
+void OculusDeviceSDK::printHMDDebugInfo() {
+	osg::notify(osg::ALWAYS) << "Product:         " << m_hmdDevice->ProductName << std::endl;
+	osg::notify(osg::ALWAYS) << "Manufacturer:    " << m_hmdDevice->Manufacturer << std::endl;
+	osg::notify(osg::ALWAYS) << "VendorId:        " << m_hmdDevice->VendorId << std::endl;
+	osg::notify(osg::ALWAYS) << "ProductId:       " << m_hmdDevice->ProductId << std::endl;
+	osg::notify(osg::ALWAYS) << "SerialNumber:    " << m_hmdDevice->SerialNumber << std::endl;
+	osg::notify(osg::ALWAYS) << "FirmwareVersion: " << m_hmdDevice->FirmwareMajor << "." << m_hmdDevice->FirmwareMinor << std::endl;
+}
+
 void OculusDeviceSDK::initialize() {
 	ovr_Initialize();
 
@@ -49,13 +140,7 @@ void OculusDeviceSDK::initialize() {
 	}
 
 	if (m_hmdDevice) {
-		// Print out some information about the HMD
-		osg::notify(osg::ALWAYS) << "Product:         " << m_hmdDevice->ProductName << std::endl;
-		osg::notify(osg::ALWAYS) << "Manufacturer:    " << m_hmdDevice->Manufacturer << std::endl;
-		osg::notify(osg::ALWAYS) << "VendorId:        " << m_hmdDevice->VendorId << std::endl;
-		osg::notify(osg::ALWAYS) << "ProductId:       " << m_hmdDevice->ProductId << std::endl;
-		osg::notify(osg::ALWAYS) << "SerialNumber:    " << m_hmdDevice->SerialNumber << std::endl;
-		osg::notify(osg::ALWAYS) << "FirmwareVersion: " << m_hmdDevice->FirmwareMajor << "." << m_hmdDevice->FirmwareMinor << std::endl;
+		printHMDDebugInfo();
 
 		// Get more details about the HMD.
 		if (m_hmdDevice->HmdCaps & ovrHmdCap_ExtendDesktop)	{
@@ -125,33 +210,11 @@ void OculusDeviceSDK::setupSlaveCameras(osgViewer::View* view) {
 
 void OculusDeviceSDK::configureRendering(HWND window, HDC dc, int backBufferMultisample) {
 	// Hmd caps.
-	unsigned int hmdCaps = (m_vSyncEnabled ? 0 : ovrHmdCap_NoVSync);
-	if (m_isLowPersistence)
-		hmdCaps |= ovrHmdCap_LowPersistence;
-
-	// ovrHmdCap_DynamicPrediction - enables internal latency feedback
-	if (m_dynamicPrediction)
-		hmdCaps |= ovrHmdCap_DynamicPrediction;
-
-	// ovrHmdCap_DisplayOff - turns off the display
-	if (m_displaySleep)
-		hmdCaps |= ovrHmdCap_DisplayOff;
-
-	if (!m_mirrorToWindow)
-		hmdCaps |= ovrHmdCap_NoMirrorToWindow;
+	unsigned int hmdCaps = getCaps();
 
 	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
 
-	unsigned int distortionCaps = ovrDistortionCap_Chromatic |
-		ovrDistortionCap_Vignette;
-	if (m_supportsSRGB)
-		distortionCaps |= ovrDistortionCap_SRGB;
-	if (m_pixelLuminanceOverdrive)
-		distortionCaps |= ovrDistortionCap_Overdrive;
-	if (m_timewarpEnabled)
-		distortionCaps |= ovrDistortionCap_TimeWarp;
-	if (m_timewarpNoJitEnabled)
-		distortionCaps |= ovrDistortionCap_ProfileNoTimewarpSpinWaits;
+	unsigned int distortionCaps = getDistortionCaps();
 
 	// Configure OpenGL
 	ovrGLConfig cfg;
@@ -165,54 +228,17 @@ void OculusDeviceSDK::configureRendering(HWND window, HDC dc, int backBufferMult
 	if (!result) {
 		return;
 	}
-	
+
 	unsigned int sensorCaps = ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection;
 	if (m_positionTrackingEnabled) {
 		sensorCaps |= ovrTrackingCap_Position;
 	}
-	
+
 	ovrHmd_ConfigureTracking(m_hmdDevice, sensorCaps, 0);
-	
-	// Calculate the view matrices
-	ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeViewOffset;
-	m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
-	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeViewOffset;
-	m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
 
-	// Calculate projection matrices
-	ovrMatrix4f leftEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[0].Fov, m_nearClip, m_farClip, true);
-	// Transpose matrix
-	m_leftEyeProjectionMatrix.set(leftEyeProjectionMatrix.M[0][0], leftEyeProjectionMatrix.M[1][0], leftEyeProjectionMatrix.M[2][0], leftEyeProjectionMatrix.M[3][0],
-		leftEyeProjectionMatrix.M[0][1], leftEyeProjectionMatrix.M[1][1], leftEyeProjectionMatrix.M[2][1], leftEyeProjectionMatrix.M[3][1],
-		leftEyeProjectionMatrix.M[0][2], leftEyeProjectionMatrix.M[1][2], leftEyeProjectionMatrix.M[2][2], leftEyeProjectionMatrix.M[3][2],
-		leftEyeProjectionMatrix.M[0][3], leftEyeProjectionMatrix.M[1][3], leftEyeProjectionMatrix.M[2][3], leftEyeProjectionMatrix.M[3][3]);
+	calculateViewMatrices();
 
-	ovrMatrix4f rightEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[1].Fov, m_nearClip, m_farClip, true);
-	// Transpose matrix
-	m_rightEyeProjectionMatrix.set(rightEyeProjectionMatrix.M[0][0], rightEyeProjectionMatrix.M[1][0], rightEyeProjectionMatrix.M[2][0], rightEyeProjectionMatrix.M[3][0],
-		rightEyeProjectionMatrix.M[0][1], rightEyeProjectionMatrix.M[1][1], rightEyeProjectionMatrix.M[2][1], rightEyeProjectionMatrix.M[3][1],
-		rightEyeProjectionMatrix.M[0][2], rightEyeProjectionMatrix.M[1][2], rightEyeProjectionMatrix.M[2][2], rightEyeProjectionMatrix.M[3][2],
-		rightEyeProjectionMatrix.M[0][3], rightEyeProjectionMatrix.M[1][3], rightEyeProjectionMatrix.M[2][3], rightEyeProjectionMatrix.M[3][3]);
-
-	float orthoDistance = 0.8f; // 2D is 0.8 meter from camera
-
-	OVR::Vector2f orthoScaleLeft = OVR::Vector2f(1.0f) / OVR::Vector2f(m_eyeRenderDesc[0].PixelsPerTanAngleAtCenter);
-	OVR::Vector2f orthoScaleRight = OVR::Vector2f(1.0f) / OVR::Vector2f(m_eyeRenderDesc[1].PixelsPerTanAngleAtCenter);
-
-	ovrMatrix4f leftOrthProjection = ovrMatrix4f_OrthoSubProjection(leftEyeProjectionMatrix, orthoScaleLeft, orthoDistance, m_eyeRenderDesc[0].HmdToEyeViewOffset.x);
-	// Transpose matrix
-	m_leftEyeOrthoProjectionMatrix.set(leftOrthProjection.M[0][0], leftOrthProjection.M[1][0], leftOrthProjection.M[2][0], leftOrthProjection.M[3][0],
-		leftOrthProjection.M[0][1], leftOrthProjection.M[1][1], leftOrthProjection.M[2][1], leftOrthProjection.M[3][1],
-		leftOrthProjection.M[0][2], leftOrthProjection.M[1][2], leftOrthProjection.M[2][2], leftOrthProjection.M[3][2],
-		leftOrthProjection.M[0][3], leftOrthProjection.M[1][3], leftOrthProjection.M[2][3], leftOrthProjection.M[3][3]);
-
-	
-	ovrMatrix4f rightOrthProjection = ovrMatrix4f_OrthoSubProjection(rightEyeProjectionMatrix, orthoScaleRight, orthoDistance, m_eyeRenderDesc[1].HmdToEyeViewOffset.x);
-	// Transpose matrix
-	m_rightEyeOrthoProjectionMatrix.set(rightOrthProjection.M[0][0], rightOrthProjection.M[1][0], rightOrthProjection.M[2][0], rightOrthProjection.M[3][0],
-		rightOrthProjection.M[0][1], rightOrthProjection.M[1][1], rightOrthProjection.M[2][1], rightOrthProjection.M[3][1],
-		rightOrthProjection.M[0][2], rightOrthProjection.M[1][2], rightOrthProjection.M[2][2], rightOrthProjection.M[3][2],
-		rightOrthProjection.M[0][3], rightOrthProjection.M[1][3], rightOrthProjection.M[2][3], rightOrthProjection.M[3][3]);
+	calculateProjectionMatrices();
 }
 
 void OculusDeviceSDK::attachToWindow(HWND window) {
