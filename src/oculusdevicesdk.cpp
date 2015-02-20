@@ -6,9 +6,18 @@
 */
 #include "oculusdevicesdk.h"
 #include <osg/Notify>
+#if _WIN32
 #include <osgViewer/api/Win32/GraphicsWindowWin32>
+
 #include "../src/OVR_CAPI_GL.h"
 #include "../src/Kernel/OVR_Math.h"
+
+#elif __linux__
+
+//TODO How do we handle OVR_CAPI_GL.h ? It's not in a good directory... I put links to it in my OVR.h.
+
+#endif
+
 
 OculusDeviceSDK::OculusDeviceSDK() : m_hmdDevice(0),
 	m_frameIndex(0),
@@ -212,6 +221,8 @@ void OculusDeviceSDK::setupSlaveCameras(osgViewer::View* view) {
 		true);
 }
 
+#if _WIN32
+
 void OculusDeviceSDK::configureRendering(HWND window, HDC dc, int backBufferMultisample) {
 	// Hmd caps.
 	unsigned int hmdCaps = getCaps();
@@ -254,6 +265,43 @@ void OculusDeviceSDK::attachToWindow(HWND window) {
 		ovrHmd_AttachToWindow(m_hmdDevice, window, NULL, NULL);
 	}
 }
+
+#elif __linux__
+
+void OculusDeviceSDK::configureRendering(Display* disp, int backBufferMultisample) {
+	// Hmd caps.
+	unsigned int hmdCaps = getCaps();
+
+	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
+
+	unsigned int distortionCaps = getDistortionCaps();
+
+	// Configure OpenGL
+	ovrGLConfig cfg;
+	cfg.OGL.Header.API = ovrRenderAPI_OpenGL;
+	cfg.OGL.Header.BackBufferSize = m_resolution;
+	cfg.OGL.Header.Multisample = backBufferMultisample;
+	cfg.OGL.Disp = disp;
+
+	ovrBool result = ovrHmd_ConfigureRendering(m_hmdDevice, &cfg.Config, distortionCaps, m_eyeFov, m_eyeRenderDesc);
+
+	if (!result) {
+		osg::notify(osg::WARN) << "Error configuring OVR rendering!" << std::endl;
+		return;
+	}
+
+	unsigned int sensorCaps = ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection;
+	if (m_positionTrackingEnabled) {
+		sensorCaps |= ovrTrackingCap_Position;
+	}
+
+	ovrHmd_ConfigureTracking(m_hmdDevice, sensorCaps, 0);
+
+	calculateViewMatrices();
+
+	calculateProjectionMatrices();
+}
+#endif
 
 void OculusDeviceSDK::getEyePose() {
 	if (! m_hmdDevice || ! m_frameBegin) {
@@ -436,6 +484,7 @@ void OculusDrawable::drawImplementation(osg::RenderInfo& info) const {
 		return;
 	}
 
+#if _WIN32
 	osg::ref_ptr<osgViewer::GraphicsWindowWin32> wdc = dynamic_cast<osgViewer::GraphicsWindowWin32*>(context);
 
 	if (! wdc.valid()) {
@@ -449,5 +498,16 @@ void OculusDrawable::drawImplementation(osg::RenderInfo& info) const {
 	m_oculusDevice->configureRendering(window, dc , 1);
 	m_oculusDevice->attachToWindow(window);
 
+#elif __linux__
+	osg::ref_ptr<osgViewer::GraphicsWindowX11> ldc = dynamic_cast<osgViewer::GraphicsWindowX11*>(context);
+	if (! ldc.valid()) {
+	  return;
+	}
+	Display* disp = ldc->getDisplayToUse();
+
+	m_oculusDevice->initializeTexture(ldc.get());
+	m_oculusDevice->setupSlaveCameras(m_view.get());
+	m_oculusDevice->configureRendering(disp, 1);
+#endif
 	m_oculusDevice->setInitialized(true);
 }

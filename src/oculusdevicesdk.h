@@ -7,9 +7,15 @@
 #ifndef _OSG_OCULUSDEVICESDK_H_
 #define _OSG_OCULUSDEVICESDK_H_
 
+#ifdef _WIN32
+#include <Windows.h>
+
+#elif __linux__
+#include <osgViewer/api/X11/GraphicsWindowX11>
+#endif
+
 // Include the OculusVR SDK
 #include "OVR.h"
-#include <Windows.h>
 
 #include <osg/Referenced>
 #include <osg/Matrix>
@@ -40,8 +46,13 @@ class OculusDeviceSDK : public osg::Referenced {
 		bool initialized() const { return m_initialized; }
 		void initializeTexture(osg::ref_ptr<osg::GraphicsContext> context);
 		void setupSlaveCameras(osgViewer::View* view);
+#if _WIN32
 		void configureRendering(HWND window, HDC dc, int backBufferMultisample);
+		// For direct mode
 		void attachToWindow(HWND window);
+#elif __linux__
+		void configureRendering(Display* disp, int backBufferMultisample);
+#endif
 		void getEyePose();
 		unsigned int screenResolutionWidth() const;
 		unsigned int screenResolutionHeight() const;

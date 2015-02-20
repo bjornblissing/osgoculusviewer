@@ -4,17 +4,20 @@
 *  Created on: Oct 01, 2014
 *      Author: Bjorn Blissing
 */
+
 #include <osgDB/ReadFile>
 #include <osgGA/TrackballManipulator>
 #include <osgViewer/Viewer>
 
 #include "oculusdevicesdk.h"
 
-
 int main(int argc, char** argv)
 {
+#if _WIN32
 	// Initialize the Oculus Rendering Shim. Must be done before any OpenGL calls
+	// Only for Direct mode
 	ovr_InitializeRenderingShim();
+#endif
 
 	// use an ArgumentParser object to manage the program arguments.
 	osg::ArgumentParser arguments(&argc, argv);
