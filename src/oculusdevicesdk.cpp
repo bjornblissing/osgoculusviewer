@@ -139,36 +139,40 @@ void OculusDeviceSDK::initialize() {
 		ovrHmd_ResetFrameTiming(m_hmdDevice, 0);
 	}
 
-	if (m_hmdDevice) {
-		printHMDDebugInfo();
-
-		// Get more details about the HMD.
-		if (m_hmdDevice->HmdCaps & ovrHmdCap_ExtendDesktop)	{
-			m_resolution = m_hmdDevice->Resolution;
-		} else	{
-			// In Direct App-rendered mode, we can use smaller window size,
-			// as it can have its own contents and isn't tied to the buffer.
-			m_resolution.w = 1100;
-			m_resolution.h = 618;
-		}
-
-		// Compute recommended render texture size
-		float pixelsPerDisplayPixel = 1.0f; // Decrease this value to scale the size on render texture on lower performance hardware. Values above 1.0 is unnecessary.
-
-		ovrSizei recommenedLeftTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0], pixelsPerDisplayPixel);
-		ovrSizei recommenedRightTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1], pixelsPerDisplayPixel);
-
-		m_eyeFov[0] = m_hmdDevice->DefaultEyeFov[0];
-		m_eyeFov[1] = m_hmdDevice->DefaultEyeFov[1];
-
-		// Initialize ovrEyeRenderDesc struct.
-		m_eyeRenderDesc[0] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Left, m_eyeFov[0]);
-		m_eyeRenderDesc[1] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Right, m_eyeFov[1]);
-
-		// Compute size of render target
-		m_renderTargetSize.w = recommenedLeftTextureSize.w + recommenedRightTextureSize.w;
-		m_renderTargetSize.h = osg::maximum(recommenedLeftTextureSize.h, recommenedRightTextureSize.h);
+	if (! m_hmdDevice) {
+		osg::notify(osg::WARN) << "Warning: No device could be found. and failed to create an emulated device " << std::endl;
+		return;
 	}
+
+	printHMDDebugInfo();
+
+	// Get more details about the HMD.
+	if (m_hmdDevice->HmdCaps & ovrHmdCap_ExtendDesktop)	{
+		m_resolution = m_hmdDevice->Resolution;
+	} else	{
+		// In Direct App-rendered mode, we can use smaller window size,
+		// as it can have its own contents and isn't tied to the buffer.
+		m_resolution.w = 1100;
+		m_resolution.h = 618;
+	}
+
+	// Compute recommended render texture size
+	float pixelsPerDisplayPixel = 1.0f; // Decrease this value to scale the size on render texture on lower performance hardware. Values above 1.0 is unnecessary.
+
+	ovrSizei recommenedLeftTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0], pixelsPerDisplayPixel);
+	ovrSizei recommenedRightTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1], pixelsPerDisplayPixel);
+
+	m_eyeFov[0] = m_hmdDevice->DefaultEyeFov[0];
+	m_eyeFov[1] = m_hmdDevice->DefaultEyeFov[1];
+
+	// Initialize ovrEyeRenderDesc struct.
+	m_eyeRenderDesc[0] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Left, m_eyeFov[0]);
+	m_eyeRenderDesc[1] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Right, m_eyeFov[1]);
+
+	// Compute size of render target
+	m_renderTargetSize.w = recommenedLeftTextureSize.w + recommenedRightTextureSize.w;
+	m_renderTargetSize.h = osg::maximum(recommenedLeftTextureSize.h, recommenedRightTextureSize.h);
+
 }
 
 void OculusDeviceSDK::initializeTexture(osg::ref_ptr<osg::GraphicsContext> context) {
@@ -252,26 +256,40 @@ void OculusDeviceSDK::attachToWindow(HWND window) {
 }
 
 void OculusDeviceSDK::getEyePose() {
-	if (m_hmdDevice && m_frameBegin) {
-		m_renderPose[0] = ovrHmd_GetHmdPosePerEye(m_hmdDevice, ovrEye_Left);
-		m_renderPose[1] = ovrHmd_GetHmdPosePerEye(m_hmdDevice, ovrEye_Right);
+	if (! m_hmdDevice || ! m_frameBegin) {
+		if (! m_hmdDevice ) osg::notify(osg::WARN) << "Tried to use ovrHmd_GetHmdPosePerEye without having a valid hmdDevice" << std::endl;
+		if (! m_frameBegin ) osg::notify(osg::WARN) << "GetHmdPosePerEye is only valid between begin/end frame" << std::endl;
+		return;
 	}
+
+	m_renderPose[0] = ovrHmd_GetHmdPosePerEye(m_hmdDevice, ovrEye_Left);
+	m_renderPose[1] = ovrHmd_GetHmdPosePerEye(m_hmdDevice, ovrEye_Right);
 }
 
 void OculusDeviceSDK::beginFrame() {
-	if (m_hmdDevice && m_initialized) {
-		ovrHmd_BeginFrame(m_hmdDevice, 0);
-		m_frameBegin = true;
+	if (! m_hmdDevice || ! m_initialized) {
+		if (! m_hmdDevice ) osg::notify(osg::WARN) << "Tried to use ovrHmd_BeginFrame without having a valid hmdDevice" << std::endl;
+		if (! m_initialized) osg::notify(osg::WARN) << "Tried to use ovrHmd_BeginFrame without being initialized" << std::endl;
+		return;
 	}
+
+	ovrHmd_BeginFrame(m_hmdDevice, 0);
+	m_frameBegin = true;
 }
 
 void OculusDeviceSDK::endFrame() {
-	if (m_hmdDevice && m_frameBegin) {
-		ovrTexture eyeTexture[2];
-		eyeTexture[0] = m_leftTexture->getOvrTexture();
-		eyeTexture[1] = m_rightTexture->getOvrTexture();
-		ovrHmd_EndFrame(m_hmdDevice, m_renderPose, eyeTexture);
+	if (! m_hmdDevice || ! m_frameBegin) {
+		if (! m_hmdDevice ) osg::notify(osg::WARN) << "Tried to use ovrHmd_EndFrame without having a valid hmdDevice" << std::endl;
+		if (! m_frameBegin ) osg::notify(osg::WARN) << "Mismatching BeginFrame / EndFrame" << std::endl;
+		return;
 	}
+
+	ovrTexture eyeTexture[2];
+	eyeTexture[0] = m_leftTexture->getOvrTexture();
+	eyeTexture[1] = m_rightTexture->getOvrTexture();
+
+	ovrHmd_EndFrame(m_hmdDevice, m_renderPose, eyeTexture);
+	m_frameBegin = false;
 }
 
 unsigned int OculusDeviceSDK::screenResolutionWidth() const
@@ -407,20 +425,29 @@ OculusDrawable::OculusDrawable(const OculusDrawable& drawable, const osg::CopyOp
 Drawable(drawable, copyop), m_oculusDevice(drawable.m_oculusDevice), m_view(drawable.m_view) {}
 
 void OculusDrawable::drawImplementation(osg::RenderInfo& info) const {	
-	if (!m_oculusDevice->initialized()) {
-		osg::State* state = info.getState();
-		osg::GraphicsContext* context = state->getGraphicsContext();
-		if (context->isRealized() && context->isCurrent()) {
-			osg::ref_ptr<osgViewer::GraphicsWindowWin32> wdc = dynamic_cast<osgViewer::GraphicsWindowWin32*>(context);
-			if (wdc.valid()) {
-				HWND window = wdc->getHWND();
-				HDC dc = wdc->getHDC();
-				m_oculusDevice->initializeTexture(wdc.get());
-				m_oculusDevice->setupSlaveCameras(m_view.get());
-				m_oculusDevice->configureRendering(window, dc , 1);
-				m_oculusDevice->attachToWindow(window);
-				m_oculusDevice->setInitialized(true);
-			}
-		}
+	if (m_oculusDevice->initialized()) {
+		return;
 	}
+
+	osg::State* state = info.getState();
+	osg::GraphicsContext* context = state->getGraphicsContext();
+
+	if (! context->isRealized() || ! context->isCurrent()) {
+		return;
+	}
+
+	osg::ref_ptr<osgViewer::GraphicsWindowWin32> wdc = dynamic_cast<osgViewer::GraphicsWindowWin32*>(context);
+
+	if (! wdc.valid()) {
+		return;
+	}
+
+	HWND window = wdc->getHWND();
+	HDC dc = wdc->getHDC();
+	m_oculusDevice->initializeTexture(wdc.get());
+	m_oculusDevice->setupSlaveCameras(m_view.get());
+	m_oculusDevice->configureRendering(window, dc , 1);
+	m_oculusDevice->attachToWindow(window);
+
+	m_oculusDevice->setInitialized(true);
 }
