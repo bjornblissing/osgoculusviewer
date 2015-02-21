@@ -39,6 +39,8 @@ class OculusDevice : public osg::Referenced {
 		unsigned int renderTargetWidth() const;
 		unsigned int renderTargetHeight() const;
 
+		void printHMDDebugInfo();
+
 		osg::Matrix projectionMatrixCenter() const;
 		osg::Matrix projectionMatrixLeft() const;
 		osg::Matrix projectionMatrixRight() const;
@@ -79,6 +81,12 @@ class OculusDevice : public osg::Referenced {
 		osg::Matrixf eyeRotationEnd(Eye eye) const;
 		osg::Vec2f eyeToSourceUVScale(Eye eye) const;
 		osg::Vec2f eyeToSourceUVOffset(Eye eye) const;
+
+		void initializeEyeRenderDesc();
+		// Note: this function requires you to run the previous function first.
+		void calculateEyeAdjustment();
+		// Note: this function requires you to run the previous function first.
+		void calculateProjectionMatrices();
 
 		void beginFrameTiming(unsigned int frameIndex = 0);
 		void endFrameTiming() const;
