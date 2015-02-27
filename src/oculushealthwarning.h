@@ -14,6 +14,7 @@
 // Forward declaration
 class OculusDevice;
 
+
 class OculusHealthAndSafetyWarning : public osg::Referenced {
 public:
 	OculusHealthAndSafetyWarning(osg::observer_ptr<OculusDevice> device) : m_scale(3.0), m_distance(4.0), m_transform(0), m_device(device) {};

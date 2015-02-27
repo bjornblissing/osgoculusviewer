@@ -12,6 +12,7 @@
 #include "oculusdevice.h"
 #include "oculushealthwarning.h"
 
+
 class OculusViewConfig : public osgViewer::ViewConfig {
 	public:
 		OculusViewConfig(float nearClip=0.01f, float farClip=10000.0f, float pixelsPerDisplayPixel=1.0f, bool useTimewarp=true) : osgViewer::ViewConfig(),
@@ -35,6 +36,7 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		osg::ref_ptr<OculusDevice> m_device;
 		osg::ref_ptr<OculusHealthAndSafetyWarning> m_warning;
 };
+
 
 class OculusViewConfigOrientationCallback :  public osg::NodeCallback {
 	public:

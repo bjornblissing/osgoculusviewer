@@ -8,6 +8,8 @@
 
 #include "oculuseventhandler.h"
 
+
+/* Public functions */
 void OculusViewConfig::configure(osgViewer::View& view) const
 {
 	// Create a graphic context based on our desired traits
@@ -104,6 +106,8 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	view.addEventHandler(new OculusWarningEventHandler(m_warning));
 }
 
+
+/* Callbacks */
 void OculusViewConfigOrientationCallback::operator() (osg::Node* node, osg::NodeVisitor* nv)
 {
 	osg::Camera* mainCamera = static_cast<osg::Camera*>(node);

@@ -9,6 +9,8 @@
 
 #include <osgViewer/View>
 
+
+/* Public functions */
 void OculusViewer::traverse(osg::NodeVisitor& nv)
 {
 	if (!m_configured) {
@@ -38,6 +40,8 @@ void OculusViewer::traverse(osg::NodeVisitor& nv)
 	osg::Group::traverse(nv);
 }
 
+
+/* Protected functions */
 void OculusViewer::configure()
 {
 	osg::ref_ptr<osg::GraphicsContext> gc =  m_view->getCamera()->getGraphicsContext();

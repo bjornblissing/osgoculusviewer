@@ -18,6 +18,7 @@ namespace osgViewer {
 	class View;
 }
 
+
 class OculusViewer : public osg::Group {
 	public:
 		OculusViewer(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev) : osg::Group(), 

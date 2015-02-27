@@ -13,6 +13,7 @@
 // Forward declaration
 class OculusDevice;
 
+
 class OculusEventHandler : public osgGA::GUIEventHandler
 {
 public:
