@@ -55,6 +55,10 @@ FIND_PACKAGE( OpenGL REQUIRED )
 FIND_PACKAGE( OpenSceneGraph REQUIRED osgViewer osgDB osgGA)
 FIND_PACKAGE( OculusSDK REQUIRED )
 
+IF(UNIX)
+  FIND_PACKAGE( X11 REQUIRED )
+ENDIF()
+
 # Oculus SDK dependencies for Mac OSX
 IF (APPLE)
     FIND_LIBRARY (CORE_FOUNDATION CoreFoundation)
@@ -110,6 +114,11 @@ ENDIF(MSVC)
 IF(UNIX)
 	IF(CMAKE_COMPILER_IS_GNUCC)
 		ADD_DEFINITIONS(-Wall -ansi -pedantic -Wextra)
+		# * no-long-long to disable warnings from OVR, it's either this or enable c++11.
+		# * no-as-needed since Ubuntu has decided to change default ld flags to as-needed
+		#   This requires some reorganizing of libraries which is very uncomfortable
+		# * also, build debug mode until we can figure out why oculusdevicesdk crashes.
+		SET(CMAKE_CXX_FLAGS "-g -ggdb3 -Wno-long-long -Wl,--no-as-needed ${CMAKE_CXX_FLAGS}")
 		IF (WARNINGS_AS_ERRORS)
 			ADD_DEFINITIONS(-Werror)
 		ENDIF(WARNINGS_AS_ERRORS)

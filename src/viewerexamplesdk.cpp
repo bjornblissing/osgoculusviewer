@@ -4,17 +4,20 @@
 *  Created on: Oct 01, 2014
 *      Author: Bjorn Blissing
 */
+
 #include <osgDB/ReadFile>
 #include <osgGA/TrackballManipulator>
 #include <osgViewer/Viewer>
 
 #include "oculusdevicesdk.h"
 
-
 int main(int argc, char** argv)
 {
+#if _WIN32
 	// Initialize the Oculus Rendering Shim. Must be done before any OpenGL calls
+	// Only for Direct mode
 	ovr_InitializeRenderingShim();
+#endif
 
 	// use an ArgumentParser object to manage the program arguments.
 	osg::ArgumentParser arguments(&argc, argv);
@@ -25,8 +28,10 @@ int main(int argc, char** argv)
 	if (!loadedModel) loadedModel = osgDB::readNodeFile("cow.osgt");
 
 	// Still no loaded model, then exit
-	if (!loadedModel) return 0;
-
+	if (!loadedModel) {
+		osg::notify(osg::NOTICE) << "Error, no loaded model and couldn't find cow.osgt" << std::endl;
+		return 0;
+	}
 	// Create Trackball manipulator
 	osg::ref_ptr<osgGA::CameraManipulator> cameraManipulator = new osgGA::TrackballManipulator;
 	const osg::BoundingSphere& bs = loadedModel->getBound();

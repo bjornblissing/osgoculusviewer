@@ -7,9 +7,15 @@
 #ifndef _OSG_OCULUSDEVICESDK_H_
 #define _OSG_OCULUSDEVICESDK_H_
 
+#ifdef _WIN32
+#include <Windows.h>
+
+#elif __linux__
+#include <osgViewer/api/X11/GraphicsWindowX11>
+#endif
+
 // Include the OculusVR SDK
 #include "OVR.h"
-#include <Windows.h>
 
 #include <osg/Referenced>
 #include <osg/Matrix>
@@ -40,13 +46,22 @@ class OculusDeviceSDK : public osg::Referenced {
 		bool initialized() const { return m_initialized; }
 		void initializeTexture(osg::ref_ptr<osg::GraphicsContext> context);
 		void setupSlaveCameras(osgViewer::View* view);
+#if _WIN32
 		void configureRendering(HWND window, HDC dc, int backBufferMultisample);
+		// For direct mode
 		void attachToWindow(HWND window);
+#elif __linux__
+		void configureRendering(Display* disp, int backBufferMultisample);
+#endif
 		void getEyePose();
 		unsigned int screenResolutionWidth() const;
 		unsigned int screenResolutionHeight() const;
 		unsigned int renderTargetWidth() const { return	m_renderTargetSize.w; }
 		unsigned int renderTargetHeight() const { return m_renderTargetSize.h; }
+		unsigned int getCaps() const;
+		unsigned int getDistortionCaps() const;
+		void calculateViewMatrices();
+		void calculateProjectionMatrices();
 		osg::Matrix projectionMatrixLeft() const { return m_leftEyeProjectionMatrix; }
 		osg::Matrix projectionMatrixRight() const { return m_rightEyeProjectionMatrix; }
 		osg::Matrix projectionOffsetMatrixLeft() const;
@@ -60,6 +75,7 @@ class OculusDeviceSDK : public osg::Referenced {
 		void beginFrame();
 		void endFrame();
 		void setInitialized(bool state) { m_initialized = state;  }
+		void printHMDDebugInfo();
 	protected:
 		~OculusDeviceSDK(); // Since we inherit from osg::Referenced we must make destructor protected
 		ovrHmd m_hmdDevice;
