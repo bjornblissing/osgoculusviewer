@@ -19,6 +19,7 @@ class WarpCameraPreDrawCallback;
 class OculusSwapCallback;
 class EyeRotationCallback;
 
+
 class OculusDevice : public osg::Referenced {
 	friend class WarpCameraPreDrawCallback;
 	friend class OculusSwapCallback;
@@ -64,8 +65,13 @@ class OculusDevice : public osg::Referenced {
 		osg::Camera* createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc=0) const;
 		osg::Program* createShaderProgram() const;
 		void applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const;
+		bool attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc);
+		void toggleMirrorToWindow();
+		void toggleLowPersistence();
+		void toggleDynamicPrediction();
 		osg::GraphicsContext::Traits* graphicsContextTraits() const;
-
+		bool getHealthAndSafetyDisplayState();
+		bool tryDismissHealthAndSafetyDisplay();
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
 
@@ -75,9 +81,20 @@ class OculusDevice : public osg::Referenced {
 		osg::Vec2f eyeToSourceUVScale(Eye eye) const;
 		osg::Vec2f eyeToSourceUVOffset(Eye eye) const;
 
+		void printHMDDebugInfo();
+
+		void initializeEyeRenderDesc();
+		// Note: this function requires you to run the previous function first.
+		void calculateEyeAdjustment();
+		// Note: this function requires you to run the previous function first.
+		void calculateProjectionMatrices();
+
 		void beginFrameTiming(unsigned int frameIndex = 0);
 		void endFrameTiming() const;
 		void waitTillTime();
+
+		void trySetProcessAsHighPriority() const;
+		void applyExtendedModeSettings() const;
 		
 		static const std::string m_warpVertexShaderSource;
 		static const std::string m_warpWithTimewarpVertexShaderSource;
@@ -103,10 +120,12 @@ class OculusDevice : public osg::Referenced {
 		float m_nearClip;
 		float m_farClip;
 		bool m_useTimeWarp;
+		bool m_directMode;
 	private:
 		OculusDevice(const OculusDevice&); // Do not allow copy
 		OculusDevice& operator=(const OculusDevice&); // Do not allow assignment operator.
 };
+
 
 class WarpCameraPreDrawCallback : public osg::Camera::DrawCallback
 {
@@ -117,6 +136,7 @@ protected:
 	osg::observer_ptr<OculusDevice> m_device;
 };
 
+
 class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
 public:
 	OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
@@ -126,6 +146,7 @@ private:
 	osg::observer_ptr<OculusDevice> m_device;
 	int m_frameIndex;
 };
+
 
 class EyeRotationCallback : public osg::Uniform::Callback
 {

@@ -9,6 +9,8 @@
 
 #include <osgViewer/View>
 
+
+/* Public functions */
 void OculusViewer::traverse(osg::NodeVisitor& nv)
 {
 	if (!m_configured) {
@@ -29,10 +31,17 @@ void OculusViewer::traverse(osg::NodeVisitor& nv)
 		// There doesn't seem to be an accessor for this, fortunately the offsets are public
 		m_view->findSlaveForCamera(m_cameraRTTLeft.get())->_viewOffset = viewOffsetLeft;
 		m_view->findSlaveForCamera(m_cameraRTTRight.get())->_viewOffset = viewOffsetRight;
+		
+		// Handle health and safety warning
+		if (m_warning.valid()) {
+			m_warning.get()->updatePosition(m_view->getCamera()->getInverseViewMatrix(), position, orientation);
+		}
 	}
 	osg::Group::traverse(nv);
 }
 
+
+/* Protected functions */
 void OculusViewer::configure()
 {
 	osg::ref_ptr<osg::GraphicsContext> gc =  m_view->getCamera()->getGraphicsContext();
@@ -46,6 +55,11 @@ void OculusViewer::configure()
 
 	// Disable scene rendering for main camera
 	camera->setCullMask(~m_sceneNodeMask);
+
+	// Add health and safety warning
+	m_warning = new OculusHealthAndSafetyWarning(m_device);
+	m_view->addEventHandler(new OculusWarningEventHandler(m_warning));
+	this->addChild(m_warning->getGraph());
 
 	const int textureWidth = m_device->renderTargetWidth()/2;
 	const int textureHeight = m_device->renderTargetHeight();
@@ -100,6 +114,9 @@ void OculusViewer::configure()
 		m_device->projectionOffsetMatrixRight(),
 		m_device->viewMatrixRight(),
 		true);
+
+	// Use sky light instead of headlight to avoid light changes when head movements
+	m_view->setLightingMode(osg::View::SKY_LIGHT);
 
 	// Add warp camera as slave
 	m_view->addSlave(cameraWarp, false);

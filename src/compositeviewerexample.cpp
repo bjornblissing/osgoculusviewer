@@ -6,6 +6,7 @@
 */
 #include "oculusdevice.h"
 #include "oculuseventhandler.h"
+#include "oculushealthwarning.h"
 
 #include <osgViewer/CompositeViewer>
 
@@ -29,7 +30,18 @@ int main( int argc, char** argv )
 	if (!loadedModel) loadedModel = osgDB::readNodeFile("cow.osgt");
 
 	// Still no loaded model, then exit
-	if (!loadedModel) return 0;
+	if (!loadedModel) {
+		osg::notify(osg::ALWAYS) << "No model could be loaded and didn't find cow.osgt, terminating.." << std::endl;
+ 		return 0;
+	}
+
+	// Add nodes to root node
+	osg::ref_ptr<osg::Group> root = new osg::Group;
+	root->addChild(loadedModel);
+
+	// Add health and safety warning
+	osg::ref_ptr<OculusHealthAndSafetyWarning> warning = new OculusHealthAndSafetyWarning(oculusDevice);
+	root->addChild(warning.get()->getGraph());
 
 	// Calculate the texture size
 	const int textureWidth = oculusDevice->renderTargetWidth()/2;
@@ -44,10 +56,10 @@ int main( int argc, char** argv )
 	// Initialize RTT cameras for each eye
 	osg::ref_ptr<osg::Camera> leftEyeRTTCamera = oculusDevice->createRTTCamera(textureLeft, OculusDevice::LEFT, osg::Camera::ABSOLUTE_RF);
 	leftEyeRTTCamera->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
-	leftEyeRTTCamera->addChild( loadedModel );
+	leftEyeRTTCamera->addChild( root );
 	osg::ref_ptr<osg::Camera> rightEyeRTTCamera = oculusDevice->createRTTCamera(textureRight, OculusDevice::RIGHT, osg::Camera::ABSOLUTE_RF);
 	rightEyeRTTCamera->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
-	rightEyeRTTCamera->addChild( loadedModel );
+	rightEyeRTTCamera->addChild( root );
 	// Create HUD cameras for each eye
 	osg::ref_ptr<osg::Camera> leftCameraWarp = oculusDevice->createWarpOrthoCamera(0.0, 1.0, 0.0, 1.0);
 	osg::ref_ptr<osg::Camera> rightCameraWarp = oculusDevice->createWarpOrthoCamera(0.0, 1.0, 0.0, 1.0);
@@ -92,6 +104,9 @@ int main( int argc, char** argv )
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = oculusDevice->graphicsContextTraits();
 	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits);
 
+	// Attach to window, needed for direct mode
+	oculusDevice->attachToWindow(gc);
+	
 	// Attach a callback to detect swap
 	osg::ref_ptr<OculusSwapCallback> swapCallback = new OculusSwapCallback(oculusDevice);
 	gc->setSwapCallback(swapCallback);
@@ -112,6 +127,8 @@ int main( int argc, char** argv )
 	leftView->addEventHandler(new osgViewer::StatsHandler);
 	// Add Oculus Keyboard Handler to only one view
 	leftView->addEventHandler(new OculusEventHandler(oculusDevice));
+	// Add Oculus Health and Safety event handler
+	leftView->addEventHandler(new OculusWarningEventHandler(warning));
 	leftView->setCameraManipulator(cameraManipulator);
 	osg::ref_ptr<osgViewer::View>  rightView = new osgViewer::View;
 	rightView->setName("RightEyeView");
@@ -122,6 +139,10 @@ int main( int argc, char** argv )
 	rightView->getCamera()->setViewport(new osg::Viewport(oculusDevice->screenResolutionWidth() / 2, 0, oculusDevice->screenResolutionWidth() / 2, oculusDevice->screenResolutionHeight()));
 	rightView->getCamera()->setGraphicsContext(gc);
 	rightView->setCameraManipulator(cameraManipulator);
+
+	// Use sky light instead of headlight to avoid light changes when head movements
+	leftView->setLightingMode(osg::View::SKY_LIGHT);
+	rightView->setLightingMode(osg::View::SKY_LIGHT);
 
 	// Realize viewer
 	if (!viewer.isRealized()) {
@@ -155,6 +176,11 @@ int main( int argc, char** argv )
 		cameraManipulatorViewMatrix = cameraManipulator->getInverseMatrix();
 		leftEyeRTTCamera->setViewMatrix(cameraManipulatorViewMatrix*hmdMatrix*leftEyeViewMatrix);
 		rightEyeRTTCamera->setViewMatrix(cameraManipulatorViewMatrix*hmdMatrix*rightEyeViewMatrix);
+
+		// Handle health and safety warning
+		if (warning.valid()) {
+			warning.get()->updatePosition(cameraManipulator->getMatrix(), position, orientation);
+		}
 
 		viewer.frame();
 	}

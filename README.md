@@ -30,3 +30,5 @@ Nico Kruithof
 Daniel Sjölie
 
 Mark Goodall
+
+Daniel Johansson

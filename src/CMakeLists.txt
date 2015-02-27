@@ -11,6 +11,7 @@ SET(TARGET_SRC
 	oculusdevice.cpp
 	oculusdevicesdk.cpp
 	oculuseventhandler.cpp
+	oculushealthwarning.cpp
 )
 # Header files for library
 SET(TARGET_H
@@ -18,6 +19,7 @@ SET(TARGET_H
 	oculusdevice.h
 	oculusdevicesdk.h
 	oculuseventhandler.h
+	oculushealthwarning.h
 )
 
 # Add view config if available
@@ -41,14 +43,14 @@ ADD_LIBRARY(${TARGET_LIBRARYNAME} ${TARGET_SRC} ${TARGET_H})
 # Linker options
 #####################################################################
 
-# Link to open gl libs
-TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OPENGL_LIBRARIES} )
-
 # Link to OpenSceneGraph libs
 TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OPENSCENEGRAPH_LIBRARIES} )
 
 # Link to Oculus libs
 TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OCULUS_SDK_LIBRARIES}	)
+
+# Link to open gl libs
+TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} ${OPENGL_LIBRARIES} )
 
 # Link to libraries needed for Oculus on Visual Studio
 IF(MSVC)
@@ -71,7 +73,6 @@ IF(UNIX)
 			pthread
 			udev
 			X11
-			Xinerama
 			Xrandr
 			rt
 		)
