@@ -131,6 +131,45 @@ const std::string OculusDevice::m_warpFragmentShaderSource(
 	"}\n"
 );
 
+void OculusDevice::calculateEyeAdjustment() {
+	ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeViewOffset;
+	m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
+	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeViewOffset;
+	m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
+}
+
+void OculusDevice::calculateProjectionMatrices() {
+	bool isRightHanded = true;
+
+	ovrMatrix4f leftEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[0].Fov, m_nearClip, m_farClip, isRightHanded);
+	// Transpose matrix
+	m_leftEyeProjectionMatrix.set(leftEyeProjectionMatrix.M[0][0], leftEyeProjectionMatrix.M[1][0], leftEyeProjectionMatrix.M[2][0], leftEyeProjectionMatrix.M[3][0],
+		leftEyeProjectionMatrix.M[0][1], leftEyeProjectionMatrix.M[1][1], leftEyeProjectionMatrix.M[2][1], leftEyeProjectionMatrix.M[3][1],
+		leftEyeProjectionMatrix.M[0][2], leftEyeProjectionMatrix.M[1][2], leftEyeProjectionMatrix.M[2][2], leftEyeProjectionMatrix.M[3][2],
+		leftEyeProjectionMatrix.M[0][3], leftEyeProjectionMatrix.M[1][3], leftEyeProjectionMatrix.M[2][3], leftEyeProjectionMatrix.M[3][3]);
+
+	ovrMatrix4f rightEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[1].Fov, m_nearClip, m_farClip, isRightHanded);
+	// Transpose matrix
+	m_rightEyeProjectionMatrix.set(rightEyeProjectionMatrix.M[0][0], rightEyeProjectionMatrix.M[1][0], rightEyeProjectionMatrix.M[2][0], rightEyeProjectionMatrix.M[3][0],
+		rightEyeProjectionMatrix.M[0][1], rightEyeProjectionMatrix.M[1][1], rightEyeProjectionMatrix.M[2][1], rightEyeProjectionMatrix.M[3][1],
+		rightEyeProjectionMatrix.M[0][2], rightEyeProjectionMatrix.M[1][2], rightEyeProjectionMatrix.M[2][2], rightEyeProjectionMatrix.M[3][2],
+		rightEyeProjectionMatrix.M[0][3], rightEyeProjectionMatrix.M[1][3], rightEyeProjectionMatrix.M[2][3], rightEyeProjectionMatrix.M[3][3]);
+}
+
+void OculusDevice::initializeEyeRenderDesc() {
+	m_eyeRenderDesc[0] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0]);
+	m_eyeRenderDesc[1] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1]);
+}
+
+void OculusDevice::printHMDDebugInfo() {
+	osg::notify(osg::ALWAYS) << "Product:         " << m_hmdDevice->ProductName << std::endl;
+	osg::notify(osg::ALWAYS) << "Manufacturer:    " << m_hmdDevice->Manufacturer << std::endl;
+	osg::notify(osg::ALWAYS) << "VendorId:        " << m_hmdDevice->VendorId << std::endl;
+	osg::notify(osg::ALWAYS) << "ProductId:       " << m_hmdDevice->ProductId << std::endl;
+	osg::notify(osg::ALWAYS) << "SerialNumber:    " << m_hmdDevice->SerialNumber << std::endl;
+	osg::notify(osg::ALWAYS) << "FirmwareVersion: " << m_hmdDevice->FirmwareMajor << "."  << m_hmdDevice->FirmwareMinor << std::endl;
+}
+
 OculusDevice::OculusDevice(float nearClip, float farClip, float pixelsPerDisplayPixel, bool useTimewarp) : m_hmdDevice(0),
 	m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
 	m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
@@ -155,65 +194,44 @@ OculusDevice::OculusDevice(float nearClip, float farClip, float pixelsPerDisplay
 		ovrHmd_ResetFrameTiming(m_hmdDevice, 0);
 	}
 
-	if (m_hmdDevice) {
-		// Print out some information about the HMD
-		osg::notify(osg::ALWAYS) << "Product:         " << m_hmdDevice->ProductName << std::endl;
-		osg::notify(osg::ALWAYS) << "Manufacturer:    " << m_hmdDevice->Manufacturer << std::endl;
-		osg::notify(osg::ALWAYS) << "VendorId:        " << m_hmdDevice->VendorId << std::endl;
-		osg::notify(osg::ALWAYS) << "ProductId:       " << m_hmdDevice->ProductId << std::endl;
-		osg::notify(osg::ALWAYS) << "SerialNumber:    " << m_hmdDevice->SerialNumber << std::endl;
-		osg::notify(osg::ALWAYS) << "FirmwareVersion: " << m_hmdDevice->FirmwareMajor << "."  << m_hmdDevice->FirmwareMinor << std::endl;
-
-		// Get more details about the HMD.
-		m_resolution = m_hmdDevice->Resolution;
-		
-		// Compute recommended render texture size
-		if (pixelsPerDisplayPixel > 1.0f) {
-			osg::notify(osg::WARN) << "Warning: Pixel per display pixel is set to a value higher than 1.0." << std::endl;
-		}
-
-		ovrSizei recommenedLeftTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0], pixelsPerDisplayPixel);
-		ovrSizei recommenedRightTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1], pixelsPerDisplayPixel);
-
-		// Compute size of render target
-		m_renderTargetSize.w = recommenedLeftTextureSize.w + recommenedRightTextureSize.w;
-		m_renderTargetSize.h = osg::maximum(recommenedLeftTextureSize.h, recommenedRightTextureSize.h);
-
-		// Initialize ovrEyeRenderDesc struct.
-		m_eyeRenderDesc[0] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0]);
-		m_eyeRenderDesc[1] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1]);
-		
-		ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeViewOffset;
-		m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
-		ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeViewOffset;
-		m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
-
-		bool isRightHanded = true;
-		
-		ovrMatrix4f leftEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[0].Fov, m_nearClip, m_farClip, isRightHanded);
-		// Transpose matrix
-		m_leftEyeProjectionMatrix.set(leftEyeProjectionMatrix.M[0][0], leftEyeProjectionMatrix.M[1][0], leftEyeProjectionMatrix.M[2][0], leftEyeProjectionMatrix.M[3][0],
-			leftEyeProjectionMatrix.M[0][1], leftEyeProjectionMatrix.M[1][1], leftEyeProjectionMatrix.M[2][1], leftEyeProjectionMatrix.M[3][1],
-			leftEyeProjectionMatrix.M[0][2], leftEyeProjectionMatrix.M[1][2], leftEyeProjectionMatrix.M[2][2], leftEyeProjectionMatrix.M[3][2],
-			leftEyeProjectionMatrix.M[0][3], leftEyeProjectionMatrix.M[1][3], leftEyeProjectionMatrix.M[2][3], leftEyeProjectionMatrix.M[3][3]);
-
-		ovrMatrix4f rightEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[1].Fov, m_nearClip, m_farClip, isRightHanded);
-		// Transpose matrix
-		m_rightEyeProjectionMatrix.set(rightEyeProjectionMatrix.M[0][0], rightEyeProjectionMatrix.M[1][0], rightEyeProjectionMatrix.M[2][0], rightEyeProjectionMatrix.M[3][0],
-			rightEyeProjectionMatrix.M[0][1], rightEyeProjectionMatrix.M[1][1], rightEyeProjectionMatrix.M[2][1], rightEyeProjectionMatrix.M[3][1],
-			rightEyeProjectionMatrix.M[0][2], rightEyeProjectionMatrix.M[1][2], rightEyeProjectionMatrix.M[2][2], rightEyeProjectionMatrix.M[3][2],
-			rightEyeProjectionMatrix.M[0][3], rightEyeProjectionMatrix.M[1][3], rightEyeProjectionMatrix.M[2][3], rightEyeProjectionMatrix.M[3][3]);
-		unsigned int hmdCaps =  ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction;
-		// Set render capabilities
-		ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
-
-		// Start the sensor which provides the Rifts pose and motion.
-		ovrHmd_ConfigureTracking(m_hmdDevice, ovrTrackingCap_Orientation |
-			ovrTrackingCap_MagYawCorrection |
-			ovrTrackingCap_Position, 0);
-
-		beginFrameTiming();
+	if (!m_hmdDevice) {
+		osg::notify(osg::WARN) << "Warning: No device could be found. and couldn't create an emulated device " << std::endl;
+		return;
 	}
+	printHMDDebugInfo();
+
+	// Get more details about the HMD.
+	m_resolution = m_hmdDevice->Resolution;
+		
+	// Compute recommended render texture size
+	if (pixelsPerDisplayPixel > 1.0f) {
+		osg::notify(osg::WARN) << "Warning: Pixel per display pixel is set to a value higher than 1.0." << std::endl;
+	}
+
+	ovrSizei recommenedLeftTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0], pixelsPerDisplayPixel);
+	ovrSizei recommenedRightTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1], pixelsPerDisplayPixel);
+
+	// Compute size of render target
+	m_renderTargetSize.w = recommenedLeftTextureSize.w + recommenedRightTextureSize.w;
+	m_renderTargetSize.h = osg::maximum(recommenedLeftTextureSize.h, recommenedRightTextureSize.h);
+
+		
+	initializeEyeRenderDesc();
+
+	calculateEyeAdjustment();
+		
+	calculateProjectionMatrices();
+
+	unsigned int hmdCaps =  ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction;
+	// Set render capabilities
+	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
+
+	// Start the sensor which provides the Rifts pose and motion.
+	ovrHmd_ConfigureTracking(m_hmdDevice, ovrTrackingCap_Orientation |
+		ovrTrackingCap_MagYawCorrection |
+		ovrTrackingCap_Position, 0);
+
+	beginFrameTiming();	
 }
 
 OculusDevice::~OculusDevice()
@@ -546,14 +564,16 @@ void OculusDevice::applyShaderParameters(osg::StateSet* stateSet, osg::Program* 
 	stateSet->addUniform(new osg::Uniform("EyeToSourceUVOffset", eyeToSourceUVOffset(eye)));
 
 	// Uniforms needed for time warp
-	if (m_useTimeWarp) {
-		osg::ref_ptr<osg::Uniform> eyeRotationStart = new osg::Uniform("EyeRotationStart", this->eyeRotationStart(eye));
-		osg::ref_ptr<osg::Uniform> eyeRotationEnd = new osg::Uniform("EyeRotationEnd", this->eyeRotationEnd(eye));
-		stateSet->addUniform(eyeRotationStart);
-		stateSet->addUniform(eyeRotationEnd);
-		eyeRotationStart->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::START, this, eye));
-		eyeRotationEnd->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::END, this, eye));
+	if (!m_useTimeWarp) {
+		return;
 	}
+
+	osg::ref_ptr<osg::Uniform> eyeRotationStart = new osg::Uniform("EyeRotationStart", this->eyeRotationStart(eye));
+	osg::ref_ptr<osg::Uniform> eyeRotationEnd = new osg::Uniform("EyeRotationEnd", this->eyeRotationEnd(eye));
+	stateSet->addUniform(eyeRotationStart);
+	stateSet->addUniform(eyeRotationEnd);
+	eyeRotationStart->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::START, this, eye));
+	eyeRotationEnd->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::END, this, eye));
 }
 
 bool OculusDevice::attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc) {
@@ -564,7 +584,7 @@ bool OculusDevice::attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc) {
 	}
 
 	// Direct rendering from a window handle to the Rift
-	#ifdef _WIN32
+#ifdef _WIN32
 	osgViewer::GraphicsHandleWin32* windowsContext = dynamic_cast<osgViewer::GraphicsHandleWin32*>(gc.get());
 
 	if (windowsContext) {
@@ -575,7 +595,7 @@ bool OculusDevice::attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc) {
 		osg::notify(osg::FATAL) << "Win32 Graphics Context Casting is unsuccessful" << std::endl;
 		return false;
 	}
-	#endif
+#endif
 
 	return false;
 }
@@ -612,10 +632,16 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
 	si.readDISPLAY();
 
 	// If displayNum has not been set, reset it to 0.
-	if (si.displayNum < 0) si.displayNum = 0;
+	if (si.displayNum < 0) {
+		si.displayNum = 0;
+		osg::notify(osg::INFO) << "Couldn't get display number, setting to 0" << std::endl;
+	}
 
 	// If screenNum has not been set, reset it to 0.
-	if (si.screenNum < 0) si.screenNum = 0;
+	if (si.screenNum < 0) {
+		si.screenNum = 0;
+		osg::notify(osg::INFO) << "Couldn't get screen number, setting to 0" << std::endl;
+	}
 
 	unsigned int width, height;
 	wsi->getScreenResolution(si, width, height);
@@ -648,32 +674,34 @@ bool OculusDevice::tryDismissHealthAndSafetyDisplay() {
 
 
 void OculusDevice::applyExtendedModeSettings() const {
-	#ifdef _WIN32
-		// Disable desktop composition when running extended mode to avoid judder
-		// DwmEnableComposition function deprecated in Windows 8
+#ifdef _WIN32
+	// Disable desktop composition when running extended mode to avoid judder
+	// DwmEnableComposition function deprecated in Windows 8
 
-		HINSTANCE HInstDwmapi = LoadLibraryW( L"dwmapi.dll" );
+	HINSTANCE HInstDwmapi = LoadLibraryW( L"dwmapi.dll" );
 
-		if (HInstDwmapi) {
-			typedef HRESULT (WINAPI *PFNDWMENABLECOMPOSITIONPROC) (UINT);
-			PFNDWMENABLECOMPOSITIONPROC DwmEnableComposition = (PFNDWMENABLECOMPOSITIONPROC)GetProcAddress( HInstDwmapi, "DwmEnableComposition" );
+	if (! HInstDwmapi) {
+		return;
+	}
 
-			if (DwmEnableComposition) {
-				DwmEnableComposition(DWM_EC_DISABLECOMPOSITION);
-			}
+	typedef HRESULT (WINAPI *PFNDWMENABLECOMPOSITIONPROC) (UINT);
+	PFNDWMENABLECOMPOSITIONPROC DwmEnableComposition = (PFNDWMENABLECOMPOSITIONPROC)GetProcAddress( HInstDwmapi, "DwmEnableComposition" );
 
-			FreeLibrary(HInstDwmapi);
-			HInstDwmapi = NULL;
-		}
-	#endif
+	if (DwmEnableComposition) {
+		DwmEnableComposition(DWM_EC_DISABLECOMPOSITION);
+	}
+
+	FreeLibrary(HInstDwmapi);
+	HInstDwmapi = NULL;	
+#endif
 }
 
 void OculusDevice::trySetProcessAsHighPriority() const {
 	// Require at least 4 processors, otherwise the process could occupy the machine.
 	if(OpenThreads::GetNumberOfProcessors() >= 4) {
-		#ifdef _WIN32
-			SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-		#endif
+#ifdef _WIN32
+		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+#endif
 	}
 }
 
