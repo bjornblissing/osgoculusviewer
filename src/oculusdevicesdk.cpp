@@ -6,16 +6,11 @@
 */
 #include "oculusdevicesdk.h"
 #include <osg/Notify>
+#include <OVR_CAPI_GL.h>
+#include <Extras/OVR_Math.h>
+
 #if _WIN32
 #include <osgViewer/api/Win32/GraphicsWindowWin32>
-
-#include "../src/OVR_CAPI_GL.h"
-#include "../src/Kernel/OVR_Math.h"
-
-#elif __linux__
-
-//TODO How do we handle OVR_CAPI_GL.h ? It's not in a good directory... I put links to it in my OVR.h.
-
 #endif
 
 
@@ -35,7 +30,6 @@ OculusDeviceSDK::OculusDeviceSDK() : m_hmdDevice(0),
 	m_supportsSRGB(true),
 	m_pixelLuminanceOverdrive(true),
 	m_timewarpEnabled(true),
-	m_timewarpNoJitEnabled(false),
 
 	m_positionTrackingEnabled(true)
 {}
@@ -60,16 +54,13 @@ unsigned int OculusDeviceSDK::getCaps() const {
 }
 
 unsigned int OculusDeviceSDK::getDistortionCaps() const {
-	unsigned int distortionCaps = ovrDistortionCap_Chromatic |
-			ovrDistortionCap_Vignette;
+	unsigned int distortionCaps = ovrDistortionCap_Vignette;
 	if (m_supportsSRGB)
 		distortionCaps |= ovrDistortionCap_SRGB;
 	if (m_pixelLuminanceOverdrive)
 		distortionCaps |= ovrDistortionCap_Overdrive;
 	if (m_timewarpEnabled)
 		distortionCaps |= ovrDistortionCap_TimeWarp;
-	if (m_timewarpNoJitEnabled)
-		distortionCaps |= ovrDistortionCap_ProfileNoTimewarpSpinWaits;
 	return distortionCaps;
 }
 

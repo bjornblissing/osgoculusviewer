@@ -15,7 +15,7 @@ typedef unsigned char uint8_t; // Needed to read type uint8_t
 
 
 // Location of image in byte stream format TGA
-#include "../Src/CAPI/Textures/healthAndSafety.tga.h"
+#include "healthAndSafety.tga.h"
 
 #include "oculusdevice.h"
 
@@ -37,7 +37,7 @@ osg::ref_ptr<osg::Group> OculusHealthAndSafetyWarning::getGraph() {
 		m_transform->setDataVariance(osg::Object::DYNAMIC);
 
 		osg::Image* image = buildImageFromByteStream();
-		if (image->valid()) {
+		if (image && image->valid()) {
 			double aspectRatio = image->s() / image->t();
 			osg::Geode* quadGeode = new osg::Geode;
 			osg::Geometry* quadGeometry = osg::createTexturedQuadGeometry(

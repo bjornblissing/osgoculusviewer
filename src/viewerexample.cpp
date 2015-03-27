@@ -34,7 +34,9 @@ int main( int argc, char** argv )
 
 	if (bs.valid()) {
 		// Adjust view to object view
-		cameraManipulator->setHomePosition(osg::Vec3(0, bs.radius()*1.5, 0), osg::Vec3(0, 0, 0), osg::Vec3(0, 0, 1));
+		osg::Vec3 modelCenter = bs.center();
+		osg::Vec3 eyePos = bs.center() + osg::Vec3(0, bs.radius(), 0);
+		cameraManipulator->setHomePosition(eyePos, modelCenter, osg::Vec3(0, 0, 1));
 	}
 
 	// Open the HMD

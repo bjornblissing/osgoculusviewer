@@ -293,7 +293,7 @@ osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, 
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode;
 	// Allocate & generate distortion mesh vertices.
 	ovrDistortionMesh meshData;
-	ovrHmd_CreateDistortionMesh(m_hmdDevice, m_eyeRenderDesc[eye].Eye, m_eyeRenderDesc[eye].Fov, ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp, &meshData);
+	ovrHmd_CreateDistortionMesh(m_hmdDevice, m_eyeRenderDesc[eye].Eye, m_eyeRenderDesc[eye].Fov, ovrDistortionCap_TimeWarp, &meshData);
 
 	// Now parse the vertex data and create a render ready vertex buffer from it
 	ovrDistortionVertex* ov = meshData.pVertexData;

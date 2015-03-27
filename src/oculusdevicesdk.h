@@ -15,7 +15,7 @@
 #endif
 
 // Include the OculusVR SDK
-#include "OVR.h"
+#include <OVR_CAPI_0_5_0.h>
 
 #include <osg/Referenced>
 #include <osg/Matrix>
@@ -107,7 +107,6 @@ class OculusDeviceSDK : public osg::Referenced {
 		bool m_supportsSRGB;
 		bool m_pixelLuminanceOverdrive;
 		bool m_timewarpEnabled;
-		bool m_timewarpNoJitEnabled;
 
 		bool m_positionTrackingEnabled;
 	private:
