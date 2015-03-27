@@ -66,11 +66,12 @@ IF(OCULUS_SDK_INCLUDE_DIRS)
 	IF(EXISTS "${_OCULUS_VERSION_FILE}") 
 		FILE(STRINGS "${_OCULUS_VERSION_FILE}" _OCULUS_VERSION_FILE_CONTENTS REGEX "#define OVR_[A-Z]+_VERSION[ \t]+[0-9]+")
 
+		STRING(REGEX REPLACE ".*#define OVR_PRODUCT_VERSION[ \t]+([0-9]+).*" "\\1" OCULUS_SDK_VERSION_PRODUCT ${_OCULUS_VERSION_FILE_CONTENTS})
 		STRING(REGEX REPLACE ".*#define OVR_MAJOR_VERSION[ \t]+([0-9]+).*" "\\1" OCULUS_SDK_VERSION_MAJOR ${_OCULUS_VERSION_FILE_CONTENTS})
 		STRING(REGEX REPLACE ".*#define OVR_MINOR_VERSION[ \t]+([0-9]+).*" "\\1" OCULUS_SDK_VERSION_MINOR ${_OCULUS_VERSION_FILE_CONTENTS})
-		STRING(REGEX REPLACE ".*#define OVR_BUILD_VERSION[ \t]+([0-9]+).*" "\\1" OCULUS_SDK_VERSION_BUILD ${_OCULUS_VERSION_FILE_CONTENTS})
-
-		SET(OCULUS_SDK_VERSION "${OCULUS_SDK_VERSION_MAJOR}.${OCULUS_SDK_VERSION_MINOR}.${OCULUS_SDK_VERSION_BUILD}" CACHE INTERNAL "The version of Oculus SDK which was detected")
+		STRING(REGEX REPLACE ".*#define OVR_PATCH_VERSION[ \t]+([0-9]+).*" "\\1" OCULUS_SDK_VERSION_PATCH ${_OCULUS_VERSION_FILE_CONTENTS})
+		
+		SET(OCULUS_SDK_VERSION "${OCULUS_SDK_VERSION_PRODUCT}.${OCULUS_SDK_VERSION_MAJOR}.${OCULUS_SDK_VERSION_MINOR}.${OCULUS_SDK_VERSION_PATCH}" CACHE INTERNAL "The version of Oculus SDK which was detected")
 	ENDIF()
 ENDIF()
 
@@ -82,7 +83,7 @@ ENDIF()
 
 # Look for the library.
 FIND_LIBRARY(OCULUS_SDK_LIBRARY NAMES libovr libovr64 ovr HINTS ${OCULUS_SDK_ROOT_DIR} 
-                                                      ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/${_OCULUS_SDK_LIB_ARCH}/${_OCULUS_MSVC_DIR}
+                                                      ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Windows/${_OCULUS_SDK_LIB_ARCH}/Release/${_OCULUS_MSVC_DIR}
                                                       ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Mac/Release
                                                       ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Linux/Release/${_OCULUS_SDK_LIB_ARCH}
                                                     )
@@ -90,7 +91,7 @@ FIND_LIBRARY(OCULUS_SDK_LIBRARY NAMES libovr libovr64 ovr HINTS ${OCULUS_SDK_ROO
 # This will find release lib on Linux if no debug is available - on Linux this is no problem and avoids 
 # having to compile in debug when not needed
 FIND_LIBRARY(OCULUS_SDK_LIBRARY_DEBUG NAMES libovr${CMAKE_DEBUG_POSTFIX} libovr64${CMAKE_DEBUG_POSTFIX} ovr${CMAKE_DEBUG_POSTFIX} ovr libovr HINTS 
-                                                      ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/${_OCULUS_SDK_LIB_ARCH}/${_OCULUS_MSVC_DIR}
+                                                      ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Windows/${_OCULUS_SDK_LIB_ARCH}/Debug/${_OCULUS_MSVC_DIR}
                                                       ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Mac/Debug
                                                       ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Mac/Release
                                                       ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Linux/Debug/${_OCULUS_SDK_LIB_ARCH}
