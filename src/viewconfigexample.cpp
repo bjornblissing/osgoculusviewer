@@ -50,8 +50,10 @@ int main( int argc, char** argv )
 	// Create Oculus View Config
 	float nearClip = 0.01f;
 	float farClip = 10000.0f;
+	float pixelsPerDisplayPixel = 1.0f;
 	bool useTimewarp = true;
-	osg::ref_ptr<OculusViewConfig> oculusViewConfig = new OculusViewConfig(nearClip, farClip, useTimewarp);
+	float worldUnitsPerMetre = 1.0f;
+	osg::ref_ptr<OculusViewConfig> oculusViewConfig = new OculusViewConfig(nearClip, farClip, pixelsPerDisplayPixel, useTimewarp, worldUnitsPerMetre);
 	// Add health and safety warning
 	root->addChild(oculusViewConfig->warning()->getGraph());
 	// Set the node mask used for scene
