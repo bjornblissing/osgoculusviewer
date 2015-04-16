@@ -15,12 +15,12 @@
 
 class OculusViewConfig : public osgViewer::ViewConfig {
 	public:
-		OculusViewConfig(float nearClip=0.01f, float farClip=10000.0f, float pixelsPerDisplayPixel=1.0f, bool useTimewarp=true) : osgViewer::ViewConfig(),
+		OculusViewConfig(float nearClip=0.01f, float farClip=10000.0f, float pixelsPerDisplayPixel=1.0f, bool useTimewarp=true, float worldUnitsPerMetre = 1.0f) : osgViewer::ViewConfig(),
 			m_configured(false),
 			m_sceneNodeMask(0x1),
 			m_device(0),
 			m_warning(0) {
-			m_device = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, useTimewarp);
+			m_device = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, useTimewarp, worldUnitsPerMetre);
 			m_warning = new OculusHealthAndSafetyWarning(m_device);
 		}
 		void setSceneNodeMask(osg::Node::NodeMask nodeMask) { m_sceneNodeMask = nodeMask; }
