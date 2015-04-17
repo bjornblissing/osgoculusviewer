@@ -1,0 +1,13 @@
+/Win32/
+/Release/
+/bin/
+/CMakeFiles/
+/Debug/
+/lib/
+*.vcxproj
+*.vcxproj.filters
+*.sln
+*.v12.suo
+*.sdf
+*.cmake
+/CMakeCache.txt

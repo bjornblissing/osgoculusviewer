@@ -1,0 +1,9 @@
+/CMakeFiles/
+/Debug/
+/OculusViewerExample.dir/
+/OsgOculus.dir/
+/Release/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+/cmake_install.cmake
