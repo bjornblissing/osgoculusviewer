@@ -327,7 +327,7 @@ osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, 
 	}
 
 	// Get triangle indicies 
-	osg::UShortArray* indexArray = new osg::UShortArray;
+	osg::ref_ptr<osg::UShortArray> indexArray = new osg::UShortArray;
 	unsigned short* index = meshData.pIndexData;
 	for (unsigned indexNum = 0; indexNum < meshData.IndexCount; ++indexNum) {
 		indexArray->push_back(index[indexNum]);
