@@ -17,7 +17,7 @@ class OculusDevice;
 
 class OculusHealthAndSafetyWarning : public osg::Referenced {
 public:
-	OculusHealthAndSafetyWarning(osg::observer_ptr<OculusDevice> device) : m_scale(3.0), m_distance(4.0), m_transform(0), m_device(device) {};
+	explicit OculusHealthAndSafetyWarning(osg::observer_ptr<OculusDevice> device) : m_scale(3.0), m_distance(4.0), m_transform(0), m_device(device) {};
 	void updatePosition(osg::Matrix cameraMatrix, osg::Vec3 position, osg::Quat orientation);
 	osg::ref_ptr<osg::Group> getGraph();
 	void tryDismissWarning();
@@ -35,7 +35,7 @@ protected:
 class OculusWarningEventHandler : public osgGA::GUIEventHandler
 {
 public:
-	OculusWarningEventHandler(osg::observer_ptr<OculusHealthAndSafetyWarning> warning) : m_warning(warning) {}
+	explicit OculusWarningEventHandler(osg::observer_ptr<OculusHealthAndSafetyWarning> warning) : m_warning(warning) {}
 	virtual bool handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter&);
 protected:
 	osg::observer_ptr<OculusHealthAndSafetyWarning> m_warning;

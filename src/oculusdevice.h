@@ -131,7 +131,7 @@ class OculusDevice : public osg::Referenced {
 class WarpCameraPreDrawCallback : public osg::Camera::DrawCallback
 {
 public:
-	WarpCameraPreDrawCallback(osg::ref_ptr<OculusDevice> device) : m_device(device) {}
+	explicit WarpCameraPreDrawCallback(osg::ref_ptr<OculusDevice> device) : m_device(device) {}
 	virtual void operator()(osg::RenderInfo& renderInfo) const;
 protected:
 	osg::observer_ptr<OculusDevice> m_device;
@@ -140,7 +140,7 @@ protected:
 
 class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
 public:
-	OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
+	explicit OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
 	void swapBuffersImplementation(osg::GraphicsContext *gc);
 	int frameIndex() const { return m_frameIndex; }
 private:
