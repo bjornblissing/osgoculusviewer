@@ -18,6 +18,7 @@ typedef unsigned char uint8_t; // Needed to read type uint8_t
 #include "healthAndSafety.tga.h"
 
 #include "oculusdevice.h"
+#include "oculusdevicesdk.h"
 
 
 /* Public functions */
@@ -57,17 +58,13 @@ osg::ref_ptr<osg::Group> OculusHealthAndSafetyWarning::getGraph() {
 			stateSet->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
 			stateSet->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
 			stateSet->setRenderBinDetails(1, "DepthSortedBin");
-
-			// Start timer
-			m_device->getHealthAndSafetyDisplayState();
-
 		}
 	}
 	return m_transform->asGroup();
 }
 
-void OculusHealthAndSafetyWarning::tryDismissWarning() {
-	if (m_transform.valid() && m_device->tryDismissHealthAndSafetyDisplay()) {
+void OculusHealthAndSafetyWarning::dismissWarning() {
+	if (m_transform.valid()) {
 		// Remove all children
 		size_t i = m_transform->getNumChildren();
 		m_transform->removeChildren(0, i);
@@ -95,15 +92,23 @@ osg::Image* OculusHealthAndSafetyWarning::buildImageFromByteStream() {
 
 
 /* Callbacks */
-bool OculusWarningEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter& ad)
+bool OculusWarningEventHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& ad)
 {
-	switch(ea.getEventType())
-	{
-	case(osgGA::GUIEventAdapter::KEYUP):
-		{
-			m_warning->tryDismissWarning();
+	if (ea.getEventType() == osgGA::GUIEventAdapter::KEYUP) {
+		if (m_device->tryDismissHealthAndSafetyDisplay()) {
+			m_warning->dismissWarning();
 		}
-	default:
-		return osgGA::GUIEventHandler::handle(ea, ad);
 	}
+	return osgGA::GUIEventHandler::handle(ea, ad);
+}
+
+/* Callbacks */
+bool OculusWarningEventHandlerSDK::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& ad)
+{
+	if (ea.getEventType() == osgGA::GUIEventAdapter::KEYUP) {
+ 		if (m_device->tryDismissHealthAndSafetyDisplay()) {
+			m_warning->dismissWarning();
+		}	 
+	}
+	return osgGA::GUIEventHandler::handle(ea, ad);
 }

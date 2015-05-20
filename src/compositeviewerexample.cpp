@@ -41,8 +41,10 @@ int main( int argc, char** argv )
 	root->addChild(loadedModel);
 
 	// Add health and safety warning
-	osg::ref_ptr<OculusHealthAndSafetyWarning> warning = new OculusHealthAndSafetyWarning(oculusDevice);
+	osg::ref_ptr<OculusHealthAndSafetyWarning> warning = new OculusHealthAndSafetyWarning();
 	root->addChild(warning.get()->getGraph());
+	// Start timer
+	oculusDevice->getHealthAndSafetyDisplayState();
 
 	// Calculate the texture size
 	const int textureWidth = oculusDevice->renderTargetWidth()/2;
@@ -131,7 +133,7 @@ int main( int argc, char** argv )
 	// Add Oculus Keyboard Handler to only one view
 	leftView->addEventHandler(new OculusEventHandler(oculusDevice));
 	// Add Oculus Health and Safety event handler
-	leftView->addEventHandler(new OculusWarningEventHandler(warning));
+	leftView->addEventHandler(new OculusWarningEventHandler(oculusDevice, warning));
 	leftView->setCameraManipulator(cameraManipulator);
 	osg::ref_ptr<osgViewer::View>  rightView = new osgViewer::View;
 	rightView->setName("RightEyeView");

@@ -83,14 +83,24 @@ int main(int argc, char** argv)
 	viewer.getCamera()->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 	viewer.setCameraManipulator(cameraManipulator);
 	viewer.realize();
+	
+	// Add nodes to root node
+	osg::ref_ptr<osg::Group> root = new osg::Group;
+	root->addChild(oculusDevice->healthWarning()->getGraph());
+	// Start timer
+	oculusDevice->getHealthAndSafetyDisplayState();
 
-	viewer.setSceneData(loadedModel);
+	root->addChild(loadedModel);
+	viewer.setSceneData(root);
 
 	// Add statistics handler
 	viewer.addEventHandler(new osgViewer::StatsHandler);
 
 	// Add Oculus Keyboard Handler to only one view
 	viewer.addEventHandler(new OculusEventHandlerSDK(oculusDevice));
+
+	// Add Oculus Health and Safety event handler
+	viewer.addEventHandler(new OculusWarningEventHandlerSDK(oculusDevice, oculusDevice->healthWarning()));
 	
 	// Start Viewer
 	while (!viewer.done()) {

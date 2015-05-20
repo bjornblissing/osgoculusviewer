@@ -24,6 +24,8 @@
 #include <osg/Vec3>
 #include <osgViewer/Viewer>
 
+#include "oculushealthwarning.h"
+
 class OculusTexture2D : public osg::Texture2D {
 	public:
 		void setViewPort(int x, int y, int w, int h);
@@ -59,6 +61,9 @@ class OculusDeviceSDK : public osg::Referenced {
 		osg::GraphicsContext::Traits* graphicsContextTraits() const;
 		void beginFrame();
 		void endFrame();
+		bool getHealthAndSafetyDisplayState();
+		bool tryDismissHealthAndSafetyDisplay();
+		osg::ref_ptr<OculusHealthAndSafetyWarning> healthWarning() const { return m_warning; }
 	protected:
 		~OculusDeviceSDK(); // Since we inherit from osg::Referenced we must make destructor protected
 
@@ -128,6 +133,7 @@ class OculusDeviceSDK : public osg::Referenced {
 		osg::ref_ptr<OculusTexture2D> m_rightDepthTexture;
 		osg::ref_ptr<osg::Camera> m_cameraRTTLeft;
 		osg::ref_ptr<osg::Camera> m_cameraRTTRight;
+		osg::ref_ptr<OculusHealthAndSafetyWarning> m_warning;
 		osg::observer_ptr<osgViewer::View> m_view;
 
 		const float m_pixelsPerDisplayPixel;

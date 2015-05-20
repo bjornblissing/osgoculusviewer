@@ -81,6 +81,9 @@ OculusDeviceSDK::OculusDeviceSDK(float nearClip, float farClip, const float pixe
 	m_renderTargetSize.w = recommenedLeftTextureSize.w + recommenedRightTextureSize.w;
 	m_renderTargetSize.h = osg::maximum(recommenedLeftTextureSize.h, recommenedRightTextureSize.h);
 
+	// Add health and safety warning
+	m_warning = new OculusHealthAndSafetyWarning();
+
 	initializeEyeRenderDesc();
 }
 
@@ -182,6 +185,16 @@ void OculusDeviceSDK::endFrame() {
 
 	ovrHmd_EndFrame(m_hmdDevice, m_renderPose, eyeTexture);
 	m_frameBegin = false;
+}
+
+bool OculusDeviceSDK::getHealthAndSafetyDisplayState() {
+	ovrHSWDisplayState hswDisplayState;
+ 	ovrHmd_GetHSWDisplayState(m_hmdDevice, &hswDisplayState);
+	return (hswDisplayState.Displayed != 0);
+}
+
+bool OculusDeviceSDK::tryDismissHealthAndSafetyDisplay() {
+	return (ovrHmd_DismissHSWDisplay(m_hmdDevice) != 0);
 }
 
 /* Protected functions */
@@ -349,6 +362,11 @@ void OculusDeviceSDK::updatePose(const ovrPosef& pose, osg::Camera* camera, osg:
 	// There doesn't seem to be an accessor for this, fortunately the offsets are public
 	m_view->findSlaveForCamera(camera)->_viewOffset = viewOffset;
 
+	// Handle health and safety warning
+	if (m_warning.valid()) {
+		// Set warning relative main camera
+		m_warning.get()->updatePosition(m_view->getCamera()->getInverseViewMatrix(), position, orientation);
+	}
 }
 
 void OculusDeviceSDK::initializeTextures(osg::ref_ptr<osg::GraphicsContext> context) {

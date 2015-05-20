@@ -103,7 +103,7 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 	
 	// Add Oculus keyboard handler
 	view.addEventHandler(new OculusEventHandler(m_device));
-	view.addEventHandler(new OculusWarningEventHandler(m_warning));
+	view.addEventHandler(new OculusWarningEventHandler(m_device, m_warning));
 }
 
 
