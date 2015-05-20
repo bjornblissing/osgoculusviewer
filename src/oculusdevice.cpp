@@ -694,6 +694,8 @@ void OculusDevice::trySetProcessAsHighPriority() const {
 
 void OculusDevice::applyExtendedModeSettings() const {
 #ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable : 4995 )
 	// Disable desktop composition when running extended mode to avoid judder
 	// DwmEnableComposition function deprecated in Windows 8
 
@@ -712,6 +714,7 @@ void OculusDevice::applyExtendedModeSettings() const {
 
 	FreeLibrary(HInstDwmapi);
 	HInstDwmapi = NULL;	
+#pragma warning( pop )
 #endif
 }
 
