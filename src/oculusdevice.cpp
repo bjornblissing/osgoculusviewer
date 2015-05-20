@@ -192,7 +192,7 @@ m_directMode(false)
 	// Set render capabilities
 	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
 
-	// Start the sensor which provides the Rift?s pose and motion.
+	// Start the sensor which provides the Rift's pose and motion.
 	ovrHmd_ConfigureTracking(m_hmdDevice, ovrTrackingCap_Orientation |
 		ovrTrackingCap_MagYawCorrection |
 		ovrTrackingCap_Position, 0);

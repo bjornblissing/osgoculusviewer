@@ -15,7 +15,7 @@
 int main( int argc, char** argv )
 {
 	// use an ArgumentParser object to manage the program arguments.
-	osg::ArgumentParser arguments(&argc,argv);
+	osg::ArgumentParser arguments(&argc, argv);
 	// read the scene from the list of file specified command line arguments.
 	osg::ref_ptr<osg::Node> loadedModel = osgDB::readNodeFiles(arguments);
 
@@ -25,7 +25,7 @@ int main( int argc, char** argv )
 	// Still no loaded model, then exit
 	if (!loadedModel) {
 		osg::notify(osg::ALWAYS) << "No model could be loaded and didn't find cow.osgt, terminating.." << std::endl;
- 		return 0;
+		return 0;
 	}
 
 	// Create Trackball manipulator
