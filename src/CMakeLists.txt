@@ -11,6 +11,7 @@ SET(TARGET_SRC
 	oculusdevice.cpp
 	oculusdevicesdk.cpp
 	oculuseventhandler.cpp
+	oculuseventhandlersdk.cpp
 	oculushealthwarning.cpp
 )
 # Header files for library
@@ -19,6 +20,7 @@ SET(TARGET_H
 	oculusdevice.h
 	oculusdevicesdk.h
 	oculuseventhandler.h
+	oculuseventhandlersdk.h
 	oculushealthwarning.h
 )
 

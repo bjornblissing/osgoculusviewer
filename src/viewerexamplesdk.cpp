@@ -10,6 +10,7 @@
 #include <osgViewer/Viewer>
 
 #include "oculusdevicesdk.h"
+#include "oculuseventhandlersdk.h"
 
 int main(int argc, char** argv)
 {
@@ -29,21 +30,27 @@ int main(int argc, char** argv)
 
 	// Still no loaded model, then exit
 	if (!loadedModel) {
-		osg::notify(osg::NOTICE) << "Error, no loaded model and couldn't find cow.osgt" << std::endl;
+		osg::notify(osg::ALWAYS) << "No model could be loaded and didn't find cow.osgt, terminating.." << std::endl;
 		return 0;
 	}
+
 	// Create Trackball manipulator
 	osg::ref_ptr<osgGA::CameraManipulator> cameraManipulator = new osgGA::TrackballManipulator;
 	const osg::BoundingSphere& bs = loadedModel->getBound();
 
 	if (bs.valid()) {
 		// Adjust view to object view
-		cameraManipulator->setHomePosition(osg::Vec3(0, bs.radius()*1.5, 0), osg::Vec3(0, 0, 0), osg::Vec3(0, 0, 1));
+		osg::Vec3 modelCenter = bs.center();
+		osg::Vec3 eyePos = bs.center() + osg::Vec3(0, bs.radius(), 0);
+		cameraManipulator->setHomePosition(eyePos, modelCenter, osg::Vec3(0, 0, 1));
 	}
 
 	// Open the HMD
-	osg::ref_ptr<OculusDeviceSDK> oculusDevice = new OculusDeviceSDK();
-	oculusDevice->initialize();
+	float nearClip = 0.01f;
+	float farClip = 10000.0f;
+	float pixelsPerDisplayPixel = 1.0;
+	float worldUnitsPerMetre = 1.0f;
+	osg::ref_ptr<OculusDeviceSDK> oculusDevice = new OculusDeviceSDK(nearClip, farClip, worldUnitsPerMetre, pixelsPerDisplayPixel);
 
 	// Get the suggested context traits
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = oculusDevice->graphicsContextTraits();
@@ -66,32 +73,28 @@ int main(int argc, char** argv)
 	viewer.getCamera()->setGraphicsContext(gc);
 	viewer.getCamera()->setViewport(0, 0, traits->width, traits->height);
 
+	// Force single threaded to make sure that no other thread can use the GL context
+	viewer.setThreadingModel(osgViewer::Viewer::SingleThreaded);
+
+	// Create textures during viewer realization
+	viewer.setRealizeOperation(new OculusRealizeOperation(oculusDevice, &viewer));
+
 	// Disable automatic computation of near and far plane
 	viewer.getCamera()->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 	viewer.setCameraManipulator(cameraManipulator);
-
-	// Add oculus geode to initialize rendering
-	osg::ref_ptr<OculusDrawable> oculusDrawable = new OculusDrawable;
-	oculusDrawable->setOculusDevice(oculusDevice.get());
-	oculusDrawable->setView(&viewer);
-	osg::ref_ptr<osg::Geode> oculusGeode = new osg::Geode;
-	oculusGeode->addDrawable(oculusDrawable);
-
-	// Create world root and add this to viewer
-	osg::ref_ptr<osg::Group> root = new osg::Group;
-	root->addChild(loadedModel);
-	root->addChild(oculusGeode);
-	viewer.setSceneData(root);
-
-	// Realize viewer
 	viewer.realize();
-	// Run one frame to make sure that textures are created
-	viewer.frame();
 
+	viewer.setSceneData(loadedModel);
+
+	// Add statistics handler
+	viewer.addEventHandler(new osgViewer::StatsHandler);
+
+	// Add Oculus Keyboard Handler to only one view
+	viewer.addEventHandler(new OculusEventHandlerSDK(oculusDevice));
+	
 	// Start Viewer
 	while (!viewer.done()) {
 		oculusDevice->beginFrame();
-		oculusDevice->getEyePose();
 		viewer.frame();
 		oculusDevice->endFrame();
 	}

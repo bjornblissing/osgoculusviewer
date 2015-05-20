@@ -1,9 +1,6 @@
 OsgOculusViewer
 ===============
 
-**NOTE** This is an experimental branch with the goal of having SDK based distortion rendering. **NOTE**
-
-
 An OsgViewer with support for the Oculus Rift
 
 Last tested against Oculus SDK 0.5.0.1 Beta
