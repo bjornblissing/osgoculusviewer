@@ -16,6 +16,8 @@
 
 /* Public functions */
 OculusDeviceSDK::OculusDeviceSDK(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre) : m_hmdDevice(0),
+	m_view(0),
+	m_warning(0),
 	m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
 	m_worldUnitsPerMetre(worldUnitsPerMetre),
 	m_nearClip(nearClip),
@@ -29,7 +31,7 @@ OculusDeviceSDK::OculusDeviceSDK(float nearClip, float farClip, const float pixe
 	m_displaySleep(false),
 	m_mirrorToWindow(true),
 
-	m_supportsSRGB(true),
+	m_supportsSRGB(false),
 	m_pixelLuminanceOverdrive(true),
 	m_timewarpEnabled(true),
 
