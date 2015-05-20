@@ -34,7 +34,7 @@ class OculusTexture2D : public osg::Texture2D {
 		osg::ref_ptr<osg::GraphicsContext> m_context;
 };
 
-class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
+class OculusSwapCallbackSDK : public osg::GraphicsContext::SwapCallback {
 	// Since Oculus calls swapbuffers we do not need OSG to do it
 	 void swapBuffersImplementation(osg::GraphicsContext*) {}
 };
