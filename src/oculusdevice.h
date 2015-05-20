@@ -9,7 +9,7 @@
 #define _OSG_OCULUSDEVICE_H_
 
 // Include the OculusVR SDK
-#include <OVR_CAPI_0_5_0.h>
+#include <OVR_CAPI.h>
 
 #include <osg/Geode>
 #include <osg/Texture2D>
