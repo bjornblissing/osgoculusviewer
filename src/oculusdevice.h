@@ -32,7 +32,7 @@ class OculusDevice : public osg::Referenced {
 			RIGHT = 1,
 			COUNT = 2
 		};
-		OculusDevice(float nearClip, float farClip, float pixelsPerDisplayPixel, bool useTimewarp);
+		OculusDevice(float nearClip, float farClip, bool useTimewarp = true, const float pixelsPerDisplayPixel = 1.0f, const float worldUnitsPerMetre = 1.0f);
 
 		unsigned int screenResolutionWidth() const;
 		unsigned int screenResolutionHeight() const;
@@ -114,6 +114,7 @@ class OculusDevice : public osg::Referenced {
 		osg::Vec3f m_leftEyeAdjust;
 		osg::Vec3f m_rightEyeAdjust;
 
+		const float m_worldUnitsPerMetre; 
 		osg::Vec3 m_position;
 		osg::Quat m_orientation;
 
@@ -130,7 +131,7 @@ class OculusDevice : public osg::Referenced {
 class WarpCameraPreDrawCallback : public osg::Camera::DrawCallback
 {
 public:
-	WarpCameraPreDrawCallback(osg::ref_ptr<OculusDevice> device) : m_device(device) {}
+	explicit WarpCameraPreDrawCallback(osg::ref_ptr<OculusDevice> device) : m_device(device) {}
 	virtual void operator()(osg::RenderInfo& renderInfo) const;
 protected:
 	osg::observer_ptr<OculusDevice> m_device;
@@ -139,7 +140,7 @@ protected:
 
 class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
 public:
-	OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
+	explicit OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
 	void swapBuffersImplementation(osg::GraphicsContext *gc);
 	int frameIndex() const { return m_frameIndex; }
 private:

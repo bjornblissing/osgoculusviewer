@@ -135,7 +135,8 @@ const std::string OculusDevice::m_warpFragmentShaderSource(
 
 
 /* Public functions */
-OculusDevice::OculusDevice(float nearClip, float farClip, float pixelsPerDisplayPixel, bool useTimewarp) : m_hmdDevice(0),
+OculusDevice::OculusDevice(float nearClip, float farClip, bool useTimewarp, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre) : m_hmdDevice(0),
+m_worldUnitsPerMetre(worldUnitsPerMetre),
 m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
 m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
 m_nearClip(nearClip), m_farClip(farClip),
@@ -280,6 +281,7 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	ovrPoseStatef headpose = ts.HeadPose;
 	ovrPosef pose = headpose.ThePose;
 	m_position.set(-pose.Position.x, -pose.Position.y, -pose.Position.z);
+	m_position *= m_worldUnitsPerMetre;
 	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
 
 	// Get head pose for both eyes (used for time warp
@@ -325,7 +327,7 @@ osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, 
 	}
 
 	// Get triangle indicies 
-	osg::UShortArray* indexArray = new osg::UShortArray;
+	osg::ref_ptr<osg::UShortArray> indexArray = new osg::UShortArray;
 	unsigned short* index = meshData.pIndexData;
 	for (unsigned indexNum = 0; indexNum < meshData.IndexCount; ++indexNum) {
 		indexArray->push_back(index[indexNum]);
@@ -639,8 +641,10 @@ void OculusDevice::initializeEyeRenderDesc() {
 void OculusDevice::calculateEyeAdjustment() {
 	ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeViewOffset;
 	m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
+	m_leftEyeAdjust *= m_worldUnitsPerMetre;
 	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeViewOffset;
 	m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
+	m_rightEyeAdjust *= m_worldUnitsPerMetre;
 }
 
 void OculusDevice::calculateProjectionMatrices() {
