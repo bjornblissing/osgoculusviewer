@@ -57,9 +57,12 @@ void OculusViewer::configure()
 	camera->setCullMask(~m_sceneNodeMask);
 
 	// Add health and safety warning
-	m_warning = new OculusHealthAndSafetyWarning(m_device);
-	m_view->addEventHandler(new OculusWarningEventHandler(m_warning));
+	m_warning = new OculusHealthAndSafetyWarning();
+	m_view->addEventHandler(new OculusWarningEventHandler(m_device.get(), m_warning));
 	this->addChild(m_warning->getGraph());
+	// Start timer
+	m_device->getHealthAndSafetyDisplayState();
+
 
 	const int textureWidth = m_device->renderTargetWidth()/2;
 	const int textureHeight = m_device->renderTargetHeight();

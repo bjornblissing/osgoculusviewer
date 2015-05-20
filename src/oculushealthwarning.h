@@ -11,16 +11,17 @@
 #include <osg/Image>
 #include <osgViewer/ViewerEventHandlers>
 
-// Forward declaration
+// Forward declarations
 class OculusDevice;
+class OculusDeviceSDK;
 
 
 class OculusHealthAndSafetyWarning : public osg::Referenced {
 public:
-	explicit OculusHealthAndSafetyWarning(osg::observer_ptr<OculusDevice> device) : m_scale(3.0), m_distance(4.0), m_transform(0), m_device(device) {};
+	OculusHealthAndSafetyWarning() : m_scale(3.0), m_distance(4.0), m_transform(0) {};
 	void updatePosition(osg::Matrix cameraMatrix, osg::Vec3 position, osg::Quat orientation);
 	osg::ref_ptr<osg::Group> getGraph();
-	void tryDismissWarning();
+	void dismissWarning();
 protected:
 	~OculusHealthAndSafetyWarning() {};
 	
@@ -28,18 +29,28 @@ protected:
 	const double m_scale;
 	const double m_distance;
 	osg::ref_ptr<osg::MatrixTransform> m_transform;
-	osg::observer_ptr<OculusDevice> m_device;
+	
 };
 
 
 class OculusWarningEventHandler : public osgGA::GUIEventHandler
 {
 public:
-	explicit OculusWarningEventHandler(osg::observer_ptr<OculusHealthAndSafetyWarning> warning) : m_warning(warning) {}
+	OculusWarningEventHandler(osg::observer_ptr<OculusDevice> device, osg::observer_ptr<OculusHealthAndSafetyWarning> warning) : m_device(device), m_warning(warning) {}
 	virtual bool handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter&);
 protected:
+	osg::observer_ptr<OculusDevice> m_device;
 	osg::observer_ptr<OculusHealthAndSafetyWarning> m_warning;
+};
 
+class OculusWarningEventHandlerSDK : public osgGA::GUIEventHandler
+{
+public:
+	OculusWarningEventHandlerSDK(osg::observer_ptr<OculusDeviceSDK> device, osg::observer_ptr<OculusHealthAndSafetyWarning> warning) : m_device(device), m_warning(warning) {}
+	virtual bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter&);
+protected:
+	osg::observer_ptr<OculusDeviceSDK> m_device;
+	osg::observer_ptr<OculusHealthAndSafetyWarning> m_warning;
 };
 
 #endif /* _OSG_OCULUSWARNING_H_ */
