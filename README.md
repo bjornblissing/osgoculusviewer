@@ -1,11 +1,11 @@
 OsgOculusViewer
 ===============
 
+**NOTE** This is an experimental branch with the goal of having support for SDK version 0.6.0.0. **NOTE**
+
 An OsgViewer with support for the Oculus Rift
 
-Last tested against Oculus SDK 0.5.0.1 Beta
-
-To be able to use the osgViewer::ViewConfig version you will need to use OpenSceneGraph 3.2.0 or later.
+Last tested against Oculus SDK 0.6.0.0 Beta
 
 
 License
