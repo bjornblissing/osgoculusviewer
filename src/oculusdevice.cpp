@@ -645,6 +645,9 @@ void OculusDevice::calculateEyeAdjustment() {
 	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeViewOffset;
 	m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
 	m_rightEyeAdjust *= m_worldUnitsPerMetre;
+
+	float ipd = 1000.0f * (m_leftEyeAdjust - m_rightEyeAdjust).length() / m_worldUnitsPerMetre;
+	osg::notify(osg::ALWAYS) << "Interpupillary Distance (IPD): " << ipd << "mm" << std::endl;
 }
 
 void OculusDevice::calculateProjectionMatrices() {
