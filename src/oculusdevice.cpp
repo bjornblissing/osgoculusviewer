@@ -640,10 +640,17 @@ void OculusDevice::initializeEyeRenderDesc() {
 
 void OculusDevice::calculateEyeAdjustment() {
 	ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeViewOffset;
-	m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
-	m_leftEyeAdjust *= m_worldUnitsPerMetre;
 	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeViewOffset;
+
+	m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
 	m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
+
+	// Display IPD
+	float ipd = (m_leftEyeAdjust - m_rightEyeAdjust).length();
+	osg::notify(osg::ALWAYS) << "Interpupillary Distance (IPD): " << ipd * 1000.0f << " mm" << std::endl;
+
+	// Scale to world units
+	m_leftEyeAdjust *= m_worldUnitsPerMetre;
 	m_rightEyeAdjust *= m_worldUnitsPerMetre;
 }
 
