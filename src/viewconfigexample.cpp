@@ -32,10 +32,6 @@ int main( int argc, char** argv )
 	osg::ref_ptr<osg::Group> root = new osg::Group;
 	root->addChild(loadedModel);
 		
-	// Subtract at least one bit of the node mask to disable rendering for main camera
-	osg::Node::NodeMask sceneNodeMask = loadedModel->getNodeMask() & ~0x1;
-	loadedModel->setNodeMask(sceneNodeMask);
-
 	// Create Trackball manipulator
 	osg::ref_ptr<osgGA::CameraManipulator> cameraManipulator = new osgGA::TrackballManipulator;
 	const osg::BoundingSphere& bs = loadedModel->getBound();
@@ -56,8 +52,6 @@ int main( int argc, char** argv )
 	osg::ref_ptr<OculusViewConfig> oculusViewConfig = new OculusViewConfig(nearClip, farClip, useTimewarp, pixelsPerDisplayPixel, worldUnitsPerMetre);
 	// Add health and safety warning
 	root->addChild(oculusViewConfig->warning()->getGraph());
-	// Set the node mask used for scene
-	oculusViewConfig->setSceneNodeMask(sceneNodeMask);
 	// Create viewer
 	osgViewer::Viewer viewer(arguments);
 	// Add statistics handler

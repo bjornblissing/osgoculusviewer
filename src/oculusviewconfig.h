@@ -17,13 +17,11 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 	public:
 		OculusViewConfig(float nearClip = 0.01f, float farClip = 10000.0f, bool useTimewarp = true, float pixelsPerDisplayPixel = 1.0f, float worldUnitsPerMetre = 1.0f) : osgViewer::ViewConfig(),
 			m_configured(false),
-			m_sceneNodeMask(0x1),
 			m_device(0),
 			m_warning(0) {
 			m_device = new OculusDevice(nearClip, farClip, useTimewarp, pixelsPerDisplayPixel, worldUnitsPerMetre);
 			m_warning = new OculusHealthAndSafetyWarning();
 		}
-		void setSceneNodeMask(osg::Node::NodeMask nodeMask) { m_sceneNodeMask = nodeMask; }
 		virtual void configure(osgViewer::View& view) const;
 		OculusDevice* oculusDevice() const { return m_device.get(); }
 		OculusHealthAndSafetyWarning* warning() const { return m_warning.get(); }
@@ -31,7 +29,6 @@ class OculusViewConfig : public osgViewer::ViewConfig {
 		~OculusViewConfig() {};
 
 		bool m_configured;
-		osg::Node::NodeMask m_sceneNodeMask;
 
 		osg::ref_ptr<OculusDevice> m_device;
 		osg::ref_ptr<OculusHealthAndSafetyWarning> m_warning;
