@@ -13,6 +13,7 @@ SET(TARGET_SRC
 	oculuseventhandler.cpp
 	oculuseventhandlersdk.cpp
 	oculushealthwarning.cpp
+	oculusupdateslavecallback.cpp
 )
 # Header files for library
 SET(TARGET_H
@@ -22,6 +23,7 @@ SET(TARGET_H
 	oculuseventhandler.h
 	oculuseventhandlersdk.h
 	oculushealthwarning.h
+	oculusupdateslavecallback.h
 )
 
 # Add view config if available

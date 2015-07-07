@@ -7,52 +7,7 @@
 #include "oculusviewconfig.h"
 
 #include "oculuseventhandler.h"
-
-
-struct SlaveUpdateCallback : public osg::View::Slave::UpdateSlaveCallback
-{
-	enum CameraType
-	{
-		LEFT_CAMERA,
-		RIGHT_CAMERA
-	};
-
-	SlaveUpdateCallback(CameraType cameraType, OculusDevice* device, OculusSwapCallback* swapCallback, OculusHealthAndSafetyWarning* warning):
-		m_cameraType(cameraType),
-		m_device(device),
-		m_swapCallback(swapCallback),
-		m_warning(warning) {}
-
-    virtual void updateSlave(osg::View& view, osg::View::Slave& slave)
-	{
-		if (m_cameraType==LEFT_CAMERA)
-		{
-			m_device->updatePose(m_swapCallback->frameIndex());
-
-		}
-
-		osg::Vec3 position = m_device->position();
-		osg::Quat orientation = m_device->orientation();
-
-		osg::Matrix viewOffset = (m_cameraType==LEFT_CAMERA) ? m_device->viewMatrixLeft() : m_device->viewMatrixRight();
-
-		viewOffset.preMultRotate(orientation);
-		viewOffset.preMultTranslate(position);
-
-		slave._viewOffset = viewOffset;
-
-		slave.updateSlaveImplementation(view);
-
-		if (m_warning.valid()) {
-			m_warning.get()->updatePosition(view.getCamera()->getInverseViewMatrix(), position, orientation);
-		}
-	}
-
-	CameraType m_cameraType;
-	osg::ref_ptr<OculusDevice> m_device;
-	osg::ref_ptr<OculusSwapCallback> m_swapCallback;
-	osg::ref_ptr<OculusHealthAndSafetyWarning> m_warning;
-};
+#include "oculusupdateslavecallback.h"
 
 
 /* Public functions */
@@ -126,13 +81,13 @@ void OculusViewConfig::configure(osgViewer::View& view) const
 		m_device->projectionOffsetMatrixLeft(),
 		m_device->viewMatrixLeft(), 
 		true);
-	view.getSlave(0)._updateSlaveCallback = new SlaveUpdateCallback(SlaveUpdateCallback::LEFT_CAMERA, m_device.get(), swapCallback.get(), m_warning.get());
+	view.getSlave(0)._updateSlaveCallback = new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::LEFT_CAMERA, m_device.get(), swapCallback.get(), m_warning.get());
 
 	view.addSlave(cameraRTTRight, 
 		m_device->projectionOffsetMatrixRight(),
 		m_device->viewMatrixRight(),
 		true);
-	view.getSlave(1)._updateSlaveCallback = new SlaveUpdateCallback(SlaveUpdateCallback::RIGHT_CAMERA, m_device.get(), swapCallback.get(), 0);
+	view.getSlave(1)._updateSlaveCallback = new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::RIGHT_CAMERA, m_device.get(), swapCallback.get(), 0);
 
 	// Use sky light instead of headlight to avoid light changes when head movements
 	view.setLightingMode(osg::View::SKY_LIGHT);

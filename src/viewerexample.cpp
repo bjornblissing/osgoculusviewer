@@ -74,12 +74,7 @@ int main( int argc, char** argv )
 	viewer.setCameraManipulator(cameraManipulator);
 	viewer.realize();
 	
-	// Subtract at least one bit of the node mask to disable rendering for main camera
-	osg::Node::NodeMask sceneNodeMask = loadedModel->getNodeMask() & ~0x1;
-	loadedModel->setNodeMask(sceneNodeMask);
-
 	osg::ref_ptr<OculusViewer> oculusViewer = new OculusViewer(&viewer, oculusDevice);
-	oculusViewer->setSceneNodeMask(sceneNodeMask);
 	oculusViewer->addChild(loadedModel);
 	viewer.setSceneData(oculusViewer);
 	// Add statistics handler

@@ -26,10 +26,8 @@ class OculusViewer : public osg::Group {
 			m_view(view), 
 			m_cameraRTTLeft(0), m_cameraRTTRight(0), 
 			m_device(dev), 
-			m_swapCallback(0),
-			m_sceneNodeMask(0x1) {};
+			m_swapCallback(0) {};
 		virtual void traverse(osg::NodeVisitor& nv);
-		void setSceneNodeMask(osg::Node::NodeMask nodeMask) { m_sceneNodeMask = nodeMask; }
 	protected:
 		~OculusViewer() {};
 		virtual void configure();
