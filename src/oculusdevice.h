@@ -38,7 +38,7 @@ protected:
 
 class OculusDepthBuffer {
 public:
-	OculusDepthBuffer(const ovrSizei& size);
+	explicit OculusDepthBuffer(const ovrSizei& size);
 	~OculusDepthBuffer() {}
 	int textureWidth() const { return m_textureSize.x(); }
 	int textureHeight() const { return m_textureSize.y(); }
@@ -114,9 +114,9 @@ class OculusDevice : public osg::Referenced {
 
 		void trySetProcessAsHighPriority() const;
 		
+		ovrHmd m_hmdDevice;
 		const float m_pixelsPerDisplayPixel;
 		const float m_worldUnitsPerMetre;
-		ovrHmd m_hmdDevice;
 		OculusTextureBuffer* m_textureBuffer[2];
 		OculusDepthBuffer* m_depthBuffer[2];
 		ovrSizei m_resolution;
@@ -146,7 +146,7 @@ class OculusDevice : public osg::Referenced {
 
 class OculusRealizeOperation : public osg::GraphicsOperation {
 public:
-	OculusRealizeOperation(osg::ref_ptr<OculusDevice> device) :
+	explicit OculusRealizeOperation(osg::ref_ptr<OculusDevice> device) :
 		osg::GraphicsOperation("OculusRealizeOperation", false), m_device(device), m_realized(false) {}
 	virtual void operator () (osg::GraphicsContext* gc);
 	bool realized() const { return m_realized; }
@@ -159,7 +159,7 @@ protected:
 
 class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
 public:
-	OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
+	explicit OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
 	void swapBuffersImplementation(osg::GraphicsContext *gc);
 	int frameIndex() const { return m_frameIndex; }
 private:

@@ -7,12 +7,14 @@ SET(TARGET_SRC
 	oculusviewer.cpp
 	oculusdevice.cpp
 	oculuseventhandler.cpp
+	oculusupdateslavecallback.cpp
 )
 # Header files for library
 SET(TARGET_H
 	oculusviewer.h
 	oculusdevice.h
 	oculuseventhandler.h
+	oculusupdateslavecallback.h
 )
 
 #####################################################################

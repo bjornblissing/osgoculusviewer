@@ -7,6 +7,10 @@
 
 #include "oculusdevice.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #include <osg/Geometry>
 #include <osg/GLExtensions>
 #include <osg/FrameBufferObject>
