@@ -1,11 +1,9 @@
 OsgOculusViewer
 ===============
 
-**NOTE** This is an experimental branch with the goal of having support for SDK version 0.6.0.0. **NOTE**
-
 An OsgViewer with support for the Oculus Rift
 
-Last tested against Oculus SDK 0.6.0.0 Beta
+Last tested against Oculus SDK 0.6.0.1 Beta
 
 
 License
@@ -31,3 +29,5 @@ Mark Goodall
 Daniel Johansson
 
 Chris Denham
+
+Jeff Bail
