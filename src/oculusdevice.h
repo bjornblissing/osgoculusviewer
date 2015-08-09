@@ -13,6 +13,7 @@
 
 #include <osg/Geode>
 #include <osg/Texture2D>
+#include <osg/FrameBufferObject>
 
 
 class OculusTextureBuffer {
@@ -25,28 +26,50 @@ public:
 	void createRenderBuffers(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size);
 	osg::ref_ptr<osg::Texture2D> texture() const { return m_texture; }
 	void advanceIndex() { m_textureSet->CurrentIndex = (m_textureSet->CurrentIndex + 1) % m_textureSet->TextureCount; }
-	void setAndClearRenderSurface();
-	void unsetRenderSurface();
-	GLuint fboId() const { return m_fboId; }
+	void setRenderSurface(const osg::FBOExtensions* fbo_ext);
+	void initializeFboId(GLuint id) { m_fboId = id; m_fboIdInitialized = true; }
+	bool isFboIdInitialized() const { return m_fboIdInitialized; }
 protected:
 	ovrSwapTextureSet* m_textureSet;
 	osg::ref_ptr<osg::Texture2D> m_texture;
 	osg::Vec2i m_textureSize;
 	unsigned int m_contextId;
 	GLuint m_fboId;
+	bool m_fboIdInitialized;
 };
+
 
 class OculusDepthBuffer {
 public:
-	explicit OculusDepthBuffer(const ovrSizei& size);
+	explicit OculusDepthBuffer(const ovrSizei& size, osg::ref_ptr<osg::State> state);
 	~OculusDepthBuffer() {}
 	int textureWidth() const { return m_textureSize.x(); }
 	int textureHeight() const { return m_textureSize.y(); }
 	osg::ref_ptr<osg::Texture2D> texture() const { return m_texture; }
+	GLuint texId() const { return m_texId; }
+	void setRenderSurface(const osg::FBOExtensions* fbo_ext);
 protected:
 	osg::ref_ptr<osg::Texture2D> m_texture;
 	osg::Vec2i m_textureSize;
-	GLuint texId;
+	GLuint m_texId;
+};
+
+
+class OculusPreDrawCallback : public osg::Camera::DrawCallback
+{
+public:
+	OculusPreDrawCallback(osg::Camera* camera, OculusTextureBuffer* textureBuffer, OculusDepthBuffer* depthBuffer)
+		: m_camera(camera)
+		, m_textureBuffer(textureBuffer)
+		, m_depthBuffer(depthBuffer)
+	{
+	}
+
+	virtual void operator()(osg::RenderInfo& renderInfo) const;
+protected:
+	osg::Camera* m_camera;
+	OculusTextureBuffer* m_textureBuffer;
+	OculusDepthBuffer* m_depthBuffer;
 
 };
 
@@ -75,9 +98,6 @@ class OculusDevice : public osg::Referenced {
 
 		osg::Matrix viewMatrixLeft() const;
 		osg::Matrix viewMatrixRight() const;
-
-		void beginFrame();
-		void endFrame();
 
 		float nearClip() const { return m_nearClip;	}
 		float farClip() const { return m_farClip; }

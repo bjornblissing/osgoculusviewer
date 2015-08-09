@@ -12,12 +12,44 @@
 #endif
 
 #include <osg/Geometry>
-#include <osg/GLExtensions>
-#include <osg/FrameBufferObject>
+#include <osgViewer/Renderer>
 
+
+void OculusPreDrawCallback::operator()(osg::RenderInfo& renderInfo) const {
+	osg::State& state = *renderInfo.getState();
+	const unsigned int ctx = state.getContextID();
+	
+	if (!m_textureBuffer->isFboIdInitialized()) {
+		osg::Camera* camera = renderInfo.getCurrentCamera();
+		osgViewer::Renderer *camRenderer = (dynamic_cast<osgViewer::Renderer*>(camera->getRenderer()));
+		if (camRenderer != NULL) {
+			osgUtil::SceneView* sceneView = camRenderer->getSceneView(0);
+			if (sceneView != NULL) {
+				osgUtil::RenderStage* renderStage = sceneView->getRenderStage();
+				if (renderStage != NULL) {
+					osg::FrameBufferObject* fbo = renderStage->getFrameBufferObject();
+					GLuint fboId = fbo->getHandle(ctx);
+					m_textureBuffer->initializeFboId(fboId);
+				}
+			}
+		}
+	}
+
+	m_textureBuffer->advanceIndex();
+
+	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
+	m_textureBuffer->setRenderSurface(fbo_ext);
+	m_depthBuffer->setRenderSurface(fbo_ext);
+}
 
 /* Public functions */
-OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size) : m_textureSet(0), m_texture(0), m_textureSize(osg::Vec2i(size.w, size.h)) {
+OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size) : m_textureSet(0), 
+	m_texture(0), 
+	m_textureSize(osg::Vec2i(size.w, size.h)), 
+	m_contextId(0), 
+	m_fboId(0), 
+	m_fboIdInitialized(false) 
+{
 	m_textureSize.set(size.w, size.h);
 	if (ovrHmd_CreateSwapTextureSetGL(hmd, GL_RGBA, size.w, size.h, &m_textureSet) == ovrSuccess) {
 		// Assign textures to OSG textures
@@ -44,9 +76,6 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 			m_texture->setTextureSize(tex->Texture.Header.TextureSize.w, tex->Texture.Header.TextureSize.h);
 			m_texture->setSourceFormat(GL_RGBA);
 			m_texture->apply(*state.get());
-			/*m_texture->setResizeNonPowerOfTwoHint(false);
-			m_texture->setInternalFormat(GL_RGBA32F_ARB);
-			m_texture->setSourceType(GL_FLOAT);*/
 			m_contextId = state->getContextID();
 
 			osg::notify(osg::DEBUG_INFO) << "Successfully created the swap texture!" << std::endl;
@@ -56,11 +85,20 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 		osg::notify(osg::WARN) << "Warning: Unable to create swap texture set! " << std::endl;
 		return;
 	}
-	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(m_contextId, true);
-	fbo_ext->glGenFramebuffers(GL_EXT_framebuffer_object, &m_fboId);
 }
 
-OculusDepthBuffer::OculusDepthBuffer(const ovrSizei& size) : m_texture(0) {
+void OculusTextureBuffer::setRenderSurface(const osg::FBOExtensions* fbo_ext) {
+	ovrGLTexture* tex = (ovrGLTexture*)&m_textureSet->Textures[m_textureSet->CurrentIndex];
+	fbo_ext->glBindFramebuffer(GL_FRAMEBUFFER_EXT, m_fboId);
+	fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, tex->OGL.TexId, 0);
+	
+}
+
+void OculusDepthBuffer::setRenderSurface(const osg::FBOExtensions* fbo_ext) {
+	fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, m_texId, 0);
+}
+
+OculusDepthBuffer::OculusDepthBuffer(const ovrSizei& size, osg::ref_ptr<osg::State> state) : m_texture(0) {
 	m_textureSize.set(size.w, size.h);
 	m_texture = new osg::Texture2D();
 	m_texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
@@ -73,22 +111,9 @@ OculusDepthBuffer::OculusDepthBuffer(const ovrSizei& size) : m_texture(0) {
 	m_texture->setTextureWidth(size.w);
 	m_texture->setTextureHeight(size.h);
 	m_texture->setBorderWidth(0);
-	
-}
-
-void OculusTextureBuffer::setAndClearRenderSurface() {
-	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(m_contextId, true);
-	ovrGLTexture* tex = (ovrGLTexture*)&m_textureSet->Textures[m_textureSet->CurrentIndex];
-	
-	fbo_ext->glBindFramebuffer(GL_EXT_framebuffer_object, m_fboId);
-	fbo_ext->glFramebufferTexture2D(GL_EXT_framebuffer_object, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, tex->OGL.TexId, 0);
-}
-
-void OculusTextureBuffer::unsetRenderSurface() {
-	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(m_contextId, true);
-
-	fbo_ext->glBindFramebuffer(GL_EXT_framebuffer_object, m_fboId);
-	fbo_ext->glFramebufferTexture2D(GL_EXT_framebuffer_object, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0);
+	m_texture->apply(*state.get());
+	unsigned int contextID = state->getContextID();
+	m_texId = m_texture->getTextureObject(contextID)->id();
 }
 
 /* Public functions */
@@ -139,7 +164,7 @@ void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state) {
 	{
 		ovrSizei recommenedTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, (ovrEyeType)i, m_hmdDevice->DefaultEyeFov[i], m_pixelsPerDisplayPixel);
 		m_textureBuffer[i] = new OculusTextureBuffer(m_hmdDevice, state, recommenedTextureSize);
-		m_depthBuffer[i] = new OculusDepthBuffer(recommenedTextureSize);
+		m_depthBuffer[i] = new OculusDepthBuffer(recommenedTextureSize, state);
 	}
 }
 
@@ -162,18 +187,6 @@ void OculusDevice::init() {
 	// Setup layers
 	setupLayers();
 }
-
-
-void OculusDevice::beginFrame() {
-	m_textureBuffer[0]->setAndClearRenderSurface();
-	m_textureBuffer[1]->setAndClearRenderSurface();
-}
-
-void OculusDevice::endFrame() {
-	m_textureBuffer[0]->unsetRenderSurface();
-	m_textureBuffer[1]->unsetRenderSurface();
-}
-
 
 unsigned int OculusDevice::screenResolutionWidth() const
 {
@@ -238,10 +251,6 @@ void OculusDevice::resetSensorOrientation() const {
 
 void OculusDevice::updatePose(unsigned int frameIndex)
 {
-	// Update the rendering index in the swap textures
-	m_textureBuffer[0]->advanceIndex();
-	m_textureBuffer[1]->advanceIndex();
-
 	// Ask the API for the times when this frame is expected to be displayed.
 	m_frameTiming = ovrHmd_GetFrameTiming(m_hmdDevice, frameIndex);
 
@@ -272,7 +281,6 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 	camera->setReferenceFrame(referenceFrame);
 
 	camera->setGraphicsContext(gc);
-
 	if (texture) {
 		camera->setViewport(0, 0, texture->getTextureWidth(), texture->getTextureHeight());
 		camera->attach(osg::Camera::COLOR_BUFFER, texture);
@@ -282,11 +290,16 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 		camera->attach(osg::Camera::DEPTH_BUFFER, depth);
 	}
 
+	camera->setPreDrawCallback(new OculusPreDrawCallback(camera.get(), m_textureBuffer[renderOrder(eye)], m_depthBuffer[renderOrder(eye)]));
+
 	return camera.release();
 }
 
 bool OculusDevice::submitFrame(unsigned int frameIndex) {
-	
+
+	m_layerEyeFov.ColorTexture[0] = m_textureBuffer[0]->textureSet();
+	m_layerEyeFov.ColorTexture[1] = m_textureBuffer[1]->textureSet();
+
 	// Set render pose
 	m_layerEyeFov.RenderPose[0] = m_eyeRenderPose[0];
 	m_layerEyeFov.RenderPose[1] = m_eyeRenderPose[1];
@@ -430,9 +443,6 @@ void OculusDevice::calculateProjectionMatrices() {
 void OculusDevice::setupLayers() {
 	m_layerEyeFov.Header.Type = ovrLayerType_EyeFov;
 	m_layerEyeFov.Header.Flags = ovrLayerFlag_TextureOriginAtBottomLeft;   // Because OpenGL.
-
-	m_layerEyeFov.ColorTexture[0] = m_textureBuffer[0]->textureSet();
-	m_layerEyeFov.ColorTexture[1] = m_textureBuffer[1]->textureSet();
 
 	ovrRecti viewPort[2];
 	viewPort[0].Pos.x = 0;

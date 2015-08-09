@@ -95,13 +95,9 @@ int main( int argc, char** argv )
 
 	// Start Viewer
 	while (!viewer.done()) {
-		oculusDevice->beginFrame();
 		viewer.frame();
-		oculusDevice->endFrame();
 	}
-
 #endif
-
 
 	return 0;
 }
