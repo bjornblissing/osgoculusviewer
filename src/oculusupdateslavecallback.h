@@ -6,7 +6,6 @@
  */
 #include <osgViewer/View>
 #include "oculusdevice.h"
-#include "oculushealthwarning.h"
 
 struct OculusUpdateSlaveCallback : public osg::View::Slave::UpdateSlaveCallback
 {
