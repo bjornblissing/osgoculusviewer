@@ -13,6 +13,7 @@
 
 #include <osg/Geometry>
 #include <osgViewer/Renderer>
+#include <osgViewer/GraphicsWindow>
 
 
 void OculusPreDrawCallback::operator()(osg::RenderInfo& renderInfo) const {
@@ -474,6 +475,11 @@ void OculusRealizeOperation::operator() (osg::GraphicsContext* gc) {
 	if (!m_realized) {
 		OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
 		gc->makeCurrent();
+
+		if (osgViewer::GraphicsWindow* window = dynamic_cast<osgViewer::GraphicsWindow*>(gc)) {
+			// Run wglSwapIntervalEXT(0) to force VSync Off
+			window->setSyncToVBlank(false);
+		}
 
 		osg::ref_ptr<osg::State> state = gc->getState();
 		m_device->createRenderBuffers(state);
