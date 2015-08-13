@@ -116,7 +116,6 @@ class OculusDevice : public osg::Referenced {
 		bool submitFrame(unsigned int frameIndex = 0);
 		void blitMirrorTexture(osg::GraphicsContext *gc);
 
-		void toggleMirrorToWindow();
 		void toggleLowPersistence();
 		void toggleDynamicPrediction();
 		void setPerfHudMode(int mode);

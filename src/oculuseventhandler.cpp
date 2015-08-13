@@ -20,10 +20,6 @@ bool OculusEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActio
 				m_oculusDevice->resetSensorOrientation();
 				return osgGA::GUIEventHandler::handle(ea, ad);
 				break;
-			case osgGA::GUIEventAdapter::KEY_M:
-				m_oculusDevice->toggleMirrorToWindow();
-				return osgGA::GUIEventHandler::handle(ea, ad);
-				break;
 			case osgGA::GUIEventAdapter::KEY_P:
 				m_oculusDevice->toggleLowPersistence();
 				return osgGA::GUIEventHandler::handle(ea, ad);

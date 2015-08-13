@@ -345,12 +345,6 @@ void OculusDevice::blitMirrorTexture(osg::GraphicsContext* gc) {
 	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
 }
 
-void OculusDevice::toggleMirrorToWindow() {
-	//unsigned int hmdCaps = ovrHmd_GetEnabledCaps(m_hmdDevice);
-	//hmdCaps ^= ovrHmdCap_NoMirrorToWindow;
-	//ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
-}
-
 void OculusDevice::toggleLowPersistence() {
 	unsigned int hmdCaps = ovrHmd_GetEnabledCaps(m_hmdDevice);
 	hmdCaps ^= ovrHmdCap_LowPersistence;
