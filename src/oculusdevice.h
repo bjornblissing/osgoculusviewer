@@ -73,6 +73,7 @@ protected:
 
 };
 
+
 class OculusDevice : public osg::Referenced {
 	
 	public:
@@ -84,6 +85,7 @@ class OculusDevice : public osg::Referenced {
 		} Eye;
 		OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel = 1.0f, const float worldUnitsPerMetre = 1.0f);
 		void createRenderBuffers(osg::ref_ptr<osg::State> state);
+		void createMirrorTexture(osg::ref_ptr<osg::State> state);
 		void init();
 
 		unsigned int screenResolutionWidth() const;
@@ -112,6 +114,7 @@ class OculusDevice : public osg::Referenced {
 		osg::Camera* createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, osg::GraphicsContext* gc = 0) const;
 		
 		bool submitFrame(unsigned int frameIndex = 0);
+		void blitMirrorTexture(osg::GraphicsContext *gc);
 
 		void toggleMirrorToWindow();
 		void toggleLowPersistence();
@@ -139,6 +142,8 @@ class OculusDevice : public osg::Referenced {
 		const float m_worldUnitsPerMetre;
 		OculusTextureBuffer* m_textureBuffer[2];
 		OculusDepthBuffer* m_depthBuffer[2];
+		ovrGLTexture* m_mirrorTexture;
+		GLuint m_mirrorFBO;
 		ovrSizei m_resolution;
 		ovrEyeRenderDesc m_eyeRenderDesc[2];
 		ovrVector2f m_UVScaleOffset[2][2];

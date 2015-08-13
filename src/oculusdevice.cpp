@@ -117,6 +117,7 @@ OculusDepthBuffer::OculusDepthBuffer(const ovrSizei& size, osg::ref_ptr<osg::Sta
 	m_texId = m_texture->getTextureObject(contextID)->id();
 }
 
+
 /* Public functions */
 OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre) : m_hmdDevice(0),
 m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
@@ -167,6 +168,22 @@ void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state) {
 		m_textureBuffer[i] = new OculusTextureBuffer(m_hmdDevice, state, recommenedTextureSize);
 		m_depthBuffer[i] = new OculusDepthBuffer(recommenedTextureSize, state);
 	}
+
+	createMirrorTexture(state);
+}
+
+void OculusDevice::createMirrorTexture(osg::ref_ptr<osg::State> state) {
+	const unsigned int ctx = state->getContextID();
+	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
+	int width = screenResolutionWidth() / 2;
+	int height = screenResolutionHeight() / 2;
+	ovrHmd_CreateMirrorTextureGL(m_hmdDevice, GL_RGBA, width, height, (ovrTexture**)&m_mirrorTexture);
+	// Configure the mirror read buffer
+	fbo_ext->glGenFramebuffers(1, &m_mirrorFBO);
+	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
+	fbo_ext->glFramebufferTexture2D(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, m_mirrorTexture->OGL.TexId, 0);
+	fbo_ext->glFramebufferRenderbuffer(GL_READ_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, 0);
+	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
 }
 
 void OculusDevice::init() {
@@ -314,6 +331,20 @@ bool OculusDevice::submitFrame(unsigned int frameIndex) {
 	return result == ovrSuccess;
 }
 
+void OculusDevice::blitMirrorTexture(osg::GraphicsContext* gc) {
+	const unsigned int ctx = gc->getState()->getContextID();
+	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
+	// Blit mirror texture to back buffer
+	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
+	fbo_ext->glBindFramebuffer(GL_DRAW_FRAMEBUFFER_EXT, 0);
+	GLint w = m_mirrorTexture->OGL.Header.TextureSize.w;
+	GLint h = m_mirrorTexture->OGL.Header.TextureSize.h;
+	fbo_ext->glBlitFramebuffer(0, h, w, 0,
+		0, 0, w, h,
+		GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
+}
+
 void OculusDevice::toggleMirrorToWindow() {
 	//unsigned int hmdCaps = ovrHmd_GetEnabledCaps(m_hmdDevice);
 	//hmdCaps ^= ovrHmdCap_NoMirrorToWindow;
@@ -379,6 +410,8 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
 /* Protected functions */
 OculusDevice::~OculusDevice()
 {
+	ovrHmd_DestroyMirrorTexture(m_hmdDevice, (ovrTexture*)m_mirrorTexture);
+
 	for (int i = 0; i < 2; i++) {
 		ovrHmd_DestroySwapTextureSet(m_hmdDevice, m_textureBuffer[i]->textureSet());
 	}
@@ -493,6 +526,10 @@ void OculusRealizeOperation::operator() (osg::GraphicsContext* gc) {
 void OculusSwapCallback::swapBuffersImplementation(osg::GraphicsContext *gc) {
 	// Submit rendered frame to compositor
 	m_device->submitFrame();
+
+	// Blit mirror texture to backbuffer
+	m_device->blitMirrorTexture(gc);
+
 	// Run the default system swapBufferImplementation
 	gc->swapBuffersImplementation();
 }
