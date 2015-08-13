@@ -22,8 +22,4 @@ void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& s
 	slave._viewOffset = viewOffset;
 
 	slave.updateSlaveImplementation(view);
-
-	if (m_warning.valid()) {
-		m_warning.get()->updatePosition(view.getCamera()->getInverseViewMatrix(), position, orientation);
-	}
 }

@@ -7,181 +7,186 @@
 
 #include "oculusdevice.h"
 
-#include <osg/Geometry>
-
 #ifdef _WIN32
-#include <osgViewer/api/Win32/GraphicsHandleWin32>
-#include <dwmapi.h> // To be able to disable desktop composition
+#include <Windows.h>
 #endif
 
+#include <osg/Geometry>
+#include <osgViewer/Renderer>
+#include <osgViewer/GraphicsWindow>
 
-/* GLSL Shaders */
-const std::string OculusDevice::m_warpVertexShaderSource(
-	"#version 110\n"
 
-	"uniform vec2 EyeToSourceUVScale;\n"
-	"uniform vec2 EyeToSourceUVOffset;\n"
+void OculusPreDrawCallback::operator()(osg::RenderInfo& renderInfo) const {
+	osg::State& state = *renderInfo.getState();
+	const unsigned int ctx = state.getContextID();
+	
+	if (!m_textureBuffer->isFboIdInitialized()) {
+		osg::Camera* camera = renderInfo.getCurrentCamera();
+		osgViewer::Renderer *camRenderer = (dynamic_cast<osgViewer::Renderer*>(camera->getRenderer()));
+		if (camRenderer != NULL) {
+			osgUtil::SceneView* sceneView = camRenderer->getSceneView(0);
+			if (sceneView != NULL) {
+				osgUtil::RenderStage* renderStage = sceneView->getRenderStage();
+				if (renderStage != NULL) {
+					osg::FrameBufferObject* fbo = renderStage->getFrameBufferObject();
+					GLuint fboId = fbo->getHandle(ctx);
+					m_textureBuffer->initializeFboId(fboId);
+				}
+			}
+		}
+	}
 
-	"attribute vec2 Position;\n"
-	"attribute vec4 Color;\n"
-	"attribute vec2 TexCoord0;\n"
-	"attribute vec2 TexCoord1;\n"
-	"attribute vec2 TexCoord2;\n"
+	m_textureBuffer->advanceIndex();
 
-	"varying vec4 oColor;\n"
-	"varying vec2 oTexCoord0;\n"
-	"varying vec2 oTexCoord1;\n"
-	"varying vec2 oTexCoord2;\n"
+	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
+	m_textureBuffer->setRenderSurface(fbo_ext);
+	m_depthBuffer->setRenderSurface(fbo_ext);
+}
 
-	"void main()\n"
-	"{\n"
-	"   gl_Position.x = Position.x;\n"
-	"   gl_Position.y = Position.y;\n"
-	"   gl_Position.z = 0.5;\n"
-	"   gl_Position.w = 1.0;\n"
-	"   // Vertex inputs are in TanEyeAngle space for the R,G,B channels (i.e. after chromatic aberration and distortion).\n"
-	"   // Scale them into the correct [0-1],[0-1] UV lookup space (depending on eye)\n"
-	"   oTexCoord0 = TexCoord0 * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
-	"   oTexCoord0.y = 1.0-oTexCoord0.y;\n"
-	"   oTexCoord1 = TexCoord1 * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
-	"   oTexCoord1.y = 1.0-oTexCoord1.y;\n"
-	"   oTexCoord2 = TexCoord2 * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
-	"   oTexCoord2.y = 1.0-oTexCoord2.y;\n"
-	"   oColor = Color; // Used for vignette fade.\n"
-	"}\n"
-);
+/* Public functions */
+OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size) : m_textureSet(0), 
+	m_texture(0), 
+	m_textureSize(osg::Vec2i(size.w, size.h)), 
+	m_contextId(0), 
+	m_fboId(0), 
+	m_fboIdInitialized(false) 
+{
+	m_textureSize.set(size.w, size.h);
+	if (ovrHmd_CreateSwapTextureSetGL(hmd, GL_RGBA, size.w, size.h, &m_textureSet) == ovrSuccess) {
+		// Assign textures to OSG textures
+		for (int i = 0; i < m_textureSet->TextureCount; ++i)
+		{
+			ovrGLTexture* tex = (ovrGLTexture*)&m_textureSet->Textures[i];
 
-const std::string OculusDevice::m_warpWithTimewarpVertexShaderSource(
-	"#version 110\n"
+			GLuint handle = tex->OGL.TexId;
+			m_texture = new osg::Texture2D();
 
-	"uniform vec2 EyeToSourceUVScale;\n"
-	"uniform vec2 EyeToSourceUVOffset;\n"
-	"uniform mat4 EyeRotationStart;\n"
-	"uniform mat4 EyeRotationEnd;\n"
+			osg::ref_ptr<osg::Texture::TextureObject> textureObject = new osg::Texture::TextureObject(m_texture.get(), handle, GL_TEXTURE_2D);
 
-	"attribute vec2 Position;\n"
-	"attribute vec4 Color;\n"
-	"attribute vec2 TexCoord0;\n"
-	"attribute vec2 TexCoord1;\n"
-	"attribute vec2 TexCoord2;\n"
+			textureObject->setAllocated(true);
 
-	"varying vec4 oColor;\n"
-	"varying vec2 oTexCoord0;\n"
-	"varying vec2 oTexCoord1;\n"
-	"varying vec2 oTexCoord2;\n"
+			m_texture->setTextureObject(state->getContextID(), textureObject.get());
 
-	"void main()\n"
-	"{\n"
-	"   gl_Position.x = Position.x;\n"
-	"   gl_Position.y = Position.y;\n"
-	"   gl_Position.z = 0.0;\n"
-	"   gl_Position.w = 1.0;\n"
+			m_texture->apply(*state.get());
 
-	"    // Vertex inputs are in TanEyeAngle space for the R,G,B channels (i.e. after chromatic aberration and distortion).\n"
-	"    // These are now real world vectors in direction(x, y, 1) relative to the eye of the HMD.\n"
-	"   vec3 TanEyeAngleR = vec3 ( TexCoord0.x, TexCoord0.y, 1.0 );\n"
-	"   vec3 TanEyeAngleG = vec3 ( TexCoord1.x, TexCoord1.y, 1.0 );\n"
-	"   vec3 TanEyeAngleB = vec3 ( TexCoord2.x, TexCoord2.y, 1.0 );\n"
+			m_texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+			m_texture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
+			m_texture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+			m_texture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
 
-	"   mat3 EyeRotation;\n"
-	"   EyeRotation[0] = mix ( EyeRotationStart[0], EyeRotationEnd[0], Color.a ).xyz;\n"
-	"   EyeRotation[1] = mix ( EyeRotationStart[1], EyeRotationEnd[1], Color.a ).xyz;\n"
-	"   EyeRotation[2] = mix ( EyeRotationStart[2], EyeRotationEnd[2], Color.a ).xyz;\n"
-	"   vec3 TransformedR   = EyeRotation * TanEyeAngleR;\n"
-	"   vec3 TransformedG   = EyeRotation * TanEyeAngleG;\n"
-	"   vec3 TransformedB   = EyeRotation * TanEyeAngleB;\n"
+			m_texture->setTextureSize(tex->Texture.Header.TextureSize.w, tex->Texture.Header.TextureSize.h);
+			m_texture->setSourceFormat(GL_RGBA);
+			m_texture->apply(*state.get());
+			m_contextId = state->getContextID();
 
-	"    // Project them back onto the Z=1 plane of the rendered images.\n"
-	"   float RecipZR = 1.0 / TransformedR.z;\n"
-	"   float RecipZG = 1.0 / TransformedG.z;\n"
-	"   float RecipZB = 1.0 / TransformedB.z;\n"
-	"   vec2 FlattenedR = vec2 ( TransformedR.x * RecipZR, TransformedR.y * RecipZR );\n"
-	"   vec2 FlattenedG = vec2 ( TransformedG.x * RecipZG, TransformedG.y * RecipZG );\n"
-	"   vec2 FlattenedB = vec2 ( TransformedB.x * RecipZB, TransformedB.y * RecipZB );\n"
+			osg::notify(osg::DEBUG_INFO) << "Successfully created the swap texture!" << std::endl;
+		}
+	}
+	else {
+		osg::notify(osg::WARN) << "Warning: Unable to create swap texture set! " << std::endl;
+		return;
+	}
+}
 
-	"    // These are now still in TanEyeAngle space.\n"
-	"    // Scale them into the correct [0-1],[0-1] UV lookup space (depending on eye)\n"
-	"   vec2 SrcCoordR = FlattenedR * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
-	"   vec2 SrcCoordG = FlattenedG * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
-	"   vec2 SrcCoordB = FlattenedB * EyeToSourceUVScale + EyeToSourceUVOffset;\n"
-	"   oTexCoord0 = SrcCoordR;\n"
-	"   oTexCoord0.y = 1.0-oTexCoord0.y;\n"
-	"   oTexCoord1 = SrcCoordG;\n"
-	"   oTexCoord1.y = 1.0-oTexCoord1.y;\n"
-	"   oTexCoord2 = SrcCoordB;\n"
-	"   oTexCoord2.y = 1.0-oTexCoord2.y;\n"
-	"   oColor = vec4(Color.r, Color.r, Color.r, Color.r); // Used for vignette fade.\n"
-	"}\n"
-);
+void OculusTextureBuffer::setRenderSurface(const osg::FBOExtensions* fbo_ext) {
+	ovrGLTexture* tex = (ovrGLTexture*)&m_textureSet->Textures[m_textureSet->CurrentIndex];
+	fbo_ext->glBindFramebuffer(GL_FRAMEBUFFER_EXT, m_fboId);
+	fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, tex->OGL.TexId, 0);
+	
+}
 
-const std::string OculusDevice::m_warpFragmentShaderSource(
-	"#version 110\n"
-	"    \n"
-	"uniform sampler2D Texture;\n"
-	"    \n"
-	"varying vec4 oColor;\n"
-	"varying vec2 oTexCoord0;\n"
-	"varying vec2 oTexCoord1;\n"
-	"varying vec2 oTexCoord2;\n"
-	"    \n"
-	"void main()\n"
-	"{\n"
-	"   gl_FragColor.r = oColor.r * texture2D(Texture, oTexCoord0).r;\n"
-	"   gl_FragColor.g = oColor.g * texture2D(Texture, oTexCoord1).g;\n"
-	"   gl_FragColor.b = oColor.b * texture2D(Texture, oTexCoord2).b;\n"
-	"   gl_FragColor.a = 1.0;\n"
-	"}\n"
-);
+void OculusDepthBuffer::setRenderSurface(const osg::FBOExtensions* fbo_ext) {
+	fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, m_texId, 0);
+}
+
+OculusDepthBuffer::OculusDepthBuffer(const ovrSizei& size, osg::ref_ptr<osg::State> state) : m_texture(0) {
+	m_textureSize.set(size.w, size.h);
+	m_texture = new osg::Texture2D();
+	m_texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+	m_texture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
+	m_texture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+	m_texture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
+	m_texture->setSourceFormat(GL_DEPTH_COMPONENT); 
+	m_texture->setSourceType(GL_UNSIGNED_INT);
+	m_texture->setInternalFormat(GL_DEPTH_COMPONENT24);
+	m_texture->setTextureWidth(size.w);
+	m_texture->setTextureHeight(size.h);
+	m_texture->setBorderWidth(0);
+	m_texture->apply(*state.get());
+	unsigned int contextID = state->getContextID();
+	m_texId = m_texture->getTextureObject(contextID)->id();
+}
 
 
 /* Public functions */
-OculusDevice::OculusDevice(float nearClip, float farClip, bool useTimewarp, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre) : m_hmdDevice(0),
+OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre) : m_hmdDevice(0),
+m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
 m_worldUnitsPerMetre(worldUnitsPerMetre),
 m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
 m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
-m_nearClip(nearClip), m_farClip(farClip),
-m_useTimeWarp(useTimewarp),
-m_directMode(false)
+m_nearClip(nearClip), m_farClip(farClip)
 {
 	trySetProcessAsHighPriority();
-	ovr_Initialize();
+	if (ovr_Initialize(nullptr) != ovrSuccess) {
+		osg::notify(osg::WARN) << "Warning: Unable to initialize the Oculus library!" << std::endl;
+		return;
+	}
 
 	// Enumerate HMD devices
 	int numberOfDevices = ovrHmd_Detect();
 	osg::notify(osg::DEBUG_INFO) << "Number of connected devices: " << numberOfDevices << std::endl;
 
 	// Get first available HMD
-	m_hmdDevice = ovrHmd_Create(0);
-
-	// If no HMD is found try an emulated device
-	if (!m_hmdDevice) {
+	ovrResult result = ovrHmd_Create(0, &m_hmdDevice);
+	if (result != ovrSuccess)
+	{
+		// If no HMD is found try an emulated device
 		osg::notify(osg::WARN) << "Warning: No device could be found. Creating emulated device " << std::endl;
-		m_hmdDevice = ovrHmd_CreateDebug(ovrHmd_DK1);
-		ovrHmd_ResetFrameTiming(m_hmdDevice, 0);
+		result = ovrHmd_CreateDebug(ovrHmd_DK2, &m_hmdDevice);
 	}
 
-	if (!m_hmdDevice) {
-		osg::notify(osg::WARN) << "Warning: No device could be found. and couldn't create an emulated device " << std::endl;
+	if (result != ovrSuccess) {
+		osg::notify(osg::WARN) << "Warning: No device could be found and couldn't create an emulated device " << std::endl;
 		return;
 	}
+
+	// Print information about device
 	printHMDDebugInfo();
 
 	// Get more details about the HMD.
 	m_resolution = m_hmdDevice->Resolution;
+}
 
+void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state) {
 	// Compute recommended render texture size
-	if (pixelsPerDisplayPixel > 1.0f) {
+	if (m_pixelsPerDisplayPixel > 1.0f) {
 		osg::notify(osg::WARN) << "Warning: Pixel per display pixel is set to a value higher than 1.0." << std::endl;
 	}
+	for (int i = 0; i<2; i++)
+	{
+		ovrSizei recommenedTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, (ovrEyeType)i, m_hmdDevice->DefaultEyeFov[i], m_pixelsPerDisplayPixel);
+		m_textureBuffer[i] = new OculusTextureBuffer(m_hmdDevice, state, recommenedTextureSize);
+		m_depthBuffer[i] = new OculusDepthBuffer(recommenedTextureSize, state);
+	}
 
-	ovrSizei recommenedLeftTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0], pixelsPerDisplayPixel);
-	ovrSizei recommenedRightTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1], pixelsPerDisplayPixel);
+	createMirrorTexture(state);
+}
 
-	// Compute size of render target
-	m_renderTargetSize.w = recommenedLeftTextureSize.w + recommenedRightTextureSize.w;
-	m_renderTargetSize.h = osg::maximum(recommenedLeftTextureSize.h, recommenedRightTextureSize.h);
+void OculusDevice::createMirrorTexture(osg::ref_ptr<osg::State> state) {
+	const unsigned int ctx = state->getContextID();
+	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
+	int width = screenResolutionWidth() / 2;
+	int height = screenResolutionHeight() / 2;
+	ovrHmd_CreateMirrorTextureGL(m_hmdDevice, GL_RGBA, width, height, (ovrTexture**)&m_mirrorTexture);
+	// Configure the mirror read buffer
+	fbo_ext->glGenFramebuffers(1, &m_mirrorFBO);
+	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
+	fbo_ext->glFramebufferTexture2D(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, m_mirrorTexture->OGL.TexId, 0);
+	fbo_ext->glFramebufferRenderbuffer(GL_READ_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, 0);
+	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
+}
 
-
+void OculusDevice::init() {
 	initializeEyeRenderDesc();
 
 	calculateEyeAdjustment();
@@ -197,7 +202,8 @@ m_directMode(false)
 		ovrTrackingCap_MagYawCorrection |
 		ovrTrackingCap_Position, 0);
 
-	beginFrameTiming();
+	// Setup layers
+	setupLayers();
 }
 
 unsigned int OculusDevice::screenResolutionWidth() const
@@ -208,16 +214,6 @@ unsigned int OculusDevice::screenResolutionWidth() const
 unsigned int OculusDevice::screenResolutionHeight() const
 {
 	return m_hmdDevice->Resolution.h;
-}
-
-unsigned int OculusDevice::renderTargetWidth() const
-{
-	return m_renderTargetSize.w;
-}
-
-unsigned int OculusDevice::renderTargetHeight() const
-{
-	return m_renderTargetSize.h;
 }
 
 osg::Matrix OculusDevice::projectionMatrixCenter() const
@@ -276,229 +272,77 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	// Ask the API for the times when this frame is expected to be displayed.
 	m_frameTiming = ovrHmd_GetFrameTiming(m_hmdDevice, frameIndex);
 
+	m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyeViewOffset;
+	m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyeViewOffset;
+	
 	// Query the HMD for the current tracking state.
-	ovrTrackingState ts = ovrHmd_GetTrackingState(m_hmdDevice, m_frameTiming.ScanoutMidpointSeconds);
+	ovrTrackingState ts = ovrHmd_GetTrackingState(m_hmdDevice, m_frameTiming.DisplayMidpointSeconds);
+	ovr_CalcEyePoses(ts.HeadPose.ThePose, m_viewOffset, m_eyeRenderPose);
 	ovrPoseStatef headpose = ts.HeadPose;
 	ovrPosef pose = headpose.ThePose;
 	m_position.set(-pose.Position.x, -pose.Position.y, -pose.Position.z);
 	m_position *= m_worldUnitsPerMetre;
 	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
-
-	// Get head pose for both eyes (used for time warp
-	for (int eyeIndex = 0; eyeIndex < ovrEye_Count; ++eyeIndex) {
-		ovrEyeType eye = m_hmdDevice->EyeRenderOrder[eyeIndex];
-		m_headPose[eye] = ovrHmd_GetHmdPosePerEye(m_hmdDevice, eye);
-	}
 }
 
-osg::Geode* OculusDevice::distortionMesh(Eye eye, osg::Program* program, int x, int y, int w, int h, bool splitViewport) {
-	osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-	// Allocate & generate distortion mesh vertices.
-	ovrDistortionMesh meshData;
-	ovrHmd_CreateDistortionMesh(m_hmdDevice, m_eyeRenderDesc[eye].Eye, m_eyeRenderDesc[eye].Fov, ovrDistortionCap_TimeWarp, &meshData);
-
-	// Now parse the vertex data and create a render ready vertex buffer from it
-	ovrDistortionVertex* ov = meshData.pVertexData;
-	osg::Vec2Array* positionArray = new osg::Vec2Array;
-	osg::Vec4Array* colorArray = new osg::Vec4Array;
-	osg::Vec2Array* textureRArray = new osg::Vec2Array;
-	osg::Vec2Array* textureGArray = new osg::Vec2Array;
-	osg::Vec2Array* textureBArray = new osg::Vec2Array;
-
-	for (unsigned vertNum = 0; vertNum < meshData.VertexCount; ++vertNum)
-	{
-		if (splitViewport) {
-			// Positions need to be scaled and translated if we are using one viewport per eye
-			if (eye == LEFT) {
-				positionArray->push_back(osg::Vec2f(2 * ov[vertNum].ScreenPosNDC.x + 1.0, ov[vertNum].ScreenPosNDC.y));
-			}
-			else if (eye == RIGHT) {
-				positionArray->push_back(osg::Vec2f(2 * ov[vertNum].ScreenPosNDC.x - 1.0, ov[vertNum].ScreenPosNDC.y));
-			}
-		}
-		else {
-			positionArray->push_back(osg::Vec2f(ov[vertNum].ScreenPosNDC.x, ov[vertNum].ScreenPosNDC.y));
-		}
-
-		colorArray->push_back(osg::Vec4f(ov[vertNum].VignetteFactor, ov[vertNum].VignetteFactor, ov[vertNum].VignetteFactor, ov[vertNum].TimeWarpFactor));
-		textureRArray->push_back(osg::Vec2f(ov[vertNum].TanEyeAnglesR.x, ov[vertNum].TanEyeAnglesR.y));
-		textureGArray->push_back(osg::Vec2f(ov[vertNum].TanEyeAnglesG.x, ov[vertNum].TanEyeAnglesG.y));
-		textureBArray->push_back(osg::Vec2f(ov[vertNum].TanEyeAnglesB.x, ov[vertNum].TanEyeAnglesB.y));
-	}
-
-	// Get triangle indicies 
-	osg::ref_ptr<osg::UShortArray> indexArray = new osg::UShortArray;
-	unsigned short* index = meshData.pIndexData;
-	for (unsigned indexNum = 0; indexNum < meshData.IndexCount; ++indexNum) {
-		indexArray->push_back(index[indexNum]);
-	}
-
-	// Deallocate the mesh data
-	ovrHmd_DestroyDistortionMesh(&meshData);
-
-	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
-	geometry->setUseDisplayList(false);
-	geometry->setUseVertexBufferObjects(true);
-	osg::ref_ptr<osg::DrawElementsUShort> drawElement = new osg::DrawElementsUShort(osg::PrimitiveSet::TRIANGLES, indexArray->size(), (GLushort*)indexArray->getDataPointer());
-	geometry->addPrimitiveSet(drawElement);
-
-	GLuint positionLoc = 0;
-	GLuint colorLoc = 1;
-	GLuint texCoord0Loc = 2;
-	GLuint texCoord1Loc = 3;
-	GLuint texCoord2Loc = 4;
-
-	program->addBindAttribLocation("Position", positionLoc);
-	geometry->setVertexAttribArray(positionLoc, positionArray);
-	geometry->setVertexAttribBinding(positionLoc, osg::Geometry::BIND_PER_VERTEX);
-
-	program->addBindAttribLocation("Color", colorLoc);
-	geometry->setVertexAttribArray(colorLoc, colorArray);
-	geometry->setVertexAttribBinding(colorLoc, osg::Geometry::BIND_PER_VERTEX);
-
-	program->addBindAttribLocation("TexCoord0", texCoord0Loc);
-	geometry->setVertexAttribArray(texCoord0Loc, textureRArray);
-	geometry->setVertexAttribBinding(texCoord0Loc, osg::Geometry::BIND_PER_VERTEX);
-
-	program->addBindAttribLocation("TexCoord1", texCoord1Loc);
-	geometry->setVertexAttribArray(texCoord1Loc, textureGArray);
-	geometry->setVertexAttribBinding(texCoord1Loc, osg::Geometry::BIND_PER_VERTEX);
-
-	program->addBindAttribLocation("TexCoord2", texCoord2Loc);
-	geometry->setVertexAttribArray(texCoord2Loc, textureBArray);
-	geometry->setVertexAttribBinding(texCoord2Loc, osg::Geometry::BIND_PER_VERTEX);
-
-	// Compute UV scale and offset
-	ovrRecti eyeRenderViewport;
-	eyeRenderViewport.Pos.x = x;
-	eyeRenderViewport.Pos.y = y;
-	eyeRenderViewport.Size.w = w;
-	eyeRenderViewport.Size.h = h;
-	ovrSizei renderTargetSize;
-	renderTargetSize.w = m_renderTargetSize.w / 2;
-	renderTargetSize.h = m_renderTargetSize.h;
-	ovrHmd_GetRenderScaleAndOffset(m_eyeRenderDesc[eye].Fov, renderTargetSize, eyeRenderViewport, m_UVScaleOffset[eye]);
-	geode->addDrawable(geometry);
-	return geode.release();
-}
-
-osg::Camera* OculusDevice::createRTTCamera(osg::Texture* texture, OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, osg::GraphicsContext* gc) const
+osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, osg::GraphicsContext* gc) const
 {
+	osg::Texture2D* texture = m_textureBuffer[renderOrder(eye)]->texture();
+	osg::Texture2D* depth = m_depthBuffer[renderOrder(eye)]->texture();
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
 	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
 	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	GLenum buffer = (gc && gc->getTraits()->doubleBuffer) ? GL_BACK : GL_FRONT;
-	if (!m_directMode) {
-		camera->setDrawBuffer(buffer);
-		camera->setReadBuffer(buffer);
-	}
-
 	camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
 	camera->setRenderOrder(osg::Camera::PRE_RENDER, renderOrder(eye));
+	camera->setCullingMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 	camera->setAllowEventFocus(false);
 	camera->setReferenceFrame(referenceFrame);
 
-	if (gc) {
-		camera->setGraphicsContext(gc);
-	}
-
+	camera->setGraphicsContext(gc);
 	if (texture) {
-		texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
-		texture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
 		camera->setViewport(0, 0, texture->getTextureWidth(), texture->getTextureHeight());
-		camera->attach(osg::Camera::COLOR_BUFFER, texture, 0, 0, false, 4, 4);
+		camera->attach(osg::Camera::COLOR_BUFFER, texture);
 	}
+
+	if (depth) {
+		camera->attach(osg::Camera::DEPTH_BUFFER, depth);
+	}
+
+	camera->setPreDrawCallback(new OculusPreDrawCallback(camera.get(), m_textureBuffer[renderOrder(eye)], m_depthBuffer[renderOrder(eye)]));
 
 	return camera.release();
 }
 
-osg::Camera* OculusDevice::createWarpOrthoCamera(double left, double right, double bottom, double top, osg::GraphicsContext* gc) const
-{
-	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
-	camera->setClearColor(osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
-	camera->setClearMask(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	camera->setRenderOrder(osg::Camera::POST_RENDER);
-	camera->setAllowEventFocus(false);
+bool OculusDevice::submitFrame(unsigned int frameIndex) {
 
-	camera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
-	camera->setProjectionMatrix(osg::Matrix::ortho2D(left, right, bottom, top));
-	camera->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+	m_layerEyeFov.ColorTexture[0] = m_textureBuffer[0]->textureSet();
+	m_layerEyeFov.ColorTexture[1] = m_textureBuffer[1]->textureSet();
 
-	if (gc) {
-		camera->setGraphicsContext(gc);
-	}
-	return camera.release();
+	// Set render pose
+	m_layerEyeFov.RenderPose[0] = m_eyeRenderPose[0];
+	m_layerEyeFov.RenderPose[1] = m_eyeRenderPose[1];
+
+	ovrLayerHeader* layers = &m_layerEyeFov.Header;
+	ovrViewScaleDesc viewScale;
+	viewScale.HmdToEyeViewOffset[0] = m_viewOffset[0];
+	viewScale.HmdToEyeViewOffset[1] = m_viewOffset[1];
+	viewScale.HmdSpaceToWorldScaleInMeters = m_worldUnitsPerMetre;
+	ovrResult result = ovrHmd_SubmitFrame(m_hmdDevice, frameIndex, &viewScale, &layers, 1);
+	return result == ovrSuccess;
 }
 
-osg::Program* OculusDevice::createShaderProgram() const {
-	// Set up shaders from the Oculus SDK documentation
-	osg::ref_ptr<osg::Program> program = new osg::Program;
-	osg::ref_ptr<osg::Shader> vertexShader = new osg::Shader(osg::Shader::VERTEX);
-
-	if (m_useTimeWarp) {
-		vertexShader->setShaderSource(m_warpWithTimewarpVertexShaderSource);
-	}
-	else {
-		vertexShader->setShaderSource(m_warpVertexShaderSource);
-	}
-
-	osg::ref_ptr<osg::Shader> fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-	fragmentShader->setShaderSource(m_warpFragmentShaderSource);
-	program->addShader(vertexShader);
-	program->addShader(fragmentShader);
-	return program.release();
-}
-
-void OculusDevice::applyShaderParameters(osg::StateSet* stateSet, osg::Program* program, osg::Texture2D* texture, OculusDevice::Eye eye) const {
-	stateSet->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
-	stateSet->setAttributeAndModes(program, osg::StateAttribute::ON);
-	stateSet->addUniform(new osg::Uniform("Texture", 0));
-	stateSet->addUniform(new osg::Uniform("EyeToSourceUVScale", eyeToSourceUVScale(eye)));
-	stateSet->addUniform(new osg::Uniform("EyeToSourceUVOffset", eyeToSourceUVOffset(eye)));
-
-	// Uniforms needed for time warp
-	if (!m_useTimeWarp) {
-		return;
-	}
-
-	osg::ref_ptr<osg::Uniform> eyeRotationStart = new osg::Uniform("EyeRotationStart", this->eyeRotationStart(eye));
-	osg::ref_ptr<osg::Uniform> eyeRotationEnd = new osg::Uniform("EyeRotationEnd", this->eyeRotationEnd(eye));
-	stateSet->addUniform(eyeRotationStart);
-	stateSet->addUniform(eyeRotationEnd);
-	eyeRotationStart->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::START, this, eye));
-	eyeRotationEnd->setUpdateCallback(new EyeRotationCallback(EyeRotationCallback::END, this, eye));
-}
-
-bool OculusDevice::attachToWindow(osg::ref_ptr<osg::GraphicsContext> gc) {
-	// Do not attach if we are using extended desktop
-	if (m_hmdDevice->HmdCaps & ovrHmdCap_ExtendDesktop) {
-		applyExtendedModeSettings();
-		return false;
-	}
-
-	// Direct rendering from a window handle to the Rift
-#ifdef _WIN32
-	osgViewer::GraphicsHandleWin32* windowsContext = dynamic_cast<osgViewer::GraphicsHandleWin32*>(gc.get());
-
-	if (windowsContext) {
-		HWND window = windowsContext->getHWND();
-		m_directMode = (ovrHmd_AttachToWindow(m_hmdDevice, window, NULL, NULL) > 0) ? true : false;
-		return m_directMode;
-	}
-	else {
-		osg::notify(osg::FATAL) << "Win32 Graphics Context Casting is unsuccessful" << std::endl;
-		return false;
-	}
-#endif
-
-	return false;
-}
-
-void OculusDevice::toggleMirrorToWindow() {
-	unsigned int hmdCaps = ovrHmd_GetEnabledCaps(m_hmdDevice);
-	hmdCaps ^= ovrHmdCap_NoMirrorToWindow;
-	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
+void OculusDevice::blitMirrorTexture(osg::GraphicsContext* gc) {
+	const unsigned int ctx = gc->getState()->getContextID();
+	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
+	// Blit mirror texture to back buffer
+	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
+	fbo_ext->glBindFramebuffer(GL_DRAW_FRAMEBUFFER_EXT, 0);
+	GLint w = m_mirrorTexture->OGL.Header.TextureSize.w;
+	GLint h = m_mirrorTexture->OGL.Header.TextureSize.h;
+	fbo_ext->glBlitFramebuffer(0, h, w, 0,
+		0, 0, w, h,
+		GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
 }
 
 void OculusDevice::toggleLowPersistence() {
@@ -511,6 +355,12 @@ void OculusDevice::toggleDynamicPrediction() {
 	unsigned int hmdCaps = ovrHmd_GetEnabledCaps(m_hmdDevice);
 	hmdCaps ^= ovrHmdCap_DynamicPrediction;
 	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
+}
+
+void OculusDevice::setPerfHudMode(int mode) {
+	if (mode == 0) ovrHmd_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_Off);
+	if (mode == 1) ovrHmd_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_LatencyTiming);
+	if (mode == 2) ovrHmd_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_RenderTiming);
 }
 
 osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
@@ -545,35 +395,30 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
 	traits->hostName = si.hostName;
 	traits->screenNum = si.screenNum;
 	traits->displayNum = si.displayNum;
-	traits->windowDecoration = false;
-	traits->x = m_hmdDevice->WindowsPos.x;
-	traits->y = m_hmdDevice->WindowsPos.y;
-	traits->width = screenResolutionWidth();
-	traits->height = screenResolutionHeight();
+	traits->windowDecoration = true;
+	traits->x = 50;
+	traits->y = 50;
+	traits->width = screenResolutionWidth() / 2;
+	traits->height = screenResolutionHeight() / 2;
 	traits->doubleBuffer = true;
 	traits->sharedContext = 0;
-	traits->vsync = true; // VSync should always be enabled for Oculus Rift applications
+	traits->vsync = false; // VSync should always be disabled for Oculus Rift applications, the SDK compositor handles the swap
 
 	return traits.release();
 }
 
-bool OculusDevice::getHealthAndSafetyDisplayState() {
-	ovrHSWDisplayState hswDisplayState;
-	ovrHmd_GetHSWDisplayState(m_hmdDevice, &hswDisplayState);
-	return (hswDisplayState.Displayed != 0);
-}
-
-bool OculusDevice::tryDismissHealthAndSafetyDisplay() {
-	return (ovrHmd_DismissHSWDisplay(m_hmdDevice) != 0);
-}
-
-
 /* Protected functions */
 OculusDevice::~OculusDevice()
 {
+	ovrHmd_DestroyMirrorTexture(m_hmdDevice, (ovrTexture*)m_mirrorTexture);
+
+	for (int i = 0; i < 2; i++) {
+		ovrHmd_DestroySwapTextureSet(m_hmdDevice, m_textureBuffer[i]->textureSet());
+	}
 	ovrHmd_Destroy(m_hmdDevice);
 	ovr_Shutdown();
 }
+
 
 int OculusDevice::renderOrder(Eye eye) const {
 	for (int eyeIndex = 0; eyeIndex < ovrEye_Count; ++eyeIndex) {
@@ -586,42 +431,6 @@ int OculusDevice::renderOrder(Eye eye) const {
 		}
 	}
 	return 0;
-}
-
-osg::Matrixf OculusDevice::eyeRotationStart(Eye eye) const {
-	osg::Matrixf rotationStart;
-
-	ovrMatrix4f rotationMatrix = m_timeWarpMatrices[eye][0];
-	// Transpose matrix
-	rotationStart.set(rotationMatrix.M[0][0], rotationMatrix.M[1][0], rotationMatrix.M[2][0], rotationMatrix.M[3][0],
-		rotationMatrix.M[0][1], rotationMatrix.M[1][1], rotationMatrix.M[2][1], rotationMatrix.M[3][1],
-		rotationMatrix.M[0][2], rotationMatrix.M[1][2], rotationMatrix.M[2][2], rotationMatrix.M[3][2],
-		rotationMatrix.M[0][3], rotationMatrix.M[1][3], rotationMatrix.M[2][3], rotationMatrix.M[3][3]);
-
-	return rotationStart;
-}
-
-osg::Matrixf OculusDevice::eyeRotationEnd(Eye eye) const {
-	osg::Matrixf rotationEnd;
-
-	ovrMatrix4f rotationMatrix = m_timeWarpMatrices[eye][1];
-	// Transpose matrix
-	rotationEnd.set(rotationMatrix.M[0][0], rotationMatrix.M[1][0], rotationMatrix.M[2][0], rotationMatrix.M[3][0],
-		rotationMatrix.M[0][1], rotationMatrix.M[1][1], rotationMatrix.M[2][1], rotationMatrix.M[3][1],
-		rotationMatrix.M[0][2], rotationMatrix.M[1][2], rotationMatrix.M[2][2], rotationMatrix.M[3][2],
-		rotationMatrix.M[0][3], rotationMatrix.M[1][3], rotationMatrix.M[2][3], rotationMatrix.M[3][3]);
-
-	return rotationEnd;
-}
-
-osg::Vec2f OculusDevice::eyeToSourceUVScale(Eye eye) const {
-	osg::Vec2f uvScale(m_UVScaleOffset[eye][0].x, m_UVScaleOffset[eye][0].y);
-	return uvScale;
-}
-
-osg::Vec2f OculusDevice::eyeToSourceUVOffset(Eye eye) const {
-	osg::Vec2f uvOffset(m_UVScaleOffset[eye][1].x, m_UVScaleOffset[eye][1].y);
-	return uvOffset;
 }
 
 void OculusDevice::printHMDDebugInfo() {
@@ -672,22 +481,25 @@ void OculusDevice::calculateProjectionMatrices() {
 		rightEyeProjectionMatrix.M[0][3], rightEyeProjectionMatrix.M[1][3], rightEyeProjectionMatrix.M[2][3], rightEyeProjectionMatrix.M[3][3]);
 }
 
-void OculusDevice::beginFrameTiming(unsigned int frameIndex) {
-	m_frameTiming = ovrHmd_BeginFrameTiming(m_hmdDevice, frameIndex);
-}
+void OculusDevice::setupLayers() {
+	m_layerEyeFov.Header.Type = ovrLayerType_EyeFov;
+	m_layerEyeFov.Header.Flags = ovrLayerFlag_TextureOriginAtBottomLeft;   // Because OpenGL.
 
-void OculusDevice::endFrameTiming() const {
-	ovrHmd_EndFrameTiming(m_hmdDevice);
-}
+	ovrRecti viewPort[2];
+	viewPort[0].Pos.x = 0;
+	viewPort[0].Pos.y = 0;
+	viewPort[0].Size.w = m_textureBuffer[0]->textureWidth();
+	viewPort[0].Size.h = m_textureBuffer[0]->textureHeight();
 
-void OculusDevice::waitTillTime() {
-	// Wait till time-warp point to reduce latency.
-	ovr_WaitTillTime(m_frameTiming.TimewarpPointSeconds);
+	viewPort[1].Pos.x = 0;
+	viewPort[1].Pos.y = 0;
+	viewPort[1].Size.w = m_textureBuffer[1]->textureWidth();
+	viewPort[1].Size.h = m_textureBuffer[1]->textureHeight();
 
-	// Get time warp properties
-	for (int eyeIndex = 0; eyeIndex < ovrEye_Count; ++eyeIndex) {
-		ovrHmd_GetEyeTimewarpMatrices(m_hmdDevice, (ovrEyeType)eyeIndex, m_headPose[eyeIndex], m_timeWarpMatrices[eyeIndex]);
-	}
+	m_layerEyeFov.Viewport[0] = viewPort[0];
+	m_layerEyeFov.Viewport[1] = viewPort[1];
+	m_layerEyeFov.Fov[0] = m_eyeRenderDesc[0].Fov;
+	m_layerEyeFov.Fov[1] = m_eyeRenderDesc[1].Fov;
 }
 
 void OculusDevice::trySetProcessAsHighPriority() const {
@@ -699,54 +511,34 @@ void OculusDevice::trySetProcessAsHighPriority() const {
 	}
 }
 
-void OculusDevice::applyExtendedModeSettings() const {
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable : 4995 )
-	// Disable desktop composition when running extended mode to avoid judder
-	// DwmEnableComposition function deprecated in Windows 8
+void OculusRealizeOperation::operator() (osg::GraphicsContext* gc) {
+	if (!m_realized) {
+		OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
+		gc->makeCurrent();
 
-	HINSTANCE HInstDwmapi = LoadLibraryW( L"dwmapi.dll" );
+		if (osgViewer::GraphicsWindow* window = dynamic_cast<osgViewer::GraphicsWindow*>(gc)) {
+			// Run wglSwapIntervalEXT(0) to force VSync Off
+			window->setSyncToVBlank(false);
+		}
 
-	if (! HInstDwmapi) {
-		return;
+		osg::ref_ptr<osg::State> state = gc->getState();
+		m_device->createRenderBuffers(state);
+		// Init the oculus system
+		m_device->init();
 	}
-
-	typedef HRESULT (WINAPI *PFNDWMENABLECOMPOSITIONPROC) (UINT);
-	PFNDWMENABLECOMPOSITIONPROC DwmEnableComposition = (PFNDWMENABLECOMPOSITIONPROC)GetProcAddress( HInstDwmapi, "DwmEnableComposition" );
-
-	if (DwmEnableComposition) {
-		DwmEnableComposition(DWM_EC_DISABLECOMPOSITION);
-	}
-
-	FreeLibrary(HInstDwmapi);
-	HInstDwmapi = NULL;	
-#pragma warning( pop )
-#endif
+	m_realized = true;
 }
 
-
-/* Callbacks */
-void WarpCameraPreDrawCallback::operator()(osg::RenderInfo&) const
-{
-	// Wait till time - warp point to reduce latency.
-	m_device->waitTillTime();
-}
 
 void OculusSwapCallback::swapBuffersImplementation(osg::GraphicsContext *gc) {
+	// Submit rendered frame to compositor
+	m_device->submitFrame();
+
+	// Blit mirror texture to backbuffer
+	m_device->blitMirrorTexture(gc);
+
 	// Run the default system swapBufferImplementation
 	gc->swapBuffersImplementation();
-	// End frame timing when swap buffer is done
-	m_device->endFrameTiming();
-	// Start a new frame with incremented frame index
-	m_device->beginFrameTiming(++m_frameIndex);
 }
 
-void EyeRotationCallback::operator() (osg::Uniform* uniform, osg::NodeVisitor*) {
-	if (m_mode == START) {
-		uniform->set(m_device->eyeRotationStart(m_eye));
-	}
-	else if (m_mode == END) {
-		uniform->set(m_device->eyeRotationEnd(m_eye));
-	}
-}
+

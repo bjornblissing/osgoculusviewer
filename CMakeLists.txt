@@ -52,19 +52,14 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 # Library files
 #######################################
 FIND_PACKAGE( OpenGL REQUIRED )
-FIND_PACKAGE( OpenSceneGraph REQUIRED osgViewer osgDB osgGA)
-FIND_PACKAGE( OculusSDK REQUIRED )
+FIND_PACKAGE( OpenSceneGraph REQUIRED osgViewer osgDB osgGA osgUtil)
+FIND_PACKAGE( OculusSDK REQUIRED)
 
-IF(UNIX)
-  FIND_PACKAGE( X11 REQUIRED )
+# Check that Oculus SDK match the desired version
+IF(NOT OCULUS_SDK_VERSION VERSION_EQUAL 0.6.0.0 AND 
+NOT OCULUS_SDK_VERSION VERSION_GREATER 0.6.0.0)
+	MESSAGE(FATAL_ERROR "ERROR: This library required SDK version 0.6.0.0 or later!")
 ENDIF()
-
-# Oculus SDK dependencies for Mac OSX
-IF (APPLE)
-    FIND_LIBRARY (CORE_FOUNDATION CoreFoundation)
-    FIND_LIBRARY (CORE_GRAPHICS CoreGraphics)
-    FIND_LIBRARY (IOKIT IOKit)
-ENDIF (APPLE)
 
 INCLUDE_DIRECTORIES(BEFORE
     ${OPENGL_INCLUDE_DIR}
@@ -77,14 +72,6 @@ IF(VISUAL_STUDIO_EXPRESS)
 		${ATL_INCLUDE_DIR}
 	)
 ENDIF(VISUAL_STUDIO_EXPRESS)
-
-# osgViewer::ViewConfig concept requires osg 3.2 or later
-IF(NOT OPENSCENEGRAPH_VERSION VERSION_EQUAL 3.2.0 AND 
-NOT OPENSCENEGRAPH_VERSION VERSION_GREATER 3.2.0)
-	SET (USE_VIEW_CONFIG OFF)
-ELSE()
-	SET (USE_VIEW_CONFIG ON)
-ENDIF()
 
 ###############################################################################
 # Compiler Options
@@ -110,27 +97,6 @@ IF(MSVC)
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
 	ENDIF (WARNINGS_AS_ERRORS)
 ENDIF(MSVC)
-
-IF(UNIX)
-	IF(CMAKE_COMPILER_IS_GNUCC)
-		ADD_DEFINITIONS(-Wall -ansi -pedantic -Wextra)
-		# * no-long-long to disable warnings from OVR, it's either this or enable c++11.
-		# * no-as-needed since Ubuntu has decided to change default ld flags to as-needed
-		#   This requires some reorganizing of libraries which is very uncomfortable
-		# * also, build debug mode until we can figure out why oculusdevicesdk crashes.
-		SET(CMAKE_CXX_FLAGS "-g -ggdb3 -Wno-long-long -Wl,--no-as-needed ${CMAKE_CXX_FLAGS}")
-		IF (WARNINGS_AS_ERRORS)
-			ADD_DEFINITIONS(-Werror)
-		ENDIF(WARNINGS_AS_ERRORS)
-	ENDIF(CMAKE_COMPILER_IS_GNUCC)
-	IF (APPLE)
-		# set standard lib, clang defaults to c++0x
-		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++98")
-		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libstdc++")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98 -stdlib=libstdc++ -Wno-overloaded-virtual -Wno-conversion")
-		set(WARNING_CFLAGS "")
-	ENDIF()
-ENDIF(UNIX)
 
 ###############################################################################
 # Compile subdirectory

@@ -10,7 +10,9 @@
 
 #include "oculusviewer.h"
 #include "oculuseventhandler.h"
-
+#include <osgViewer/Viewer>
+#include <osgViewer/ViewerEventHandlers>
+#include <osgUtil/GLObjectsVisitor>
 
 int main( int argc, char** argv )
 {
@@ -43,12 +45,12 @@ int main( int argc, char** argv )
 	float nearClip = 0.01f;
 	float farClip = 10000.0f;
 	float pixelsPerDisplayPixel = 1.0;
-	bool useTimewarp = true;
 	float worldUnitsPerMetre = 1.0f;
-	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, useTimewarp, pixelsPerDisplayPixel, worldUnitsPerMetre);
+	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, worldUnitsPerMetre);
 
 	// Get the suggested context traits
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = oculusDevice->graphicsContextTraits();
+	traits->windowName = "OsgOculusViewerExample";
 
 	// Create a graphic context based on our desired traits
 	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits);
@@ -57,31 +59,45 @@ int main( int argc, char** argv )
 		return 1;
 	}
 
-	// Attach to window, needed for direct mode
-	oculusDevice->attachToWindow(gc);
-
 	if (gc.valid()) {
 		gc->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
 		gc->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
 	osgViewer::Viewer viewer(arguments);
+	// Force single threaded to make sure that no other thread can use the GL context
+	viewer.setThreadingModel(osgViewer::Viewer::SingleThreaded);
 	viewer.getCamera()->setGraphicsContext(gc);
 	viewer.getCamera()->setViewport(0, 0, traits->width, traits->height);
 
 	// Disable automatic computation of near and far plane
 	viewer.getCamera()->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
 	viewer.setCameraManipulator(cameraManipulator);
-	viewer.realize();
+
+	// Things to do when viewer is realized
+	osg::ref_ptr<OculusRealizeOperation> oculusRealizeOperation = new OculusRealizeOperation(oculusDevice);	
+	viewer.setRealizeOperation(oculusRealizeOperation.get());
 	
-	osg::ref_ptr<OculusViewer> oculusViewer = new OculusViewer(&viewer, oculusDevice);
+	osg::ref_ptr<OculusViewer> oculusViewer = new OculusViewer(&viewer, oculusDevice, oculusRealizeOperation);
 	oculusViewer->addChild(loadedModel);
 	viewer.setSceneData(oculusViewer);
 	// Add statistics handler
 	viewer.addEventHandler(new osgViewer::StatsHandler);
-	// Add Oculus Keyboard Handler to only one view
+
 	viewer.addEventHandler(new OculusEventHandler(oculusDevice));
-	// Start Viewer
+
+#define standard_viewer_run 0
+#if standard_viewer_run
 	viewer.run();
+#else
+	// Realize viewer
+	viewer.realize();
+
+	// Start Viewer
+	while (!viewer.done()) {
+		viewer.frame();
+	}
+#endif
+
 	return 0;
 }

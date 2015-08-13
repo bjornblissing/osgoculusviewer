@@ -3,9 +3,7 @@ OsgOculusViewer
 
 An OsgViewer with support for the Oculus Rift
 
-Last tested against Oculus SDK 0.5.0.1 Beta
-
-To be able to use the osgViewer::ViewConfig version you will need to use OpenSceneGraph 3.2.0 or later.
+Last tested against Oculus SDK 0.6.0.1 Beta
 
 
 License
@@ -33,3 +31,5 @@ Daniel Johansson
 Chris Denham
 
 Robert Osfield
+
+Jeff Bail
