@@ -119,6 +119,7 @@ class OculusDevice : public osg::Referenced {
 		void toggleMirrorToWindow();
 		void toggleLowPersistence();
 		void toggleDynamicPrediction();
+		void setPerfHudMode(int mode);
 		osg::GraphicsContext::Traits* graphicsContextTraits() const;
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected

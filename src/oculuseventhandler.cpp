@@ -32,6 +32,18 @@ bool OculusEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActio
 				m_oculusDevice->toggleDynamicPrediction();
 				return osgGA::GUIEventHandler::handle(ea, ad);
 				break;
+			case osgGA::GUIEventAdapter::KEY_0:
+				m_oculusDevice->setPerfHudMode(0);
+				return osgGA::GUIEventHandler::handle(ea, ad);
+				break;
+			case osgGA::GUIEventAdapter::KEY_1:
+				m_oculusDevice->setPerfHudMode(1);
+				return osgGA::GUIEventHandler::handle(ea, ad);
+				break;
+			case osgGA::GUIEventAdapter::KEY_2:
+				m_oculusDevice->setPerfHudMode(2);
+				return osgGA::GUIEventHandler::handle(ea, ad);
+				break;
 			default:
 				return osgGA::GUIEventHandler::handle(ea, ad);
 			} 

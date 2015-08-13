@@ -363,6 +363,12 @@ void OculusDevice::toggleDynamicPrediction() {
 	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
 }
 
+void OculusDevice::setPerfHudMode(int mode) {
+	if (mode == 0) ovrHmd_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_Off);
+	if (mode == 1) ovrHmd_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_LatencyTiming);
+	if (mode == 2) ovrHmd_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_RenderTiming);
+}
+
 osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
 	// Create screen with match the Oculus Rift resolution
 	osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
