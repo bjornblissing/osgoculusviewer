@@ -1,34 +1,21 @@
 # Target name
 SET(TARGET_LIBRARYNAME OsgOculus)
-SET(TARGET_TARGETNAME_VIEW_CONFIG OculusViewConfigExample)
 SET(TARGET_TARGETNAME_VIEWER OculusViewerExample)
-SET(TARGET_TARGETNAME_COMPOSITE_VIEWER OculusCompositeViewerExample)
 
 # Source files for library
 SET(TARGET_SRC
 	oculusviewer.cpp
 	oculusdevice.cpp
 	oculuseventhandler.cpp
-	oculushealthwarning.cpp
+	oculusupdateslavecallback.cpp
 )
 # Header files for library
 SET(TARGET_H
 	oculusviewer.h
 	oculusdevice.h
 	oculuseventhandler.h
-	oculushealthwarning.h
+	oculusupdateslavecallback.h
 )
-
-# Add view config if available
-IF (USE_VIEW_CONFIG)
-	SET(TARGET_SRC ${TARGET_SRC}
-		oculusviewconfig.cpp
-	)
-
-	SET(TARGET_H ${TARGET_H}
-		oculusviewconfig.h
-	)
-ENDIF()
 
 #####################################################################
 # Create library
@@ -54,28 +41,6 @@ IF(MSVC)
 	TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME} winmm.lib ws2_32.lib)
 ENDIF(MSVC)
 
-# Link to libraries needed for Oculus on Linux and Mac
-IF(UNIX)
-	# Oculus SDK dependencies for Mac OSX
-	IF (APPLE)
-		TARGET_LINK_LIBRARIES (
-			${TARGET_LIBRARYNAME}
-			${CORE_FOUNDATION}
-			${CORE_GRAPHICS}
-			${IOKIT}
-		)
-	ELSE(APPLE)
-		# Oculus SDK dependencies for Linux
-		TARGET_LINK_LIBRARIES(${TARGET_LIBRARYNAME}
-			pthread
-			udev
-			X11
-			Xrandr
-			rt
-		)
-	ENDIF(APPLE)
-ENDIF(UNIX)
-
 #####################################################################
 # Create executable
 #####################################################################
@@ -83,16 +48,7 @@ IF(BUILD_EXAMPLES)
 	ADD_EXECUTABLE(${TARGET_TARGETNAME_VIEWER} viewerexample.cpp)
 	TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME_VIEWER} ${TARGET_LIBRARYNAME})
 
-	ADD_EXECUTABLE(${TARGET_TARGETNAME_COMPOSITE_VIEWER} compositeviewerexample.cpp)
-	TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME_COMPOSITE_VIEWER} ${TARGET_LIBRARYNAME})
-
 	INSTALL(TARGETS ${TARGET_TARGETNAME_VIEWER} ${TARGET_TARGETNAME_COMPOSITE_VIEWER} RUNTIME DESTINATION bin)
-
-	IF (USE_VIEW_CONFIG)
-		ADD_EXECUTABLE(${TARGET_TARGETNAME_VIEW_CONFIG} viewconfigexample.cpp)
-		TARGET_LINK_LIBRARIES(${TARGET_TARGETNAME_VIEW_CONFIG} ${TARGET_LIBRARYNAME})
-		INSTALL(TARGETS ${TARGET_TARGETNAME_VIEW_CONFIG} RUNTIME DESTINATION bin)
-	ENDIF()
 
 ENDIF(BUILD_EXAMPLES)
 
@@ -126,10 +82,11 @@ IF(MSVC)
 		# For visual studio 2010 (MSVC10), 2012 (MSVC11) and 2013 (MSVC12)
 		IF(MSVC10 OR MSVC11 OR MSVC12)
 			CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEWER}.vcxproj.user @ONLY)
-			CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_COMPOSITE_VIEWER}.vcxproj.user @ONLY)
-			IF (USE_VIEW_CONFIG)
-				CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEW_CONFIG}.vcxproj.user @ONLY)
-			ENDIF()
+			#CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_COMPOSITE_VIEWER}.vcxproj.user @ONLY)
+			#CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_SDK_VIEWER}.vcxproj.user @ONLY)
+			#IF (USE_VIEW_CONFIG)
+			#	CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEW_CONFIG}.vcxproj.user @ONLY)
+			#ENDIF()
 		ENDIF()
 
 	ENDIF (OPENSCENEGRAPH_FOUND)
@@ -160,8 +117,6 @@ SET(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/license.txt")
 
 IF(WIN32)
 	SET(CPACK_GENERATOR "ZIP")
-ELSEIF(UNIX)
-	SET(CPACK_GENERATOR "TGZ;TBZ2;TZ")
 ENDIF()
 
 # Pack files to package
