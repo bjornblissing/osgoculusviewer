@@ -126,6 +126,12 @@ m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
 m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
 m_nearClip(nearClip), m_farClip(farClip)
 {
+	m_mirrorTexture = NULL;
+	m_textureBuffer[0] = NULL;
+	m_textureBuffer[1] = NULL;
+	m_depthBuffer[0] = NULL;
+	m_depthBuffer[1] = NULL;
+
 	trySetProcessAsHighPriority();
 	if (ovr_Initialize(nullptr) != ovrSuccess) {
 		osg::notify(osg::WARN) << "Warning: Unable to initialize the Oculus library!" << std::endl;
@@ -162,7 +168,7 @@ void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state) {
 	if (m_pixelsPerDisplayPixel > 1.0f) {
 		osg::notify(osg::WARN) << "Warning: Pixel per display pixel is set to a value higher than 1.0." << std::endl;
 	}
-	for (int i = 0; i<2; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		ovrSizei recommenedTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, (ovrEyeType)i, m_hmdDevice->DefaultEyeFov[i], m_pixelsPerDisplayPixel);
 		m_textureBuffer[i] = new OculusTextureBuffer(m_hmdDevice, state, recommenedTextureSize);
@@ -410,11 +416,24 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
 /* Protected functions */
 OculusDevice::~OculusDevice()
 {
-	ovrHmd_DestroyMirrorTexture(m_hmdDevice, (ovrTexture*)m_mirrorTexture);
-
-	for (int i = 0; i < 2; i++) {
-		ovrHmd_DestroySwapTextureSet(m_hmdDevice, m_textureBuffer[i]->textureSet());
+	if (m_mirrorTexture != NULL)
+	{
+		ovrHmd_DestroyMirrorTexture(m_hmdDevice, (ovrTexture*)m_mirrorTexture);
 	}
+
+	for (int i = 0; i < 2; i++)
+	{
+		if (m_textureBuffer[i] != NULL)
+		{
+			ovrHmd_DestroySwapTextureSet(m_hmdDevice, m_textureBuffer[i]->textureSet());
+			delete m_textureBuffer[i];
+		}
+		if (m_depthBuffer[i] != NULL)
+		{
+			delete m_depthBuffer[i];
+		}
+	}
+
 	ovrHmd_Destroy(m_hmdDevice);
 	ovr_Shutdown();
 }
