@@ -33,7 +33,6 @@ void OculusViewer::configure()
 
 	osg::ref_ptr<osg::Camera> camera = m_view->getCamera();
 	camera->setName("Main");
-
 	// master projection matrix
 	camera->setProjectionMatrix(m_device->projectionMatrixCenter());
 	// Create RTT cameras and attach textures
@@ -57,6 +56,9 @@ void OculusViewer::configure()
 
 	// Use sky light instead of headlight to avoid light changes when head movements
 	m_view->setLightingMode(osg::View::SKY_LIGHT);
+	
+	// Disable rendering of main camera since its being overwritten by the swap texture anyway
+	camera->setGraphicsContext(nullptr);
 
 	m_configured = true;
 }
