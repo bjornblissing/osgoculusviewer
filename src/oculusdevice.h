@@ -36,7 +36,6 @@ protected:
 	ovrSwapTextureSet* m_textureSet;
 	osg::ref_ptr<osg::Texture2D> m_texture;
 	osg::Vec2i m_textureSize;
-	unsigned int m_contextId;
 	GLuint m_fboId;
 	bool m_fboIdInitialized;
 };

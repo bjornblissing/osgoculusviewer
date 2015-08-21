@@ -47,7 +47,6 @@ void OculusPreDrawCallback::operator()(osg::RenderInfo& renderInfo) const {
 OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size) : m_hmdDevice(hmd), m_textureSet(0),
 	m_texture(0), 
 	m_textureSize(osg::Vec2i(size.w, size.h)), 
-	m_contextId(0), 
 	m_fboId(0), 
 	m_fboIdInitialized(false) 
 {
@@ -59,28 +58,32 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 			ovrGLTexture* tex = (ovrGLTexture*)&m_textureSet->Textures[i];
 
 			GLuint handle = tex->OGL.TexId;
-			m_texture = new osg::Texture2D();
+
+			osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D();
 
 			osg::ref_ptr<osg::Texture::TextureObject> textureObject = new osg::Texture::TextureObject(m_texture.get(), handle, GL_TEXTURE_2D);
 
 			textureObject->setAllocated(true);
 
-			m_texture->setTextureObject(state->getContextID(), textureObject.get());
+			texture->setTextureObject(state->getContextID(), textureObject.get());
 
-			m_texture->apply(*state.get());
+			texture->apply(*state.get());
 
-			m_texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
-			m_texture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
-			m_texture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
-			m_texture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
+			texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+			texture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
+			texture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+			texture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
 
-			m_texture->setTextureSize(tex->Texture.Header.TextureSize.w, tex->Texture.Header.TextureSize.h);
-			m_texture->setSourceFormat(GL_RGBA);
-			m_texture->apply(*state.get());
-			m_contextId = state->getContextID();
+			texture->setTextureSize(tex->Texture.Header.TextureSize.w, tex->Texture.Header.TextureSize.h);
+			texture->setSourceFormat(GL_RGBA);
+			texture->apply(*state.get());
 
-			osg::notify(osg::DEBUG_INFO) << "Successfully created the swap texture!" << std::endl;
+			// Set the current texture to point to the texture with the index (which will be advanced before drawing)
+			if (i  == (m_textureSet->CurrentIndex + 1)) {
+				m_texture = texture;
+			}
 		}
+		osg::notify(osg::DEBUG_INFO) << "Successfully created the swap texture set!" << std::endl;
 	}
 	else {
 		osg::notify(osg::WARN) << "Warning: Unable to create swap texture set! " << std::endl;
