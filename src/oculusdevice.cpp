@@ -344,12 +344,12 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
 }
 
-osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, osg::GraphicsContext* gc) const
+osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc) const
 {
 	osg::Texture2D* texture = m_textureBuffer[renderOrder(eye)]->texture();
 	osg::Texture2D* depth = m_depthBuffer[renderOrder(eye)]->texture();
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
-	camera->setClearColor(osg::Vec4(0.2f, 0.2f, 0.4f, 1.0f));
+	camera->setClearColor(clearColor);
 	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
 	camera->setRenderOrder(osg::Camera::PRE_RENDER, renderOrder(eye));
