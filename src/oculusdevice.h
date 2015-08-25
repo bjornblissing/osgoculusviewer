@@ -144,7 +144,7 @@ class OculusDevice : public osg::Referenced {
 		osg::Vec3 position() const { return m_position; }
 		osg::Quat orientation() const { return m_orientation;  }
 
-		osg::Camera* createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, osg::GraphicsContext* gc = 0) const;
+		osg::Camera* createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc = 0) const;
 		
 		bool submitFrame(unsigned int frameIndex = 0);
 		void blitMirrorTexture(osg::GraphicsContext *gc);
