@@ -55,7 +55,7 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 	m_fboIdInitialized(false) 
 {
 	m_textureSize.set(size.w, size.h);
-	if (ovr_CreateSwapTextureSetGL(m_hmdDevice, GL_RGBA, size.w, size.h, &m_textureSet) == ovrSuccess) {
+	if (ovr_CreateSwapTextureSetGL(m_hmdDevice, GL_SRGB8_ALPHA8, size.w, size.h, &m_textureSet) == ovrSuccess) {
 		// Assign textures to OSG textures
 		for (int i = 0; i < m_textureSet->TextureCount; ++i)
 		{
@@ -79,7 +79,7 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 			texture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
 
 			texture->setTextureSize(tex->Texture.Header.TextureSize.w, tex->Texture.Header.TextureSize.h);
-			texture->setSourceFormat(GL_RGBA);
+			texture->setSourceFormat(GL_SRGB8_ALPHA8);
 			texture->apply(*state.get());
 
 			// Set the current texture to point to the texture with the index (which will be advanced before drawing)
@@ -145,7 +145,7 @@ OculusMirrorTexture::OculusMirrorTexture(const ovrHmd& hmd, osg::ref_ptr<osg::St
 	const unsigned int ctx = state->getContextID();
 	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
 #endif
-	ovr_CreateMirrorTextureGL(m_hmdDevice, GL_RGBA, width, height, (ovrTexture**)&m_texture);
+	ovr_CreateMirrorTextureGL(m_hmdDevice, GL_SRGB8_ALPHA8, width, height, (ovrTexture**)&m_texture);
 	// Configure the mirror read buffer
 	fbo_ext->glGenFramebuffers(1, &m_mirrorFBO);
 	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
