@@ -256,6 +256,9 @@ void OculusDevice::init() {
 
 	// Setup layers
 	setupLayers();
+
+	// Reset perf hud
+	ovr_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_Off);
 }
 
 unsigned int OculusDevice::screenResolutionWidth() const
