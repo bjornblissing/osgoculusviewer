@@ -149,14 +149,10 @@ class OculusDevice : public osg::Referenced {
 		bool submitFrame(unsigned int frameIndex = 0);
 		void blitMirrorTexture(osg::GraphicsContext *gc);
 
-		void toggleLowPersistence();
-		void toggleDynamicPrediction();
 		void setPerfHudMode(int mode);
 		osg::GraphicsContext::Traits* graphicsContextTraits() const;
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
-
-		int renderOrder(Eye eye) const;
 
 		void printHMDDebugInfo();
 
@@ -171,6 +167,7 @@ class OculusDevice : public osg::Referenced {
 		void trySetProcessAsHighPriority() const;
 		
 		ovrHmd m_hmdDevice;
+		ovrHmdDesc m_hmdDesc;
 		
 		const float m_pixelsPerDisplayPixel;
 		const float m_worldUnitsPerMetre;

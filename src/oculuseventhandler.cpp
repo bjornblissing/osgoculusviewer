@@ -20,14 +20,6 @@ bool OculusEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActio
 				m_oculusDevice->resetSensorOrientation();
 				return osgGA::GUIEventHandler::handle(ea, ad);
 				break;
-			case osgGA::GUIEventAdapter::KEY_P:
-				m_oculusDevice->toggleLowPersistence();
-				return osgGA::GUIEventHandler::handle(ea, ad);
-				break;
-			case osgGA::GUIEventAdapter::KEY_D:
-				m_oculusDevice->toggleDynamicPrediction();
-				return osgGA::GUIEventHandler::handle(ea, ad);
-				break;
 			case osgGA::GUIEventAdapter::KEY_0:
 				m_oculusDevice->setPerfHudMode(0);
 				return osgGA::GUIEventHandler::handle(ea, ad);
@@ -38,6 +30,14 @@ bool OculusEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActio
 				break;
 			case osgGA::GUIEventAdapter::KEY_2:
 				m_oculusDevice->setPerfHudMode(2);
+				return osgGA::GUIEventHandler::handle(ea, ad);
+				break;
+			case osgGA::GUIEventAdapter::KEY_3:
+				m_oculusDevice->setPerfHudMode(3);
+				return osgGA::GUIEventHandler::handle(ea, ad);
+				break;
+			case osgGA::GUIEventAdapter::KEY_4:
+				m_oculusDevice->setPerfHudMode(4);
 				return osgGA::GUIEventHandler::handle(ea, ad);
 				break;
 			default:

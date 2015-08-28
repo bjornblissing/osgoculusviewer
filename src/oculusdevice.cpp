@@ -55,7 +55,7 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 	m_fboIdInitialized(false) 
 {
 	m_textureSize.set(size.w, size.h);
-	if (ovrHmd_CreateSwapTextureSetGL(m_hmdDevice, GL_RGBA, size.w, size.h, &m_textureSet) == ovrSuccess) {
+	if (ovr_CreateSwapTextureSetGL(m_hmdDevice, GL_RGBA, size.w, size.h, &m_textureSet) == ovrSuccess) {
 		// Assign textures to OSG textures
 		for (int i = 0; i < m_textureSet->TextureCount; ++i)
 		{
@@ -108,7 +108,7 @@ void OculusTextureBuffer::setRenderSurface(const osg::FBOExtensions* fbo_ext)
 }
 
 void OculusTextureBuffer::destroy() {
-	ovrHmd_DestroySwapTextureSet(m_hmdDevice, m_textureSet);
+	ovr_DestroySwapTextureSet(m_hmdDevice, m_textureSet);
 }
 
 #if(OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
@@ -145,7 +145,7 @@ OculusMirrorTexture::OculusMirrorTexture(const ovrHmd& hmd, osg::ref_ptr<osg::St
 	const unsigned int ctx = state->getContextID();
 	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
 #endif
-	ovrHmd_CreateMirrorTextureGL(m_hmdDevice, GL_RGBA, width, height, (ovrTexture**)&m_texture);
+	ovr_CreateMirrorTextureGL(m_hmdDevice, GL_RGBA, width, height, (ovrTexture**)&m_texture);
 	// Configure the mirror read buffer
 	fbo_ext->glGenFramebuffers(1, &m_mirrorFBO);
 	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
@@ -181,7 +181,7 @@ void OculusMirrorTexture::destroy(const osg::FBOExtensions* fbo_ext) {
 	if (fbo_ext) {
 		fbo_ext->glDeleteFramebuffers(1, &m_mirrorFBO);
 	}
-	ovrHmd_DestroyMirrorTexture(m_hmdDevice, (ovrTexture*)m_texture);
+	ovr_DestroyMirrorTexture(m_hmdDevice, (ovrTexture*)m_texture);
 }
 
 /* Public functions */
@@ -198,35 +198,30 @@ m_nearClip(nearClip), m_farClip(farClip)
 		m_depthBuffer[i] = nullptr;
 	}
 
+	ovrGraphicsLuid luid; 
+
 	trySetProcessAsHighPriority();
 	if (ovr_Initialize(nullptr) != ovrSuccess) {
 		osg::notify(osg::WARN) << "Warning: Unable to initialize the Oculus library!" << std::endl;
 		return;
 	}
 
-	// Enumerate HMD devices
-	int numberOfDevices = ovrHmd_Detect();
-	osg::notify(osg::DEBUG_INFO) << "Number of connected devices: " << numberOfDevices << std::endl;
-
 	// Get first available HMD
-	ovrResult result = ovrHmd_Create(0, &m_hmdDevice);
+	ovrResult result = ovr_Create(&m_hmdDevice, &luid);
 	if (result != ovrSuccess)
 	{
-		// If no HMD is found try an emulated device
-		osg::notify(osg::WARN) << "Warning: No device could be found. Creating emulated device " << std::endl;
-		result = ovrHmd_CreateDebug(ovrHmd_DK2, &m_hmdDevice);
-	}
-
-	if (result != ovrSuccess) {
-		osg::notify(osg::WARN) << "Warning: No device could be found and couldn't create an emulated device " << std::endl;
+		osg::notify(osg::WARN) << "Warning: No device could be found." << std::endl;
 		return;
 	}
 
 	// Print information about device
 	printHMDDebugInfo();
 
+	// Get HMD description
+	m_hmdDesc = ovr_GetHmdDesc(m_hmdDevice);
+
 	// Get more details about the HMD.
-	m_resolution = m_hmdDevice->Resolution;
+	m_resolution = m_hmdDesc.Resolution;
 }
 
 void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state) {
@@ -236,7 +231,7 @@ void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state) {
 	}
 	for (int i = 0; i < 2; i++)
 	{
-		ovrSizei recommenedTextureSize = ovrHmd_GetFovTextureSize(m_hmdDevice, (ovrEyeType)i, m_hmdDevice->DefaultEyeFov[i], m_pixelsPerDisplayPixel);
+		ovrSizei recommenedTextureSize = ovr_GetFovTextureSize(m_hmdDevice, (ovrEyeType)i, m_hmdDesc.DefaultEyeFov[i], m_pixelsPerDisplayPixel);
 		m_textureBuffer[i] = new OculusTextureBuffer(m_hmdDevice, state, recommenedTextureSize);
 		m_depthBuffer[i] = new OculusDepthBuffer(recommenedTextureSize, state);
 	}
@@ -252,12 +247,12 @@ void OculusDevice::init() {
 
 	calculateProjectionMatrices();
 
-	unsigned int hmdCaps = ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction;
+	unsigned int hmdCaps = 0;
 	// Set render capabilities
-	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
+	ovr_SetEnabledCaps(m_hmdDevice, hmdCaps);
 
 	// Start the sensor which provides the Rift's pose and motion.
-	ovrHmd_ConfigureTracking(m_hmdDevice, ovrTrackingCap_Orientation |
+	ovr_ConfigureTracking(m_hmdDevice, ovrTrackingCap_Orientation |
 		ovrTrackingCap_MagYawCorrection |
 		ovrTrackingCap_Position, 0);
 
@@ -267,12 +262,12 @@ void OculusDevice::init() {
 
 unsigned int OculusDevice::screenResolutionWidth() const
 {
-	return m_hmdDevice->Resolution.w;
+	return m_resolution.w;
 }
 
 unsigned int OculusDevice::screenResolutionHeight() const
 {
-	return m_hmdDevice->Resolution.h;
+	return m_resolution.h;
 }
 
 osg::Matrix OculusDevice::projectionMatrixCenter() const
@@ -323,19 +318,19 @@ osg::Matrix OculusDevice::viewMatrixRight() const
 }
 
 void OculusDevice::resetSensorOrientation() const {
-	ovrHmd_RecenterPose(m_hmdDevice);
+	ovr_RecenterPose(m_hmdDevice);
 }
 
 void OculusDevice::updatePose(unsigned int frameIndex)
 {
 	// Ask the API for the times when this frame is expected to be displayed.
-	m_frameTiming = ovrHmd_GetFrameTiming(m_hmdDevice, frameIndex);
+	m_frameTiming = ovr_GetFrameTiming(m_hmdDevice, frameIndex);
 
 	m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyeViewOffset;
 	m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyeViewOffset;
 	
 	// Query the HMD for the current tracking state.
-	ovrTrackingState ts = ovrHmd_GetTrackingState(m_hmdDevice, m_frameTiming.DisplayMidpointSeconds);
+	ovrTrackingState ts = ovr_GetTrackingState(m_hmdDevice, m_frameTiming.DisplayMidpointSeconds);
 	ovr_CalcEyePoses(ts.HeadPose.ThePose, m_viewOffset, m_eyeRenderPose);
 	ovrPoseStatef headpose = ts.HeadPose;
 	ovrPosef pose = headpose.ThePose;
@@ -346,13 +341,13 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 
 osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc) const
 {
-	osg::Texture2D* texture = m_textureBuffer[renderOrder(eye)]->texture();
-	osg::Texture2D* depth = m_depthBuffer[renderOrder(eye)]->texture();
+	osg::Texture2D* texture = m_textureBuffer[eye]->texture();
+	osg::Texture2D* depth = m_depthBuffer[eye]->texture();
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
 	camera->setClearColor(clearColor);
 	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
-	camera->setRenderOrder(osg::Camera::PRE_RENDER, renderOrder(eye));
+	camera->setRenderOrder(osg::Camera::PRE_RENDER, eye);
 	camera->setCullingMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 	camera->setAllowEventFocus(false);
 	camera->setReferenceFrame(referenceFrame);
@@ -367,7 +362,7 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 		camera->attach(osg::Camera::DEPTH_BUFFER, depth);
 	}
 
-	camera->setPreDrawCallback(new OculusPreDrawCallback(camera.get(), m_textureBuffer[renderOrder(eye)], m_depthBuffer[renderOrder(eye)]));
+	camera->setPreDrawCallback(new OculusPreDrawCallback(camera.get(), m_textureBuffer[eye], m_depthBuffer[eye]));
 
 	return camera.release();
 }
@@ -386,7 +381,7 @@ bool OculusDevice::submitFrame(unsigned int frameIndex) {
 	viewScale.HmdToEyeViewOffset[0] = m_viewOffset[0];
 	viewScale.HmdToEyeViewOffset[1] = m_viewOffset[1];
 	viewScale.HmdSpaceToWorldScaleInMeters = m_worldUnitsPerMetre;
-	ovrResult result = ovrHmd_SubmitFrame(m_hmdDevice, frameIndex, &viewScale, &layers, 1);
+	ovrResult result = ovr_SubmitFrame(m_hmdDevice, frameIndex, &viewScale, &layers, 1);
 	return result == ovrSuccess;
 }
 
@@ -394,22 +389,12 @@ void OculusDevice::blitMirrorTexture(osg::GraphicsContext* gc) {
 	m_mirrorTexture->blitTexture(gc);
 }
 
-void OculusDevice::toggleLowPersistence() {
-	unsigned int hmdCaps = ovrHmd_GetEnabledCaps(m_hmdDevice);
-	hmdCaps ^= ovrHmdCap_LowPersistence;
-	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
-}
-
-void OculusDevice::toggleDynamicPrediction() {
-	unsigned int hmdCaps = ovrHmd_GetEnabledCaps(m_hmdDevice);
-	hmdCaps ^= ovrHmdCap_DynamicPrediction;
-	ovrHmd_SetEnabledCaps(m_hmdDevice, hmdCaps);
-}
-
 void OculusDevice::setPerfHudMode(int mode) {
-	if (mode == 0) ovrHmd_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_Off);
-	if (mode == 1) ovrHmd_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_LatencyTiming);
-	if (mode == 2) ovrHmd_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_RenderTiming);
+	if (mode == 0) ovr_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_Off);
+	if (mode == 1) ovr_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_LatencyTiming);
+	if (mode == 2) ovr_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_RenderTiming);
+	if (mode == 3) ovr_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_PerfHeadroom);
+	if (mode == 4) ovr_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_VersionInfo);
 }
 
 osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
@@ -468,36 +453,22 @@ OculusDevice::~OculusDevice()
 		m_depthBuffer[i]->destroy();
 	}
 
-	ovrHmd_Destroy(m_hmdDevice);
+	ovr_Destroy(m_hmdDevice);
 	ovr_Shutdown();
 }
 
-
-int OculusDevice::renderOrder(Eye eye) const {
-	for (int eyeIndex = 0; eyeIndex < ovrEye_Count; ++eyeIndex) {
-		ovrEyeType ovrEye = m_hmdDevice->EyeRenderOrder[eyeIndex];
-		if (ovrEye == ovrEye_Left && eye == LEFT) {
-			return eyeIndex;
-		}
-		if (ovrEye == ovrEye_Right && eye == RIGHT) {
-			return eyeIndex;
-		}
-	}
-	return 0;
-}
-
 void OculusDevice::printHMDDebugInfo() {
-	osg::notify(osg::ALWAYS) << "Product:         " << m_hmdDevice->ProductName << std::endl;
-	osg::notify(osg::ALWAYS) << "Manufacturer:    " << m_hmdDevice->Manufacturer << std::endl;
-	osg::notify(osg::ALWAYS) << "VendorId:        " << m_hmdDevice->VendorId << std::endl;
-	osg::notify(osg::ALWAYS) << "ProductId:       " << m_hmdDevice->ProductId << std::endl;
-	osg::notify(osg::ALWAYS) << "SerialNumber:    " << m_hmdDevice->SerialNumber << std::endl;
-	osg::notify(osg::ALWAYS) << "FirmwareVersion: " << m_hmdDevice->FirmwareMajor << "." << m_hmdDevice->FirmwareMinor << std::endl;
+	osg::notify(osg::ALWAYS) << "Product:         " << m_hmdDesc.ProductName << std::endl;
+	osg::notify(osg::ALWAYS) << "Manufacturer:    " << m_hmdDesc.Manufacturer << std::endl;
+	osg::notify(osg::ALWAYS) << "VendorId:        " << m_hmdDesc.VendorId << std::endl;
+	osg::notify(osg::ALWAYS) << "ProductId:       " << m_hmdDesc.ProductId << std::endl;
+	osg::notify(osg::ALWAYS) << "SerialNumber:    " << m_hmdDesc.SerialNumber << std::endl;
+	osg::notify(osg::ALWAYS) << "FirmwareVersion: " << m_hmdDesc.FirmwareMajor << "." << m_hmdDesc.FirmwareMinor << std::endl;
 }
 
 void OculusDevice::initializeEyeRenderDesc() {
-	m_eyeRenderDesc[0] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Left, m_hmdDevice->DefaultEyeFov[0]);
-	m_eyeRenderDesc[1] = ovrHmd_GetRenderDesc(m_hmdDevice, ovrEye_Right, m_hmdDevice->DefaultEyeFov[1]);
+	m_eyeRenderDesc[0] = ovr_GetRenderDesc(m_hmdDevice, ovrEye_Left, m_hmdDesc.DefaultEyeFov[0]);
+	m_eyeRenderDesc[1] = ovr_GetRenderDesc(m_hmdDevice, ovrEye_Right, m_hmdDesc.DefaultEyeFov[1]);
 }
 
 void OculusDevice::calculateEyeAdjustment() {
