@@ -186,6 +186,7 @@ void OculusMirrorTexture::destroy(const osg::FBOExtensions* fbo_ext) {
 
 /* Public functions */
 OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre) : m_hmdDevice(0),
+m_hmdDesc(),
 m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
 m_worldUnitsPerMetre(worldUnitsPerMetre),
 m_mirrorTexture(nullptr),
@@ -214,14 +215,11 @@ m_nearClip(nearClip), m_farClip(farClip)
 		return;
 	}
 
-	// Print information about device
-	printHMDDebugInfo();
-
 	// Get HMD description
 	m_hmdDesc = ovr_GetHmdDesc(m_hmdDevice);
 
-	// Get more details about the HMD.
-	m_resolution = m_hmdDesc.Resolution;
+	// Print information about device
+	printHMDDebugInfo();
 }
 
 void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state) {
@@ -262,12 +260,12 @@ void OculusDevice::init() {
 
 unsigned int OculusDevice::screenResolutionWidth() const
 {
-	return m_resolution.w;
+	return  m_hmdDesc.Resolution.w;
 }
 
 unsigned int OculusDevice::screenResolutionHeight() const
 {
-	return m_resolution.h;
+	return  m_hmdDesc.Resolution.h;
 }
 
 osg::Matrix OculusDevice::projectionMatrixCenter() const

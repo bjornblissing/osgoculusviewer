@@ -176,7 +176,6 @@ class OculusDevice : public osg::Referenced {
 		osg::ref_ptr<OculusDepthBuffer> m_depthBuffer[2];
 		osg::ref_ptr<OculusMirrorTexture> m_mirrorTexture;
 		
-		ovrSizei m_resolution;
 		ovrEyeRenderDesc m_eyeRenderDesc[2];
 		ovrVector2f m_UVScaleOffset[2][2];
 		ovrFrameTiming m_frameTiming;
