@@ -27,11 +27,7 @@ public:
 	void createRenderBuffers(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size);
 	osg::ref_ptr<osg::Texture2D> texture() const { return m_texture; }
 	void advanceIndex() { m_textureSet->CurrentIndex = (m_textureSet->CurrentIndex + 1) % m_textureSet->TextureCount; }
-#if(OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
-	void setRenderSurface(const osg::GLExtensions* fbo_ext);
-#else
-	void setRenderSurface(const osg::FBOExtensions* fbo_ext);
-#endif
+	void setRenderSurface(const osg::State& state);
 	void initializeFboId(GLuint id) { m_fboId = id; m_fboIdInitialized = true; }
 	bool isFboIdInitialized() const { return m_fboIdInitialized; }
 protected:
@@ -53,18 +49,12 @@ public:
 	int textureWidth() const { return m_textureSize.x(); }
 	int textureHeight() const { return m_textureSize.y(); }
 	osg::ref_ptr<osg::Texture2D> texture() const { return m_texture; }
-	GLuint texId() const { return m_texId; }
-#if(OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
-	void setRenderSurface(const osg::GLExtensions* fbo_ext);
-#else
-	void setRenderSurface(const osg::FBOExtensions* fbo_ext);
-#endif
+	void setRenderSurface(const osg::State& state);
 protected:
 	~OculusDepthBuffer() {}
 
 	osg::ref_ptr<osg::Texture2D> m_texture;
 	osg::Vec2i m_textureSize;
-	GLuint m_texId;
 };
 
 
