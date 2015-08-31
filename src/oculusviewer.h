@@ -2,7 +2,7 @@
  * oculusviewer.h
  *
  *  Created on: Jun 30, 2013
- *      Author: Jan Ciger & Björn Blissing
+ *      Author: Jan Ciger & BjÃ¶rn Blissing
  */
 
 #ifndef _OSG_OCULUSVIEWER_H_
@@ -39,7 +39,6 @@ class OculusViewer : public osg::Group {
 		osg::observer_ptr<OculusDevice> m_device;
 		osg::observer_ptr<OculusRealizeOperation> m_realizeOperation;
 		osg::ref_ptr<OculusSwapCallback> m_swapCallback;
-		osg::Node::NodeMask m_sceneNodeMask;
 };
 
 #endif /* _OSG_OCULUSVIEWER_H_ */
