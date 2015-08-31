@@ -28,8 +28,8 @@ void OculusViewer::configure()
 	osg::ref_ptr<osg::GraphicsContext> gc =  m_view->getCamera()->getGraphicsContext();
 	
 	// Attach a callback to detect swap
-	m_swapCallback = new OculusSwapCallback(m_device);
-	gc->setSwapCallback(m_swapCallback);
+	osg::ref_ptr<OculusSwapCallback> swapCallback = new OculusSwapCallback(m_device);
+	gc->setSwapCallback(swapCallback);
 
 	osg::ref_ptr<osg::Camera> camera = m_view->getCamera();
 	camera->setName("Main");
@@ -48,13 +48,13 @@ void OculusViewer::configure()
 		m_device->projectionOffsetMatrixLeft(),
 		m_device->viewMatrixLeft(),
 		true);
-	m_view->getSlave(0)._updateSlaveCallback = new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::LEFT_CAMERA, m_device.get(), m_swapCallback.get());
+	m_view->getSlave(0)._updateSlaveCallback = new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::LEFT_CAMERA, m_device.get(), swapCallback.get());
 
 	m_view->addSlave(m_cameraRTTRight.get(),
 		m_device->projectionOffsetMatrixRight(),
 		m_device->viewMatrixRight(),
 		true);
-	m_view->getSlave(1)._updateSlaveCallback = new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::RIGHT_CAMERA, m_device.get(), m_swapCallback.get());
+	m_view->getSlave(1)._updateSlaveCallback = new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::RIGHT_CAMERA, m_device.get(), swapCallback.get());
 
 	// Use sky light instead of headlight to avoid light changes when head movements
 	m_view->setLightingMode(osg::View::SKY_LIGHT);

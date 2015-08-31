@@ -25,8 +25,8 @@ class OculusViewer : public osg::Group {
 			m_view(view),
 			m_cameraRTTLeft(0), m_cameraRTTRight(0),
 			m_device(dev),
-			m_realizeOperation(realizeOperation),
-			m_swapCallback(0) {};
+			m_realizeOperation(realizeOperation)
+		{};
 		virtual void traverse(osg::NodeVisitor& nv);
 	protected:
 		~OculusViewer() {};
@@ -38,7 +38,6 @@ class OculusViewer : public osg::Group {
 		osg::observer_ptr<osg::Camera> m_cameraRTTLeft, m_cameraRTTRight;
 		osg::observer_ptr<OculusDevice> m_device;
 		osg::observer_ptr<OculusRealizeOperation> m_realizeOperation;
-		osg::ref_ptr<OculusSwapCallback> m_swapCallback;
 };
 
 #endif /* _OSG_OCULUSVIEWER_H_ */
