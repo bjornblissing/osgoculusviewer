@@ -59,7 +59,7 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 		// Assign textures to OSG textures
 		for (int i = 0; i < m_textureSet->TextureCount; ++i)
 		{
-			ovrGLTexture* tex = (ovrGLTexture*)&m_textureSet->Textures[i];
+			ovrGLTexture* tex = reinterpret_cast<ovrGLTexture*>(&m_textureSet->Textures[i]);
 
 			GLuint handle = tex->OGL.TexId;
 
@@ -101,7 +101,7 @@ void OculusTextureBuffer::setRenderSurface(const osg::GLExtensions* fbo_ext)
 void OculusTextureBuffer::setRenderSurface(const osg::FBOExtensions* fbo_ext)
 #endif
 {
-	ovrGLTexture* tex = (ovrGLTexture*)&m_textureSet->Textures[m_textureSet->CurrentIndex];
+	ovrGLTexture* tex = reinterpret_cast<ovrGLTexture*>(&m_textureSet->Textures[m_textureSet->CurrentIndex]);
 	fbo_ext->glBindFramebuffer(GL_FRAMEBUFFER_EXT, m_fboId);
 	fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, tex->OGL.TexId, 0);
 	
@@ -145,7 +145,7 @@ OculusMirrorTexture::OculusMirrorTexture(const ovrHmd& hmd, osg::ref_ptr<osg::St
 	const unsigned int ctx = state->getContextID();
 	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
 #endif
-	ovr_CreateMirrorTextureGL(m_hmdDevice, GL_SRGB8_ALPHA8, width, height, (ovrTexture**)&m_texture);
+	ovr_CreateMirrorTextureGL(m_hmdDevice, GL_SRGB8_ALPHA8, width, height, reinterpret_cast<ovrTexture**>(&m_texture));
 	// Configure the mirror read buffer
 	fbo_ext->glGenFramebuffers(1, &m_mirrorFBO);
 	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
@@ -181,7 +181,7 @@ void OculusMirrorTexture::destroy(const osg::FBOExtensions* fbo_ext) {
 	if (fbo_ext) {
 		fbo_ext->glDeleteFramebuffers(1, &m_mirrorFBO);
 	}
-	ovr_DestroyMirrorTexture(m_hmdDevice, (ovrTexture*)m_texture);
+	ovr_DestroyMirrorTexture(m_hmdDevice, reinterpret_cast<ovrTexture*>(m_texture));
 }
 
 /* Public functions */
