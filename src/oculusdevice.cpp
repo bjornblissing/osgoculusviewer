@@ -71,8 +71,6 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 
 			texture->setTextureObject(state->getContextID(), textureObject.get());
 
-			texture->apply(*state.get());
-
 			texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
 			texture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
 			texture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
@@ -80,7 +78,6 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 
 			texture->setTextureSize(tex->Texture.Header.TextureSize.w, tex->Texture.Header.TextureSize.h);
 			texture->setSourceFormat(GL_SRGB8_ALPHA8);
-			texture->apply(*state.get());
 
 			// Set the current texture to point to the texture with the index (which will be advanced before drawing)
 			if (i  == (m_textureSet->CurrentIndex + 1)) {
