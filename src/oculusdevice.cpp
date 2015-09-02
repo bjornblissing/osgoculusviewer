@@ -92,7 +92,7 @@ void OculusTextureBuffer::setRenderSurface(const osg::State& state)
 #if(OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
 	const osg::GLExtensions* fbo_ext = state.get<osg::GLExtensions>();
 #else
-	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
+	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(state.getContextID(), true);
 #endif
 	ovrGLTexture* tex = reinterpret_cast<ovrGLTexture*>(&m_textureSet->Textures[m_textureSet->CurrentIndex]);
 	fbo_ext->glBindFramebuffer(GL_FRAMEBUFFER_EXT, m_fboId);
@@ -109,7 +109,7 @@ void OculusDepthBuffer::setRenderSurface(const osg::State& state)
 #if(OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
 	const osg::GLExtensions* fbo_ext = state.get<osg::GLExtensions>();
 #else
-	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(ctx, true);
+	const osg::FBOExtensions* fbo_ext = osg::FBOExtensions::instance(state.getContextID(), true);
 #endif
 	fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, m_texture->getTextureObject(state.getContextID())->id(), 0);
 }
