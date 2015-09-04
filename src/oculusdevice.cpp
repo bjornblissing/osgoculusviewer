@@ -60,7 +60,7 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 
 			osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D();
 
-			osg::ref_ptr<osg::Texture::TextureObject> textureObject = new osg::Texture::TextureObject(m_texture.get(), handle, GL_TEXTURE_2D);
+			osg::ref_ptr<osg::Texture::TextureObject> textureObject = new osg::Texture::TextureObject(texture.get(), handle, GL_TEXTURE_2D);
 
 			textureObject->setAllocated(true);
 
