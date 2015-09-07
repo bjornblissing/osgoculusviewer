@@ -24,7 +24,6 @@ public:
 	int textureWidth() const { return m_textureSize.x();  }
 	int textureHeight() const { return m_textureSize.y(); }
 	ovrSwapTextureSet* textureSet() const { return m_textureSet; }
-	void createRenderBuffers(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size);
 	osg::ref_ptr<osg::Texture2D> texture() const { return m_texture; }
 	void advanceIndex() { m_textureSet->CurrentIndex = (m_textureSet->CurrentIndex + 1) % m_textureSet->TextureCount; }
 	void setRenderSurface(const osg::State& state);
