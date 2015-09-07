@@ -126,7 +126,6 @@ class OculusDevice : public osg::Referenced {
 
 		float nearClip() const { return m_nearClip;	}
 		float farClip() const { return m_farClip; }
-		bool useTimewarp() const { return m_useTimeWarp; }
 
 		void resetSensorOrientation() const;
 		void updatePose(unsigned int frameIndex = 0);
@@ -140,6 +139,8 @@ class OculusDevice : public osg::Referenced {
 		void blitMirrorTexture(osg::GraphicsContext *gc);
 
 		void setPerfHudMode(int mode);
+		void togglePositionalTracking();
+
 		osg::GraphicsContext::Traits* graphicsContextTraits() const;
 	protected:
 		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
@@ -183,7 +184,8 @@ class OculusDevice : public osg::Referenced {
 
 		float m_nearClip;
 		float m_farClip;
-		bool m_useTimeWarp;
+
+		bool m_usePositionalTracking;
 	private:
 		OculusDevice(const OculusDevice&); // Do not allow copy
 		OculusDevice& operator=(const OculusDevice&); // Do not allow assignment operator.

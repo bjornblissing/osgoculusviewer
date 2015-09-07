@@ -183,7 +183,8 @@ m_worldUnitsPerMetre(worldUnitsPerMetre),
 m_mirrorTexture(nullptr),
 m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
 m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
-m_nearClip(nearClip), m_farClip(farClip)
+m_nearClip(nearClip), m_farClip(farClip),
+m_usePositionalTracking(true)
 {
 	for (int i = 0; i < 2; i++) {
 		m_textureBuffer[i] = nullptr;
@@ -387,6 +388,17 @@ void OculusDevice::setPerfHudMode(int mode) {
 	if (mode == 2) ovr_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_RenderTiming);
 	if (mode == 3) ovr_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_PerfHeadroom);
 	if (mode == 4) ovr_SetInt(m_hmdDevice, "PerfHudMode", (int)ovrPerfHud_VersionInfo);
+}
+
+void OculusDevice::togglePositionalTracking() {
+	m_usePositionalTracking = !m_usePositionalTracking;
+	unsigned sensorCaps = 0;
+	sensorCaps = ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection;
+	if (m_usePositionalTracking)
+	{
+		sensorCaps |= ovrTrackingCap_Position;
+	}
+	ovr_ConfigureTracking(m_hmdDevice, sensorCaps, 0);
 }
 
 osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
