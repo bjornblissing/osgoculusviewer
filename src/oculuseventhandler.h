@@ -17,10 +17,11 @@ class OculusDevice;
 class OculusEventHandler : public osgGA::GUIEventHandler
 {
 public:
-	explicit OculusEventHandler(osg::ref_ptr<OculusDevice> device) : m_oculusDevice(device) {}
+	explicit OculusEventHandler(osg::ref_ptr<OculusDevice> device) : m_oculusDevice(device), m_usePositionalTracking(true) {}
 	virtual bool handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter&);
 protected:
 	osg::ref_ptr<OculusDevice> m_oculusDevice;
+	bool m_usePositionalTracking;
 
 };
 

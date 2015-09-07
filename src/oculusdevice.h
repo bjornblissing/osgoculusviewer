@@ -139,7 +139,7 @@ class OculusDevice : public osg::Referenced {
 		void blitMirrorTexture(osg::GraphicsContext *gc);
 
 		void setPerfHudMode(int mode);
-		void togglePositionalTracking();
+		void setPositionalTrackingState(bool state);
 
 		osg::GraphicsContext::Traits* graphicsContextTraits() const;
 	protected:
@@ -184,8 +184,6 @@ class OculusDevice : public osg::Referenced {
 
 		float m_nearClip;
 		float m_farClip;
-
-		bool m_usePositionalTracking;
 	private:
 		OculusDevice(const OculusDevice&); // Do not allow copy
 		OculusDevice& operator=(const OculusDevice&); // Do not allow assignment operator.
