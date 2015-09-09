@@ -353,7 +353,7 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
 	camera->setRenderOrder(osg::Camera::PRE_RENDER, renderOrder(eye));
-	camera->setCullingMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
+	camera->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 	camera->setAllowEventFocus(false);
 	camera->setReferenceFrame(referenceFrame);
 
