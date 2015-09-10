@@ -16,6 +16,11 @@
 #include <osg/Version>
 #include <osg/FrameBufferObject>
 
+#if(OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
+typedef osg::GLExtensions OSG_GLExtensions;
+#else
+typedef osg::FBOExtensions OSG_GLExtensions;
+#endif
 
 class OculusTextureBuffer : public osg::Referenced {
 public:
@@ -24,47 +29,29 @@ public:
 	int textureWidth() const { return m_textureSize.x();  }
 	int textureHeight() const { return m_textureSize.y(); }
 	ovrSwapTextureSet* textureSet() const { return m_textureSet; }
+	void createRenderBuffers(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size);
 	osg::ref_ptr<osg::Texture2D> texture() const { return m_texture; }
+	osg::ref_ptr<osg::Texture2D> depthBuffer() const { return m_depthBuffer; }
 	void advanceIndex() { m_textureSet->CurrentIndex = (m_textureSet->CurrentIndex + 1) % m_textureSet->TextureCount; }
-	void setRenderSurface(const osg::State& state);
-	void initializeFboId(GLuint id) { m_fboId = id; m_fboIdInitialized = true; }
-	bool isFboIdInitialized() const { return m_fboIdInitialized; }
+	void onPreRender(osg::RenderInfo& renderInfo);
+	void onPostRender(osg::RenderInfo& renderInfo);
+
 protected:
 	~OculusTextureBuffer() {}
 
 	const ovrHmd m_hmdDevice;
 	ovrSwapTextureSet* m_textureSet;
 	osg::ref_ptr<osg::Texture2D> m_texture;
+	osg::ref_ptr<osg::Texture2D> m_depthBuffer;
 	osg::Vec2i m_textureSize;
-	GLuint m_fboId;
-	bool m_fboIdInitialized;
+	
+	GLuint m_fbo; // MSAA FBO is copied to this FBO after render.
 };
-
-
-class OculusDepthBuffer : public osg::Referenced {
-public:
-	explicit OculusDepthBuffer(const ovrSizei& size, osg::ref_ptr<osg::State> state);
-	void destroy() {};
-	int textureWidth() const { return m_textureSize.x(); }
-	int textureHeight() const { return m_textureSize.y(); }
-	osg::ref_ptr<osg::Texture2D> texture() const { return m_texture; }
-	void setRenderSurface(const osg::State& state);
-protected:
-	~OculusDepthBuffer() {}
-
-	osg::ref_ptr<osg::Texture2D> m_texture;
-	osg::Vec2i m_textureSize;
-};
-
 
 class OculusMirrorTexture : public osg::Referenced {
 public:
 	OculusMirrorTexture(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, int width, int height);
-#if(OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
-	void destroy(const osg::GLExtensions* fbo_ext = 0);
-#else
-	void destroy(const osg::FBOExtensions* fbo_ext=0);
-#endif
+	void destroy(const OSG_GLExtensions* fbo_ext = 0);
 	GLuint id() const { return m_texture->OGL.TexId; }
 	GLint width() const { return m_texture->OGL.Header.TextureSize.w; }
 	GLint height() const { return m_texture->OGL.Header.TextureSize.h; }
@@ -81,10 +68,9 @@ protected:
 class OculusPreDrawCallback : public osg::Camera::DrawCallback
 {
 public:
-	OculusPreDrawCallback(osg::Camera* camera, OculusTextureBuffer* textureBuffer, OculusDepthBuffer* depthBuffer)
+	OculusPreDrawCallback(osg::Camera* camera, OculusTextureBuffer* textureBuffer)
 		: m_camera(camera)
 		, m_textureBuffer(textureBuffer)
-		, m_depthBuffer(depthBuffer)
 	{
 	}
 
@@ -92,7 +78,22 @@ public:
 protected:
 	osg::Camera* m_camera;
 	OculusTextureBuffer* m_textureBuffer;
-	OculusDepthBuffer* m_depthBuffer;
+
+};
+
+class OculusPostDrawCallback : public osg::Camera::DrawCallback
+{
+public:
+	OculusPostDrawCallback(osg::Camera* camera, OculusTextureBuffer* textureBuffer)
+		: m_camera(camera)
+		, m_textureBuffer(textureBuffer)
+	{
+	}
+
+	virtual void operator()(osg::RenderInfo& renderInfo) const;
+protected:
+	osg::Camera* m_camera;
+	OculusTextureBuffer* m_textureBuffer;
 
 };
 
@@ -163,7 +164,6 @@ class OculusDevice : public osg::Referenced {
 		const float m_worldUnitsPerMetre;
 
 		osg::ref_ptr<OculusTextureBuffer> m_textureBuffer[2];
-		osg::ref_ptr<OculusDepthBuffer> m_depthBuffer[2];
 		osg::ref_ptr<OculusMirrorTexture> m_mirrorTexture;
 		
 		ovrEyeRenderDesc m_eyeRenderDesc[2];
