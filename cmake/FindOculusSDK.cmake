@@ -85,9 +85,15 @@ FIND_LIBRARY(OCULUS_SDK_LIBRARY NAMES libovr libovr64 ovr HINTS ${OCULUS_SDK_ROO
 FIND_LIBRARY(OCULUS_SDK_LIBRARY_DEBUG NAMES libovr${CMAKE_DEBUG_POSTFIX} libovr64${CMAKE_DEBUG_POSTFIX} ovr${CMAKE_DEBUG_POSTFIX} ovr libovr HINTS 
                                                       ${OCULUS_SDK_ROOT_DIR}/LibOVR/Lib/Windows/${_OCULUS_SDK_LIB_ARCH}/Debug/${_OCULUS_MSVC_DIR}
                                                     )
-    
+
 MARK_AS_ADVANCED(OCULUS_SDK_LIBRARY)
 MARK_AS_ADVANCED(OCULUS_SDK_LIBRARY_DEBUG)
+
+# If no debug library is found, use the release version instead
+IF(OCULUS_SDK_LIBRARY AND NOT OCULUS_SDK_LIBRARY_DEBUG)
+	MESSAGE("Warning: Could not find the debug version of libovr in the OculusSDK directory. Please consider building it from source.")
+    SET(OCULUS_SDK_LIBRARY_DEBUG ${OCULUS_SDK_LIBRARY})
+ENDIF()
 
 SET(OCULUS_SDK_LIBRARIES optimized ${OCULUS_SDK_LIBRARY} debug ${OCULUS_SDK_LIBRARY_DEBUG})
 
