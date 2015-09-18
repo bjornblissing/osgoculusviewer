@@ -298,14 +298,14 @@ osg::Matrix OculusDevice::projectionOffsetMatrixRight() const
 osg::Matrix OculusDevice::viewMatrixLeft() const
 {
 	osg::Matrix viewMatrix;
-	viewMatrix.makeTranslate(m_leftEyeAdjust);
+	viewMatrix.makeTranslate(-m_leftEyeAdjust);
 	return viewMatrix;
 }
 
 osg::Matrix OculusDevice::viewMatrixRight() const
 {
 	osg::Matrix viewMatrix;
-	viewMatrix.makeTranslate(m_rightEyeAdjust);
+	viewMatrix.makeTranslate(-m_rightEyeAdjust);
 	return viewMatrix;
 }
 
