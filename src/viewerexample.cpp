@@ -46,7 +46,8 @@ int main( int argc, char** argv )
 	float farClip = 10000.0f;
 	float pixelsPerDisplayPixel = 1.0;
 	float worldUnitsPerMetre = 1.0f;
-	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, worldUnitsPerMetre);
+	int samples = 4;
+	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, worldUnitsPerMetre, samples);
 
 	// Get the suggested context traits
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = oculusDevice->graphicsContextTraits();
