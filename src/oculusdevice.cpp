@@ -311,14 +311,14 @@ osg::Matrix OculusDevice::projectionOffsetMatrixRight() const
 osg::Matrix OculusDevice::viewMatrixLeft() const
 {
 	osg::Matrix viewMatrix;
-	viewMatrix.makeTranslate(m_leftEyeAdjust);
+	viewMatrix.makeTranslate(-m_leftEyeAdjust);
 	return viewMatrix;
 }
 
 osg::Matrix OculusDevice::viewMatrixRight() const
 {
 	osg::Matrix viewMatrix;
-	viewMatrix.makeTranslate(m_rightEyeAdjust);
+	viewMatrix.makeTranslate(-m_rightEyeAdjust);
 	return viewMatrix;
 }
 
@@ -346,8 +346,8 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 
 osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc) const
 {
-	osg::Texture2D* texture = m_textureBuffer[renderOrder(eye)]->texture();
-	osg::Texture2D* depth = m_depthBuffer[renderOrder(eye)]->texture();
+	osg::Texture2D* texture = m_textureBuffer[eye]->texture();
+	osg::Texture2D* depth = m_depthBuffer[eye]->texture();
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
 	camera->setClearColor(clearColor);
 	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -367,7 +367,7 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 		camera->attach(osg::Camera::DEPTH_BUFFER, depth);
 	}
 
-	camera->setPreDrawCallback(new OculusPreDrawCallback(camera.get(), m_textureBuffer[renderOrder(eye)], m_depthBuffer[renderOrder(eye)]));
+	camera->setPreDrawCallback(new OculusPreDrawCallback(camera.get(), m_textureBuffer[eye], m_depthBuffer[eye]));
 
 	return camera.release();
 }
