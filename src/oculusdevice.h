@@ -18,8 +18,10 @@
 
 #if(OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
 typedef osg::GLExtensions OSG_GLExtensions;
+typedef osg::GLExtensions OSG_Texture_Extensions;
 #else
 typedef osg::FBOExtensions OSG_GLExtensions;
+typedef osg::Texture::Extensions OSG_Texture_Extensions;
 #endif
 
 class OculusTextureBuffer : public osg::Referenced {
@@ -45,8 +47,8 @@ protected:
 	osg::ref_ptr<osg::Texture2D> m_depthBuffer;
 	osg::Vec2i m_textureSize;
 	
-	void SetupNormal(osg::State& state);
-	void SetupMSAA(osg::State& state);
+	void setup(osg::State& state);
+	void setupMSAA(osg::State& state);
 
 	GLuint m_Oculus_FBO = 0; // MSAA FBO is copied to this FBO after render.
 	GLuint m_MSAA_FBO = 0; // framebuffer for MSAA texture

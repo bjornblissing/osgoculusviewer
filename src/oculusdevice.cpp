@@ -31,6 +31,15 @@ static const OSG_GLExtensions* getGLExtensions(const osg::State& state)
 #endif
 }
 
+static const OSG_Texture_Extensions* getTextureExtensions(const osg::State& state)
+{
+#if(OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
+	return state.get<osg::GLExtensions>();
+#else
+	return osg::Texture::getExtensions(state.getContextID(), true);
+#endif
+}
+
 static osg::FrameBufferObject* getFrameBufferObject(osg::RenderInfo& renderInfo)
 {
 	osg::Camera* camera = renderInfo.getCurrentCamera();
@@ -70,16 +79,16 @@ m_samples(samples)
 {
 	if (samples == 0)
 	{
-		SetupNormal(*state);
+		setup(*state);
 	}
 	else
 	{
-		SetupMSAA(*state);
+		setupMSAA(*state);
 	}
 
 }
 
-void OculusTextureBuffer::SetupNormal(osg::State& state)
+void OculusTextureBuffer::setup(osg::State& state)
 {
 	if (ovr_CreateSwapTextureSetGL(m_hmdDevice, GL_SRGB8_ALPHA8, textureWidth(), textureHeight(), &m_textureSet) == ovrSuccess) 
 	{
@@ -133,7 +142,7 @@ void OculusTextureBuffer::SetupNormal(osg::State& state)
 }
 
 
-void OculusTextureBuffer::SetupMSAA(osg::State& state)
+void OculusTextureBuffer::setupMSAA(osg::State& state)
 {
 	const OSG_GLExtensions* fbo_ext = getGLExtensions(state);
 
@@ -160,8 +169,7 @@ void OculusTextureBuffer::SetupMSAA(osg::State& state)
 	// We don't want to support MIPMAP so, ensure only level 0 is allowed.
 	const int maxTextureLevel = 0;
 
-	const unsigned int contextID = state.getContextID();
-	const osg::Texture::Extensions* extensions = osg::Texture::getExtensions(contextID, true);
+	const OSG_Texture_Extensions* extensions = getTextureExtensions(state);
 
 	// Create MSAA colour buffer
 	glGenTextures(1, &m_MSAA_ColorTex);
