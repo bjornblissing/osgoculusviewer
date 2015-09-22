@@ -4,10 +4,13 @@
  *  Created on: Jul 07, 2015
  *      Author: Björn Blissing
  */
+
 #include "oculusupdateslavecallback.h"
 
-void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& slave) {
-	if (m_cameraType == LEFT_CAMERA) {
+void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& slave)
+{
+	if (m_cameraType == LEFT_CAMERA)
+	{
 		m_device->updatePose(m_swapCallback->frameIndex());
 	}
 

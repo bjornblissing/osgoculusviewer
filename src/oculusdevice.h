@@ -17,14 +17,15 @@
 #include <osg/FrameBufferObject>
 
 #if(OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
-typedef osg::GLExtensions OSG_GLExtensions;
-typedef osg::GLExtensions OSG_Texture_Extensions;
+	typedef osg::GLExtensions OSG_GLExtensions;
+	typedef osg::GLExtensions OSG_Texture_Extensions;
 #else
-typedef osg::FBOExtensions OSG_GLExtensions;
-typedef osg::Texture::Extensions OSG_Texture_Extensions;
+	typedef osg::FBOExtensions OSG_GLExtensions;
+	typedef osg::Texture::Extensions OSG_Texture_Extensions;
 #endif
 
-class OculusTextureBuffer : public osg::Referenced {
+class OculusTextureBuffer : public osg::Referenced
+{
 public:
 	OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size, int msaaSamples);
 	void destroy();
@@ -46,7 +47,7 @@ protected:
 	osg::ref_ptr<osg::Texture2D> m_colorBuffer;
 	osg::ref_ptr<osg::Texture2D> m_depthBuffer;
 	osg::Vec2i m_textureSize;
-	
+
 	void setup(osg::State& state);
 	void setupMSAA(osg::State& state);
 
@@ -58,7 +59,8 @@ protected:
 
 };
 
-class OculusMirrorTexture : public osg::Referenced {
+class OculusMirrorTexture : public osg::Referenced
+{
 public:
 	OculusMirrorTexture(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, int width, int height);
 	void destroy(const OSG_GLExtensions* fbo_ext = 0);
@@ -108,99 +110,101 @@ protected:
 };
 
 
-class OculusDevice : public osg::Referenced {
-	
-	public:
-		typedef enum Eye_
-		{
-			LEFT = 0,
-			RIGHT = 1,
-			COUNT = 2
-		} Eye;
-		OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel = 1.0f, const float worldUnitsPerMetre = 1.0f, const int samples = 0);
-		void createRenderBuffers(osg::ref_ptr<osg::State> state);
-		void init();
+class OculusDevice : public osg::Referenced
+{
 
-		unsigned int screenResolutionWidth() const;
-		unsigned int screenResolutionHeight() const;
+public:
+	typedef enum Eye_
+	{
+		LEFT = 0,
+		RIGHT = 1,
+		COUNT = 2
+	} Eye;
+	OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel = 1.0f, const float worldUnitsPerMetre = 1.0f, const int samples = 0);
+	void createRenderBuffers(osg::ref_ptr<osg::State> state);
+	void init();
 
-		osg::Matrix projectionMatrixCenter() const;
-		osg::Matrix projectionMatrixLeft() const;
-		osg::Matrix projectionMatrixRight() const;
+	unsigned int screenResolutionWidth() const;
+	unsigned int screenResolutionHeight() const;
 
-		osg::Matrix projectionOffsetMatrixLeft() const;
-		osg::Matrix projectionOffsetMatrixRight() const;
+	osg::Matrix projectionMatrixCenter() const;
+	osg::Matrix projectionMatrixLeft() const;
+	osg::Matrix projectionMatrixRight() const;
 
-		osg::Matrix viewMatrixLeft() const;
-		osg::Matrix viewMatrixRight() const;
+	osg::Matrix projectionOffsetMatrixLeft() const;
+	osg::Matrix projectionOffsetMatrixRight() const;
 
-		float nearClip() const { return m_nearClip;	}
-		float farClip() const { return m_farClip; }
+	osg::Matrix viewMatrixLeft() const;
+	osg::Matrix viewMatrixRight() const;
 
-		void resetSensorOrientation() const;
-		void updatePose(unsigned int frameIndex = 0);
-		
-		osg::Vec3 position() const { return m_position; }
-		osg::Quat orientation() const { return m_orientation;  }
+	float nearClip() const { return m_nearClip;	}
+	float farClip() const { return m_farClip; }
 
-		osg::Camera* createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc = 0) const;
-		
-		bool submitFrame(unsigned int frameIndex = 0);
-		void blitMirrorTexture(osg::GraphicsContext *gc);
+	void resetSensorOrientation() const;
+	void updatePose(unsigned int frameIndex = 0);
 
-		void setPerfHudMode(int mode);
-		void setPositionalTrackingState(bool state);
+	osg::Vec3 position() const { return m_position; }
+	osg::Quat orientation() const { return m_orientation;  }
 
-		osg::GraphicsContext::Traits* graphicsContextTraits() const;
-	protected:
-		~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
+	osg::Camera* createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc = 0) const;
 
-		void printHMDDebugInfo();
+	bool submitFrame(unsigned int frameIndex = 0);
+	void blitMirrorTexture(osg::GraphicsContext* gc);
 
-		void initializeEyeRenderDesc();
-		// Note: this function requires you to run the previous function first.
-		void calculateEyeAdjustment();
-		// Note: this function requires you to run the previous function first.
-		void calculateProjectionMatrices();
+	void setPerfHudMode(int mode);
+	void setPositionalTrackingState(bool state);
 
-		void setupLayers();
+	osg::GraphicsContext::Traits* graphicsContextTraits() const;
+protected:
+	~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
 
-		void trySetProcessAsHighPriority() const;
-		
-		ovrHmd m_hmdDevice;
-		ovrHmdDesc m_hmdDesc;
-		
-		const float m_pixelsPerDisplayPixel;
-		const float m_worldUnitsPerMetre;
+	void printHMDDebugInfo();
 
-		osg::ref_ptr<OculusTextureBuffer> m_textureBuffer[2];
-		osg::ref_ptr<OculusMirrorTexture> m_mirrorTexture;
-		
-		ovrEyeRenderDesc m_eyeRenderDesc[2];
-		ovrVector2f m_UVScaleOffset[2][2];
-		ovrFrameTiming m_frameTiming;
-		ovrPosef m_headPose[2];
-		ovrPosef m_eyeRenderPose[2];
-		ovrLayerEyeFov m_layerEyeFov;
-		ovrVector3f m_viewOffset[2];
-		osg::Matrixf m_leftEyeProjectionMatrix;
-		osg::Matrixf m_rightEyeProjectionMatrix;
-		osg::Vec3f m_leftEyeAdjust;
-		osg::Vec3f m_rightEyeAdjust;
-		
-		osg::Vec3 m_position;
-		osg::Quat m_orientation;
+	void initializeEyeRenderDesc();
+	// Note: this function requires you to run the previous function first.
+	void calculateEyeAdjustment();
+	// Note: this function requires you to run the previous function first.
+	void calculateProjectionMatrices();
 
-		float m_nearClip;
-		float m_farClip;
-		int m_samples;
-	private:
-		OculusDevice(const OculusDevice&); // Do not allow copy
-		OculusDevice& operator=(const OculusDevice&); // Do not allow assignment operator.
+	void setupLayers();
+
+	void trySetProcessAsHighPriority() const;
+
+	ovrHmd m_hmdDevice;
+	ovrHmdDesc m_hmdDesc;
+
+	const float m_pixelsPerDisplayPixel;
+	const float m_worldUnitsPerMetre;
+
+	osg::ref_ptr<OculusTextureBuffer> m_textureBuffer[2];
+	osg::ref_ptr<OculusMirrorTexture> m_mirrorTexture;
+
+	ovrEyeRenderDesc m_eyeRenderDesc[2];
+	ovrVector2f m_UVScaleOffset[2][2];
+	ovrFrameTiming m_frameTiming;
+	ovrPosef m_headPose[2];
+	ovrPosef m_eyeRenderPose[2];
+	ovrLayerEyeFov m_layerEyeFov;
+	ovrVector3f m_viewOffset[2];
+	osg::Matrixf m_leftEyeProjectionMatrix;
+	osg::Matrixf m_rightEyeProjectionMatrix;
+	osg::Vec3f m_leftEyeAdjust;
+	osg::Vec3f m_rightEyeAdjust;
+
+	osg::Vec3 m_position;
+	osg::Quat m_orientation;
+
+	float m_nearClip;
+	float m_farClip;
+	int m_samples;
+private:
+	OculusDevice(const OculusDevice&); // Do not allow copy
+	OculusDevice& operator=(const OculusDevice&); // Do not allow assignment operator.
 };
 
 
-class OculusRealizeOperation : public osg::GraphicsOperation {
+class OculusRealizeOperation : public osg::GraphicsOperation
+{
 public:
 	explicit OculusRealizeOperation(osg::ref_ptr<OculusDevice> device) :
 		osg::GraphicsOperation("OculusRealizeOperation", false), m_device(device), m_realized(false) {}
@@ -213,10 +217,11 @@ protected:
 };
 
 
-class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
+class OculusSwapCallback : public osg::GraphicsContext::SwapCallback
+{
 public:
 	explicit OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
-	void swapBuffersImplementation(osg::GraphicsContext *gc);
+	void swapBuffersImplementation(osg::GraphicsContext* gc);
 	int frameIndex() const { return m_frameIndex; }
 private:
 	osg::observer_ptr<OculusDevice> m_device;

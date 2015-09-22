@@ -9,7 +9,9 @@
 #define _OSG_OCULUSUPDATESLAVECALLBACK_H_
 
 #include <osgViewer/View>
+
 #include "oculusdevice.h"
+
 
 struct OculusUpdateSlaveCallback : public osg::View::Slave::UpdateSlaveCallback
 {
