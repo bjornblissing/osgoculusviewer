@@ -86,18 +86,7 @@ int main( int argc, char** argv )
 
 	viewer.addEventHandler(new OculusEventHandler(oculusDevice));
 
-#define standard_viewer_run 0
-#if standard_viewer_run
 	viewer.run();
-#else
-	// Realize viewer
-	viewer.realize();
-
-	// Start Viewer
-	while (!viewer.done()) {
-		viewer.frame();
-	}
-#endif
 
 	return 0;
 }
