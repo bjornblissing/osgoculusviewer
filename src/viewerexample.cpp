@@ -7,12 +7,11 @@
 
 #include <osgDB/ReadFile>
 #include <osgGA/TrackballManipulator>
+#include <osgViewer/Viewer>
+#include <osgUtil/GLObjectsVisitor>
 
 #include "oculusviewer.h"
 #include "oculuseventhandler.h"
-#include <osgViewer/Viewer>
-#include <osgViewer/ViewerEventHandlers>
-#include <osgUtil/GLObjectsVisitor>
 
 int main( int argc, char** argv )
 {
