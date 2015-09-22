@@ -23,7 +23,7 @@ class OculusViewer : public osg::Group {
 		OculusViewer(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev, osg::ref_ptr<OculusRealizeOperation> realizeOperation) : osg::Group(),
 			m_configured(false),
 			m_view(view),
-			m_cameraRTTLeft(0), m_cameraRTTRight(0),
+			m_cameraRTTLeft(nullptr), m_cameraRTTRight(nullptr),
 			m_device(dev),
 			m_realizeOperation(realizeOperation)
 		{};

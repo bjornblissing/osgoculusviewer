@@ -44,19 +44,19 @@ static osg::FrameBufferObject* getFrameBufferObject(osg::RenderInfo& renderInfo)
 {
 	osg::Camera* camera = renderInfo.getCurrentCamera();
 	osgViewer::Renderer *camRenderer = (dynamic_cast<osgViewer::Renderer*>(camera->getRenderer()));
-	if (camRenderer != NULL) 
+	if (camRenderer != nullptr) 
 	{
 		osgUtil::SceneView* sceneView = camRenderer->getSceneView(0);
-		if (sceneView != NULL) 
+		if (sceneView != nullptr) 
 		{
 			osgUtil::RenderStage* renderStage = sceneView->getRenderStage();
-			if (renderStage != NULL) 
+			if (renderStage != nullptr) 
 			{
 				return renderStage->getFrameBufferObject();
 			}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void OculusPreDrawCallback::operator()(osg::RenderInfo& renderInfo) const 
@@ -70,9 +70,10 @@ void OculusPostDrawCallback::operator()(osg::RenderInfo& renderInfo) const
 }
 
 /* Public functions */
-OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size, int samples) : m_hmdDevice(hmd), m_textureSet(0),
-m_colorBuffer(0),
-m_depthBuffer(0),
+OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, const ovrSizei& size, int samples) : m_hmdDevice(hmd), 
+m_textureSet(nullptr),
+m_colorBuffer(nullptr),
+m_depthBuffer(nullptr),
 m_textureSize(osg::Vec2i(size.w, size.h)),
 m_Oculus_FBO(0),
 m_samples(samples)
@@ -202,7 +203,7 @@ void OculusTextureBuffer::onPreRender(osg::RenderInfo& renderInfo)
 	if (m_samples == 0)
 	{
 		osg::FrameBufferObject* fbo = getFrameBufferObject(renderInfo);
-		if (fbo == NULL)
+		if (fbo == nullptr)
 		{
 			return;
 		}
@@ -253,7 +254,7 @@ void OculusTextureBuffer::destroy() {
 	ovr_DestroySwapTextureSet(m_hmdDevice, m_textureSet);
 }
 
-OculusMirrorTexture::OculusMirrorTexture(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, int width, int height) : m_hmdDevice(hmd), m_texture(NULL) {
+OculusMirrorTexture::OculusMirrorTexture(const ovrHmd& hmd, osg::ref_ptr<osg::State> state, int width, int height) : m_hmdDevice(hmd), m_texture(nullptr) {
 	const OSG_GLExtensions* fbo_ext = getGLExtensions(*state);
 	ovr_CreateMirrorTextureGL(m_hmdDevice, GL_SRGB8_ALPHA8, width, height, reinterpret_cast<ovrTexture**>(&m_texture));
 	// Configure the mirror read buffer
@@ -286,7 +287,7 @@ void OculusMirrorTexture::destroy(const OSG_GLExtensions* fbo_ext) {
 
 /* Public functions */
 OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre, const int samples) : 
-m_hmdDevice(0),
+m_hmdDevice(nullptr),
 m_hmdDesc(),
 m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
 m_worldUnitsPerMetre(worldUnitsPerMetre),
@@ -563,7 +564,7 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
 	traits->width = screenResolutionWidth() / 2;
 	traits->height = screenResolutionHeight() / 2;
 	traits->doubleBuffer = true;
-	traits->sharedContext = 0;
+	traits->sharedContext = nullptr;
 	traits->vsync = false; // VSync should always be disabled for Oculus Rift applications, the SDK compositor handles the swap
 
 	return traits.release();
