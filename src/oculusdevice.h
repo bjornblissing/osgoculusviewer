@@ -51,11 +51,11 @@ protected:
 	void setup(osg::State& state);
 	void setupMSAA(osg::State& state);
 
-	GLuint m_Oculus_FBO = 0; // MSAA FBO is copied to this FBO after render.
-	GLuint m_MSAA_FBO = 0; // framebuffer for MSAA texture
-	GLuint m_MSAA_ColorTex = 0; // color texture for MSAA
-	GLuint m_MSAA_DepthTex = 0; // depth texture for MSAA
-	int m_samples = 0;  // sample width for MSAA
+	GLuint m_Oculus_FBO; // MSAA FBO is copied to this FBO after render.
+	GLuint m_MSAA_FBO; // framebuffer for MSAA texture
+	GLuint m_MSAA_ColorTex; // color texture for MSAA
+	GLuint m_MSAA_DepthTex; // depth texture for MSAA
+	int m_samples;  // sample width for MSAA
 
 };
 

@@ -80,6 +80,9 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrHmd& hmd, osg::ref_ptr<osg::St
 	m_depthBuffer(nullptr),
 	m_textureSize(osg::Vec2i(size.w, size.h)),
 	m_Oculus_FBO(0),
+	m_MSAA_FBO(0),
+	m_MSAA_ColorTex(0),
+	m_MSAA_DepthTex(0),
 	m_samples(samples)
 {
 	if (samples == 0)
