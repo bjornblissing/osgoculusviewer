@@ -465,28 +465,29 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
 }
 
+class OculusInitialDrawCallback : public osg::Camera::DrawCallback
+{
+public:
+	virtual void operator()(osg::RenderInfo& renderInfo) const
+	{
+		osg::GraphicsOperation* graphicsOperation = renderInfo.getCurrentCamera()->getRenderer();
+		osgViewer::Renderer* renderer = dynamic_cast<osgViewer::Renderer*>(graphicsOperation);
+		if (renderer != nullptr)
+		{
+			// Disable normal OSG FBO camera setup because it will undo the MSAA FBO configuration.
+			renderer->setCameraRequiresSetUp(false);
+		}
+	}
+};
+
 osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc) const
 {
 	OculusTextureBuffer* buffer = m_textureBuffer[eye];
 
-	osg::Camera::RenderTargetImplementation target = osg::Camera::FRAME_BUFFER_OBJECT;
-
-	if (m_samples != 0)
-	{
-		// If we are using MSAA, we don't want OSG doing anything regarding FBO
-		// setup and selection because this is handled completely by 'SetupMSAA'
-		// and by pre and post render callbacks. So setting target to FRAME_BUFFER
-		// here to prevent OSG from undoing the MSAA buffer configuration.
-		// Note that we also implicity avoid the camera buffer attachments below
-		// when MSAA is enabled because we don't want OSG to affect the texture
-		// bindings handled by the pre and post render callbacks.
-		target = osg::Camera::FRAME_BUFFER;
-	}
-
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera();
 	camera->setClearColor(clearColor);
 	camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	camera->setRenderTargetImplementation(target);
+	camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
 	camera->setRenderOrder(osg::Camera::PRE_RENDER, eye);
 	camera->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 	camera->setAllowEventFocus(false);
@@ -502,6 +503,18 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 	if (buffer->depthBuffer())
 	{
 		camera->attach(osg::Camera::DEPTH_BUFFER, buffer->depthBuffer());
+	}
+
+	if (m_samples != 0)
+	{
+		// If we are using MSAA, we don't want OSG doing anything regarding FBO
+		// setup and selection because this is handled completely by 'setupMSAA'
+		// and by pre and post render callbacks. So this initial draw callback is 
+		// used to disable normal OSG camera setup which would undo the MSAA buffer
+		// configuration. Note that we have also implicity avoided the camera buffer 
+		// attachments above when MSAA is enabled because we don't want OSG to 
+		// affect the texture bindings handled by the pre and post render callbacks.
+		camera->setInitialDrawCallback(new OculusInitialDrawCallback());
 	}
 
 	camera->setPreDrawCallback(new OculusPreDrawCallback(camera.get(), buffer));
