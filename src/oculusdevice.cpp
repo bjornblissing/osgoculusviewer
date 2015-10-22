@@ -372,16 +372,6 @@ void OculusDevice::init()
 
 	calculateProjectionMatrices();
 
-	unsigned int hmdCaps = 0;
-	// Set render capabilities
-	ovr_SetEnabledCaps(m_session, hmdCaps);
-
-	// Start the sensor which provides the Rift's pose and motion.
-	ovr_ConfigureTracking(m_session, ovrTrackingCap_Orientation |
-						  ovrTrackingCap_MagYawCorrection |
-						  ovrTrackingCap_Position, 0);
-
-	// Setup layers
 	setupLayers();
 
 	// Reset perf hud
