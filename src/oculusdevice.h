@@ -181,7 +181,7 @@ protected:
 
 	ovrEyeRenderDesc m_eyeRenderDesc[2];
 	ovrVector2f m_UVScaleOffset[2][2];
-	ovrFrameTiming m_frameTiming;
+	double m_frameTiming;
 	ovrPosef m_headPose[2];
 	ovrPosef m_eyeRenderPose[2];
 	ovrLayerEyeFov m_layerEyeFov;

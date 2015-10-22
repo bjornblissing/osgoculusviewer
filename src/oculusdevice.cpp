@@ -453,13 +453,13 @@ void OculusDevice::resetSensorOrientation() const
 void OculusDevice::updatePose(unsigned int frameIndex)
 {
 	// Ask the API for the times when this frame is expected to be displayed.
-	m_frameTiming = ovr_GetFrameTiming(m_hmdDevice, frameIndex);
+	m_frameTiming = ovr_GetPredictedDisplayTime(m_hmdDevice, frameIndex);
 
 	m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyeViewOffset;
 	m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyeViewOffset;
 
 	// Query the HMD for the current tracking state.
-	ovrTrackingState ts = ovr_GetTrackingState(m_hmdDevice, m_frameTiming.DisplayMidpointSeconds);
+	ovrTrackingState ts = ovr_GetTrackingState(m_hmdDevice, m_frameTiming, ovrTrue);
 	ovr_CalcEyePoses(ts.HeadPose.ThePose, m_viewOffset, m_eyeRenderPose);
 	ovrPoseStatef headpose = ts.HeadPose;
 	ovrPosef pose = headpose.ThePose;
