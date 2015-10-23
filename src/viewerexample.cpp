@@ -50,6 +50,11 @@ int main( int argc, char** argv )
 	int samples = 4;
 	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, worldUnitsPerMetre, samples);
 
+	if (!oculusDevice->hmdDetected())
+	{
+		return 1;
+	}
+
 	// Get the suggested context traits
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = oculusDevice->graphicsContextTraits();
 	traits->windowName = "OsgOculusViewerExample";
