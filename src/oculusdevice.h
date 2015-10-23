@@ -124,6 +124,8 @@ public:
 	void createRenderBuffers(osg::ref_ptr<osg::State> state);
 	void init();
 
+	bool hmdPresent() const;
+
 	unsigned int screenResolutionWidth() const;
 	unsigned int screenResolutionHeight() const;
 

@@ -50,6 +50,13 @@ int main( int argc, char** argv )
 	int samples = 4;
 	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, worldUnitsPerMetre, samples);
 
+	// Exit if we do not have a valid HMD present
+	if (!oculusDevice->hmdPresent())
+	{
+		osg::notify(osg::FATAL) << "Error: No valid HMD present!" << std::endl;
+		return 1;
+	}
+
 	// Get the suggested context traits
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = oculusDevice->graphicsContextTraits();
 	traits->windowName = "OsgOculusViewerExample";

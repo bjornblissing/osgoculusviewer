@@ -378,6 +378,30 @@ void OculusDevice::init()
 	ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_Off);
 }
 
+bool OculusDevice::hmdPresent() const
+{
+	ovrSessionStatus status;
+
+	if (m_session)
+	{
+		ovrResult result = ovr_GetSessionStatus(m_session, &status);
+
+		if (result == ovrSuccess)
+		{
+			return (status.HmdPresent == ovrTrue);
+		}
+		else
+		{
+			ovrErrorInfo error;
+			ovr_GetLastErrorInfo(&error);
+			osg::notify(osg::WARN) << error.ErrorString << std::endl;
+			return false;
+		}
+	}
+
+	return false;
+}
+
 unsigned int OculusDevice::screenResolutionWidth() const
 {
 	return  m_hmdDesc.Resolution.w;
@@ -617,12 +641,18 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const
 OculusDevice::~OculusDevice()
 {
 	// Delete mirror texture
-	m_mirrorTexture->destroy();
+	if (m_mirrorTexture.valid())
+	{
+		m_mirrorTexture->destroy();
+	}
 
 	// Delete texture and depth buffers
 	for (int i = 0; i < 2; i++)
 	{
-		m_textureBuffer[i]->destroy();
+		if (m_textureBuffer[i].valid())
+		{
+			m_textureBuffer[i]->destroy();
+		}
 	}
 
 	ovr_Destroy(m_session);
