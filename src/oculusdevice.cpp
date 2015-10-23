@@ -304,6 +304,7 @@ void OculusMirrorTexture::destroy(const OSG_GLExtensions* fbo_ext)
 
 /* Public functions */
 OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre, const int samples) :
+	m_hmdDetected(false),
 	m_session(nullptr),
 	m_hmdDesc(),
 	m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
@@ -337,6 +338,8 @@ OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerD
 		osg::notify(osg::WARN) << "Warning: No device could be found." << std::endl;
 		return;
 	}
+	
+	m_hmdDetected = true;
 
 	// Get HMD description
 	m_hmdDesc = ovr_GetHmdDesc(m_session);
@@ -617,12 +620,18 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const
 OculusDevice::~OculusDevice()
 {
 	// Delete mirror texture
-	m_mirrorTexture->destroy();
+	if (m_mirrorTexture.valid())
+	{
+		m_mirrorTexture->destroy();
+	}
 
 	// Delete texture and depth buffers
 	for (int i = 0; i < 2; i++)
 	{
-		m_textureBuffer[i]->destroy();
+		if (m_textureBuffer[i].valid())
+		{
+			m_textureBuffer[i]->destroy();
+		}
 	}
 
 	ovr_Destroy(m_session);
