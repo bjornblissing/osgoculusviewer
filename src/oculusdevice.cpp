@@ -482,20 +482,16 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
 }
 
-class OculusInitialDrawCallback : public osg::Camera::DrawCallback
+void OculusInitialDrawCallback::operator()(osg::RenderInfo& renderInfo) const
 {
-public:
-	virtual void operator()(osg::RenderInfo& renderInfo) const
+	osg::GraphicsOperation* graphicsOperation = renderInfo.getCurrentCamera()->getRenderer();
+	osgViewer::Renderer* renderer = dynamic_cast<osgViewer::Renderer*>(graphicsOperation);
+	if (renderer != nullptr)
 	{
-		osg::GraphicsOperation* graphicsOperation = renderInfo.getCurrentCamera()->getRenderer();
-		osgViewer::Renderer* renderer = dynamic_cast<osgViewer::Renderer*>(graphicsOperation);
-		if (renderer != nullptr)
-		{
-			// Disable normal OSG FBO camera setup because it will undo the MSAA FBO configuration.
-			renderer->setCameraRequiresSetUp(false);
-		}
+		// Disable normal OSG FBO camera setup because it will undo the MSAA FBO configuration.
+		renderer->setCameraRequiresSetUp(false);
 	}
-};
+}
 
 osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc) const
 {

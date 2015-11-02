@@ -230,5 +230,10 @@ private:
 	int m_frameIndex;
 };
 
+class OculusInitialDrawCallback : public osg::Camera::DrawCallback
+{
+public:
+   virtual void operator()(osg::RenderInfo& renderInfo) const;
+};
 
 #endif /* _OSG_OCULUSDEVICE_H_ */
