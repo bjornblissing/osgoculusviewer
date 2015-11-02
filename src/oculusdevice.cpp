@@ -528,7 +528,7 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 		// setup and selection because this is handled completely by 'setupMSAA'
 		// and by pre and post render callbacks. So this initial draw callback is 
 		// used to disable normal OSG camera setup which would undo the MSAA buffer
-		// configuration. Note that we have also implicity avoided the camera buffer 
+		// configuration. Note that we have also implicitly avoided the camera buffer 
 		// attachments above when MSAA is enabled because we don't want OSG to 
 		// affect the texture bindings handled by the pre and post render callbacks.
 		camera->setInitialDrawCallback(new OculusInitialDrawCallback());
