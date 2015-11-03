@@ -482,20 +482,16 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
 }
 
-class OculusInitialDrawCallback : public osg::Camera::DrawCallback
+void OculusInitialDrawCallback::operator()(osg::RenderInfo& renderInfo) const
 {
-public:
-	virtual void operator()(osg::RenderInfo& renderInfo) const
+	osg::GraphicsOperation* graphicsOperation = renderInfo.getCurrentCamera()->getRenderer();
+	osgViewer::Renderer* renderer = dynamic_cast<osgViewer::Renderer*>(graphicsOperation);
+	if (renderer != nullptr)
 	{
-		osg::GraphicsOperation* graphicsOperation = renderInfo.getCurrentCamera()->getRenderer();
-		osgViewer::Renderer* renderer = dynamic_cast<osgViewer::Renderer*>(graphicsOperation);
-		if (renderer != nullptr)
-		{
-			// Disable normal OSG FBO camera setup because it will undo the MSAA FBO configuration.
-			renderer->setCameraRequiresSetUp(false);
-		}
+		// Disable normal OSG FBO camera setup because it will undo the MSAA FBO configuration.
+		renderer->setCameraRequiresSetUp(false);
 	}
-};
+}
 
 osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc) const
 {
@@ -528,7 +524,7 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 		// setup and selection because this is handled completely by 'setupMSAA'
 		// and by pre and post render callbacks. So this initial draw callback is 
 		// used to disable normal OSG camera setup which would undo the MSAA buffer
-		// configuration. Note that we have also implicity avoided the camera buffer 
+		// configuration. Note that we have also implicitly avoided the camera buffer 
 		// attachments above when MSAA is enabled because we don't want OSG to 
 		// affect the texture bindings handled by the pre and post render callbacks.
 		camera->setInitialDrawCallback(new OculusInitialDrawCallback());
