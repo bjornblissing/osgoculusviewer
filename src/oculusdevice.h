@@ -147,6 +147,7 @@ public:
 
 	osg::Vec3 position() const { return m_position; }
 	osg::Quat orientation() const { return m_orientation;  }
+   osg::Vec3 yawPitchRoll() const;
 
 	osg::Camera* createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc = 0) const;
 
@@ -195,6 +196,10 @@ protected:
 
 	osg::Vec3 m_position;
 	osg::Quat m_orientation;
+
+   // oculus orientation quaternion,
+   // used to extract yaw pitch and roll with oculus routines
+   ovrQuatf m_oculusOrientation;
 
 	float m_nearClip;
 	float m_farClip;
