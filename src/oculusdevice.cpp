@@ -10,9 +10,6 @@
 
 #include "oculusdevice.h"
 
-// include oculus extras
-#include <Extras/OVR_Math.h>
-
 #ifdef _WIN32
 	#include <Windows.h>
 #endif
@@ -482,10 +479,6 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	ovrPosef pose = headpose.ThePose;
 	m_position.set(-pose.Position.x, -pose.Position.y, -pose.Position.z);
 	m_position *= m_worldUnitsPerMetre;
-
-   // store the oculus orientation - needed to request yaw/pitch/roll
-   m_oculusOrientation = pose.Orientation;
-   // convert to osg orientation
 	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
 }
 
@@ -747,15 +740,6 @@ void OculusDevice::trySetProcessAsHighPriority() const
 #endif
 	}
 }
-
-osg::Vec3 OculusDevice::yawPitchRoll() const
-{
-   OVR::Quat<float> ciccio(m_oculusOrientation);
-   float y, p, r;
-   ciccio.GetYawPitchRoll(&y, &p, &r);
-   return osg::Vec3(y, p, r);
-}
-
 
 void OculusRealizeOperation::operator() (osg::GraphicsContext* gc)
 {
