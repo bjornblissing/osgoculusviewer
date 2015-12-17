@@ -477,9 +477,9 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	ovr_CalcEyePoses(ts.HeadPose.ThePose, m_viewOffset, m_eyeRenderPose);
 	ovrPoseStatef headpose = ts.HeadPose;
 	ovrPosef pose = headpose.ThePose;
-	m_position.set(-pose.Position.x, -pose.Position.y, -pose.Position.z);
+	m_position.set(pose.Position.x, pose.Position.y, pose.Position.z);
 	m_position *= m_worldUnitsPerMetre;
-	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, -pose.Orientation.w);
+	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
 }
 
 void OculusInitialDrawCallback::operator()(osg::RenderInfo& renderInfo) const
