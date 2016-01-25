@@ -19,8 +19,10 @@ void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& s
 
 	osg::Matrix viewOffset = (m_cameraType == LEFT_CAMERA) ? m_device->viewMatrixLeft() : m_device->viewMatrixRight();
 
+	// invert orientation and position to apply to the view matrix as offset
+	orientation[3] *= -1.f;
 	viewOffset.preMultRotate(orientation);
-	viewOffset.preMultTranslate(position);
+	viewOffset.preMultTranslate(-position);
 
 	slave._viewOffset = viewOffset;
 
