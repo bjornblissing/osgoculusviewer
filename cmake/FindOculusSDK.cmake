@@ -51,6 +51,10 @@ IF (MSVC)
 	IF(MSVC12)
 		SET(_OCULUS_MSVC_DIR "VS2013")
 	ENDIF()
+	# Visual Studio 2015
+	IF(MSVC14)
+		SET(_OCULUS_MSVC_DIR "VS2015")
+	ENDIF()
 ENDIF()
 
 # Try to ascertain the version of the SDK
