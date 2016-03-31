@@ -75,7 +75,7 @@ void OculusPostDrawCallback::operator()(osg::RenderInfo& renderInfo) const
 
 /* Public functions */
 OculusTextureBuffer::OculusTextureBuffer(const ovrSession& session, osg::ref_ptr<osg::State> state, const ovrSizei& size, int samples) : m_session(session),
-	m_textureSet(nullptr),
+	m_textureSwapChain(nullptr),
 	m_colorBuffer(nullptr),
 	m_depthBuffer(nullptr),
 	m_textureSize(osg::Vec2i(size.w, size.h)),
@@ -98,18 +98,32 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrSession& session, osg::ref_ptr
 
 void OculusTextureBuffer::setup(osg::State& state)
 {
-	if (ovr_CreateSwapTextureSetGL(m_session, GL_SRGB8_ALPHA8, textureWidth(), textureHeight(), &m_textureSet) == ovrSuccess)
-	{
-		// Assign textures to OSG textures
-		for (int i = 0; i < m_textureSet->TextureCount; ++i)
-		{
-			ovrGLTexture* tex = reinterpret_cast<ovrGLTexture*>(&m_textureSet->Textures[i]);
 
-			GLuint handle = tex->OGL.TexId;
+	ovrTextureSwapChainDesc desc = {};
+	desc.Type = ovrTexture_2D;
+	desc.ArraySize = 1;
+	desc.Width = m_textureSize.x();
+	desc.Height = m_textureSize.y();
+	desc.MipLevels = 1;
+	desc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
+	desc.SampleCount = 1;
+	desc.StaticImage = ovrFalse;
+
+	ovrResult result = ovr_CreateTextureSwapChainGL(m_session, &desc, &m_textureSwapChain);
+
+	int length = 0;
+	ovr_GetTextureSwapChainLength(m_session, m_textureSwapChain, &length);
+
+	if (OVR_SUCCESS(result))
+	{
+		for (int i = 0; i < length; ++i)
+		{
+			GLuint chainTexId;
+			ovr_GetTextureSwapChainBufferGL(m_session, m_textureSwapChain, i, &chainTexId);
 
 			osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D();
 
-			osg::ref_ptr<osg::Texture::TextureObject> textureObject = new osg::Texture::TextureObject(texture.get(), handle, GL_TEXTURE_2D);
+			osg::ref_ptr<osg::Texture::TextureObject> textureObject = new osg::Texture::TextureObject(texture.get(), chainTexId, GL_TEXTURE_2D);
 
 			textureObject->setAllocated(true);
 
@@ -120,11 +134,11 @@ void OculusTextureBuffer::setup(osg::State& state)
 			texture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
 			texture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
 
-			texture->setTextureSize(tex->Texture.Header.TextureSize.w, tex->Texture.Header.TextureSize.h);
+			texture->setTextureSize(m_textureSize.x(), m_textureSize.y());
 			texture->setSourceFormat(GL_SRGB8_ALPHA8);
 
-			// Set the current texture to point to the texture with the index (which will be advanced before drawing)
-			if (i == (m_textureSet->CurrentIndex + 1))
+			// Set the color buffer to be the first texture generated
+			if (i == 0)
 			{
 				m_colorBuffer = texture;
 			}
@@ -155,20 +169,39 @@ void OculusTextureBuffer::setup(osg::State& state)
 
 void OculusTextureBuffer::setupMSAA(osg::State& state)
 {
+	
 	const OSG_GLExtensions* fbo_ext = getGLExtensions(state);
 
-	if (ovr_CreateSwapTextureSetGL(m_session, GL_SRGB8_ALPHA8, m_textureSize.x(), m_textureSize.y(), &m_textureSet) == ovrSuccess)
-	{
-		for (int i = 0; i < m_textureSet->TextureCount; ++i)
-		{
-			ovrGLTexture* tex = reinterpret_cast<ovrGLTexture*>(&m_textureSet->Textures[i]);
-			glBindTexture(GL_TEXTURE_2D, tex->OGL.TexId);
+	
+	ovrTextureSwapChainDesc desc = {};
+	desc.Type = ovrTexture_2D;
+	desc.ArraySize = 1;
+	desc.Width = m_textureSize.x();
+	desc.Height = m_textureSize.y();
+	desc.MipLevels = 1;
+	desc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
+	desc.SampleCount = 1;
+	desc.StaticImage = ovrFalse;
 
+	ovrResult result = ovr_CreateTextureSwapChainGL(m_session, &desc, &m_textureSwapChain);
+
+	int length = 0;
+	ovr_GetTextureSwapChainLength(m_session, m_textureSwapChain, &length);
+
+	if (OVR_SUCCESS(result))
+	{
+		for (int i = 0; i < length; ++i)
+		{
+			GLuint chainTexId;
+			ovr_GetTextureSwapChainBufferGL(m_session, m_textureSwapChain, i, &chainTexId);
+			glBindTexture(GL_TEXTURE_2D, chainTexId);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
+
+		osg::notify(osg::DEBUG_INFO) << "Successfully created the swap texture set!" << std::endl;
 	}
 
 	// Create an FBO for output to Oculus swap texture set.
@@ -182,7 +215,7 @@ void OculusTextureBuffer::setupMSAA(osg::State& state)
 
 	const OSG_Texture_Extensions* extensions = getTextureExtensions(state);
 
-	// Create MSAA colour buffer
+	// Create MSAA color buffer
 	glGenTextures(1, &m_MSAA_ColorTex);
 	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_MSAA_ColorTex);
 	extensions->glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, m_samples, GL_RGBA, m_textureSize.x(), m_textureSize.y(), false);
@@ -205,7 +238,13 @@ void OculusTextureBuffer::setupMSAA(osg::State& state)
 
 void OculusTextureBuffer::onPreRender(osg::RenderInfo& renderInfo)
 {
-	advanceIndex();
+	GLuint curTexId = 0;
+	if (m_textureSwapChain)
+	{
+		int curIndex;
+		ovr_GetTextureSwapChainCurrentIndex(m_session, m_textureSwapChain, &curIndex);
+		ovr_GetTextureSwapChainBufferGL(m_session, m_textureSwapChain, curIndex, &curTexId);
+	}
 
 	osg::State& state = *renderInfo.getState();
 	const OSG_GLExtensions* fbo_ext = getGLExtensions(state);
@@ -220,9 +259,8 @@ void OculusTextureBuffer::onPreRender(osg::RenderInfo& renderInfo)
 		}
 
 		const unsigned int ctx = state.getContextID();
-		ovrGLTexture* tex = reinterpret_cast<ovrGLTexture*>(&m_textureSet->Textures[m_textureSet->CurrentIndex]);
 		fbo_ext->glBindFramebuffer(GL_FRAMEBUFFER_EXT, fbo->getHandle(ctx));
-		fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, tex->OGL.TexId, 0);
+		fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, curTexId, 0);
 		fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, m_depthBuffer->getTextureObject(state.getContextID())->id(), 0);
 	}
 	else
@@ -235,10 +273,24 @@ void OculusTextureBuffer::onPreRender(osg::RenderInfo& renderInfo)
 }
 void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo)
 {
+
+	if (m_textureSwapChain) {
+		ovr_CommitTextureSwapChain(m_session, m_textureSwapChain);
+	}
+
 	if (m_samples == 0)
 	{
 		// Nothing to do here if MSAA not being used.
 		return;
+	}
+
+	// Get texture id
+	GLuint curTexId = 0;
+	if (m_textureSwapChain)
+	{
+		int curIndex;
+		ovr_GetTextureSwapChainCurrentIndex(m_session, m_textureSwapChain, &curIndex);
+		ovr_GetTextureSwapChainBufferGL(m_session, m_textureSwapChain, curIndex, &curTexId);
 	}
 
 	osg::State& state = *renderInfo.getState();
@@ -248,9 +300,8 @@ void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo)
 	fbo_ext->glFramebufferTexture2D(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D_MULTISAMPLE, m_MSAA_ColorTex, 0);
 	fbo_ext->glFramebufferRenderbuffer(GL_READ_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, 0);
 
-	ovrGLTexture* tex = reinterpret_cast<ovrGLTexture*>(&m_textureSet->Textures[m_textureSet->CurrentIndex]);
 	fbo_ext->glBindFramebuffer(GL_DRAW_FRAMEBUFFER_EXT, m_Oculus_FBO);
-	fbo_ext->glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, tex->OGL.TexId, 0);
+	fbo_ext->glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, curTexId, 0);
 	fbo_ext->glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, 0);
 
 	int w = m_textureSize.x();
@@ -263,17 +314,32 @@ void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo)
 
 void OculusTextureBuffer::destroy()
 {
-	ovr_DestroySwapTextureSet(m_session, m_textureSet);
+	ovr_DestroyTextureSwapChain(m_session, m_textureSwapChain);
 }
 
-OculusMirrorTexture::OculusMirrorTexture(ovrSession& session, osg::ref_ptr<osg::State> state, int width, int height) : m_session(session), m_texture(nullptr)
+OculusMirrorTexture::OculusMirrorTexture(ovrSession& session, osg::ref_ptr<osg::State> state, int width, int height) : m_session(session), m_texture(nullptr), m_width(width), m_height(height)
 {
-	const OSG_GLExtensions* fbo_ext = getGLExtensions(*state);
-	ovr_CreateMirrorTextureGL(m_session, GL_SRGB8_ALPHA8, width, height, reinterpret_cast<ovrTexture**>(&m_texture));
+
+	ovrMirrorTextureDesc desc;
+	memset(&desc, 0, sizeof(desc));
+	desc.Width = width;
+	desc.Height = height;
+	desc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
+
+	// Create mirror texture and an FBO used to copy mirror texture to back buffer
+	ovrResult result = ovr_CreateMirrorTextureGL(session, &desc, &m_texture);
+	if (!OVR_SUCCESS(result))
+	{
+		osg::notify(osg::DEBUG_INFO) << "Failed to create mirror texture." << std::endl;
+	}
+
 	// Configure the mirror read buffer
+	GLuint texId;
+	ovr_GetMirrorTextureBufferGL(session, m_texture, &texId);
+	const OSG_GLExtensions* fbo_ext = getGLExtensions(*state);
 	fbo_ext->glGenFramebuffers(1, &m_mirrorFBO);
 	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
-	fbo_ext->glFramebufferTexture2D(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, m_texture->OGL.TexId, 0);
+	fbo_ext->glFramebufferTexture2D(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texId, 0);
 	fbo_ext->glFramebufferRenderbuffer(GL_READ_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, 0);
 	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
 }
@@ -284,8 +350,8 @@ void OculusMirrorTexture::blitTexture(osg::GraphicsContext* gc)
 	// Blit mirror texture to back buffer
 	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
 	fbo_ext->glBindFramebuffer(GL_DRAW_FRAMEBUFFER_EXT, 0);
-	GLint w = m_texture->OGL.Header.TextureSize.w;
-	GLint h = m_texture->OGL.Header.TextureSize.h;
+	GLint w = m_width;
+	GLint h = m_height;
 	fbo_ext->glBlitFramebuffer(0, h, w, 0,
 							   0, 0, w, h,
 							   GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -299,7 +365,7 @@ void OculusMirrorTexture::destroy(const OSG_GLExtensions* fbo_ext)
 		fbo_ext->glDeleteFramebuffers(1, &m_mirrorFBO);
 	}
 
-	ovr_DestroyMirrorTexture(m_session, reinterpret_cast<ovrTexture*>(m_texture));
+	ovr_DestroyMirrorTexture(m_session, m_texture);
 }
 
 /* Public functions */
@@ -319,18 +385,20 @@ OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerD
 		m_textureBuffer[i] = nullptr;
 	}
 
-	ovrGraphicsLuid luid;
-
 	trySetProcessAsHighPriority();
+	
+	ovrResult result = ovr_Initialize(nullptr);
 
-	if (ovr_Initialize(nullptr) != ovrSuccess)
+	if (result != ovrSuccess)
 	{
 		osg::notify(osg::WARN) << "Warning: Unable to initialize the Oculus library!" << std::endl;
 		return;
 	}
 
+	ovrGraphicsLuid luid;
+
 	// Get first available HMD
-	ovrResult result = ovr_Create(&m_session, &luid);
+	result = ovr_Create(&m_session, &luid);
 
 	if (result != ovrSuccess)
 	{
@@ -461,7 +529,7 @@ osg::Matrix OculusDevice::viewMatrixRight() const
 
 void OculusDevice::resetSensorOrientation() const
 {
-	ovr_RecenterPose(m_session);
+	ovr_RecenterTrackingOrigin(m_session);
 }
 
 void OculusDevice::updatePose(unsigned int frameIndex)
@@ -469,8 +537,8 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	// Ask the API for the times when this frame is expected to be displayed.
 	m_frameTiming = ovr_GetPredictedDisplayTime(m_session, frameIndex);
 
-	m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyeViewOffset;
-	m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyeViewOffset;
+	m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyeOffset;
+	m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyeOffset;
 
 	// Query the HMD for the current tracking state.
 	ovrTrackingState ts = ovr_GetTrackingState(m_session, m_frameTiming, ovrTrue);
@@ -538,8 +606,8 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 
 bool OculusDevice::submitFrame(unsigned int frameIndex)
 {
-	m_layerEyeFov.ColorTexture[0] = m_textureBuffer[0]->textureSet();
-	m_layerEyeFov.ColorTexture[1] = m_textureBuffer[1]->textureSet();
+	m_layerEyeFov.ColorTexture[0] = m_textureBuffer[0]->textureSwapChain();
+	m_layerEyeFov.ColorTexture[1] = m_textureBuffer[1]->textureSwapChain();
 
 	// Set render pose
 	m_layerEyeFov.RenderPose[0] = m_eyeRenderPose[0];
@@ -547,8 +615,8 @@ bool OculusDevice::submitFrame(unsigned int frameIndex)
 
 	ovrLayerHeader* layers = &m_layerEyeFov.Header;
 	ovrViewScaleDesc viewScale;
-	viewScale.HmdToEyeViewOffset[0] = m_viewOffset[0];
-	viewScale.HmdToEyeViewOffset[1] = m_viewOffset[1];
+	viewScale.HmdToEyeOffset[0] = m_viewOffset[0];
+	viewScale.HmdToEyeOffset[1] = m_viewOffset[1];
 	viewScale.HmdSpaceToWorldScaleInMeters = m_worldUnitsPerMetre;
 	ovrResult result = ovr_SubmitFrame(m_session, frameIndex, &viewScale, &layers, 1);
 	return result == ovrSuccess;
@@ -563,13 +631,15 @@ void OculusDevice::setPerfHudMode(int mode)
 {
 	if (mode == 0) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_Off); }
 
-	if (mode == 1) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_LatencyTiming); }
+	if (mode == 1) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_PerfSummary); }
 
-	if (mode == 2) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_RenderTiming); }
+	if (mode == 2) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_LatencyTiming); }
 
-	if (mode == 3) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_PerfHeadroom); }
+	if (mode == 3) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_AppRenderTiming); }
 
-	if (mode == 4) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_VersionInfo); }
+	if (mode == 4) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_CompRenderTiming); }
+	
+	if (mode == 5) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_VersionInfo); }
 }
 
 osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const
@@ -660,8 +730,8 @@ void OculusDevice::initializeEyeRenderDesc()
 
 void OculusDevice::calculateEyeAdjustment()
 {
-	ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeViewOffset;
-	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeViewOffset;
+	ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeOffset;
+	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeOffset;
 
 	m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
 	m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
@@ -677,17 +747,14 @@ void OculusDevice::calculateEyeAdjustment()
 
 void OculusDevice::calculateProjectionMatrices()
 {
-	unsigned int projectionModifier = ovrProjection_RightHanded;
-	projectionModifier |= ovrProjection_ClipRangeOpenGL;
-
-	ovrMatrix4f leftEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[0].Fov, m_nearClip, m_farClip, projectionModifier);
+	ovrMatrix4f leftEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[0].Fov, m_nearClip, m_farClip, ovrProjection_ClipRangeOpenGL);
 	// Transpose matrix
 	m_leftEyeProjectionMatrix.set(leftEyeProjectionMatrix.M[0][0], leftEyeProjectionMatrix.M[1][0], leftEyeProjectionMatrix.M[2][0], leftEyeProjectionMatrix.M[3][0],
 								  leftEyeProjectionMatrix.M[0][1], leftEyeProjectionMatrix.M[1][1], leftEyeProjectionMatrix.M[2][1], leftEyeProjectionMatrix.M[3][1],
 								  leftEyeProjectionMatrix.M[0][2], leftEyeProjectionMatrix.M[1][2], leftEyeProjectionMatrix.M[2][2], leftEyeProjectionMatrix.M[3][2],
 								  leftEyeProjectionMatrix.M[0][3], leftEyeProjectionMatrix.M[1][3], leftEyeProjectionMatrix.M[2][3], leftEyeProjectionMatrix.M[3][3]);
 
-	ovrMatrix4f rightEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[1].Fov, m_nearClip, m_farClip, projectionModifier);
+	ovrMatrix4f rightEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[1].Fov, m_nearClip, m_farClip, ovrProjection_ClipRangeOpenGL);
 	// Transpose matrix
 	m_rightEyeProjectionMatrix.set(rightEyeProjectionMatrix.M[0][0], rightEyeProjectionMatrix.M[1][0], rightEyeProjectionMatrix.M[2][0], rightEyeProjectionMatrix.M[3][0],
 								   rightEyeProjectionMatrix.M[0][1], rightEyeProjectionMatrix.M[1][1], rightEyeProjectionMatrix.M[2][1], rightEyeProjectionMatrix.M[3][1],
@@ -753,7 +820,7 @@ void OculusRealizeOperation::operator() (osg::GraphicsContext* gc)
 void OculusSwapCallback::swapBuffersImplementation(osg::GraphicsContext* gc)
 {
 	// Submit rendered frame to compositor
-	m_device->submitFrame();
+	m_device->submitFrame(m_frameIndex++);
 
 	// Blit mirror texture to backbuffer
 	m_device->blitMirrorTexture(gc);
