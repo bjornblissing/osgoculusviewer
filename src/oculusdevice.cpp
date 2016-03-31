@@ -572,19 +572,6 @@ void OculusDevice::setPerfHudMode(int mode)
 	if (mode == 4) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_VersionInfo); }
 }
 
-void OculusDevice::setPositionalTrackingState(bool state)
-{
-	unsigned sensorCaps = 0;
-	sensorCaps = ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection;
-
-	if (state)
-	{
-		sensorCaps |= ovrTrackingCap_Position;
-	}
-
-	ovr_ConfigureTracking(m_session, sensorCaps, 0);
-}
-
 osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const
 {
 	// Create screen with match the Oculus Rift resolution

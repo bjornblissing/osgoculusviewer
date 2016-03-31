@@ -154,7 +154,6 @@ public:
 	void blitMirrorTexture(osg::GraphicsContext* gc);
 
 	void setPerfHudMode(int mode);
-	void setPositionalTrackingState(bool state);
 
 	osg::GraphicsContext::Traits* graphicsContextTraits() const;
 protected:
