@@ -57,39 +57,34 @@ ENDIF(BUILD_EXAMPLES)
 # Create user file for correct environment string
 #####################################################################
 IF(MSVC)
+	# Build path
+	SET(USERFILE_ENVIRONMENT_DEBUG "PATH=%PATH%")
+	SET(USERFILE_ENVIRONMENT_RELEASE "PATH=%PATH%")
+	
+	# Add OpenSceneGraph to path
 	IF (OPENSCENEGRAPH_FOUND)
-		# Build path
-		SET(USERFILE_ENVIRONMENT_DEBUG "PATH=")
-		SET(USERFILE_ENVIRONMENT_RELEASE "PATH=")
-
-		# Add OpenSceneGraph to path
 		IF (EXISTS "${OSG_DIR}/bin")
 			SET(OSG_BIN_DIR "${OSG_DIR}/bin" CACHE PATH "Path where to find OpenSceneGraph binaries")
-		ELSE (EXISTS "${OSG_DIR}/bin")
-			SET (OSG_BIN_DIR CACHE PATH "Path where to find OpenSceneGraph binaries")
-		ENDIF(EXISTS "${OSG_DIR}/bin")
-		SET(USERFILE_ENVIRONMENT_DEBUG "${USERFILE_ENVIRONMENT_DEBUG}${OSG_BIN_DIR}")
-		SET(USERFILE_ENVIRONMENT_RELEASE "${USERFILE_ENVIRONMENT_RELEASE}${OSG_BIN_DIR}")
+		ELSE()
+			MESSAGE(WARNING "Warning: OpenSceneGraph binaries not found.")
+		ENDIF()
+		SET(USERFILE_ENVIRONMENT_DEBUG "${USERFILE_ENVIRONMENT_DEBUG};${OSG_BIN_DIR}")
+		SET(USERFILE_ENVIRONMENT_RELEASE "${USERFILE_ENVIRONMENT_RELEASE};${OSG_BIN_DIR}")
 
+		# Add third party to path
 		IF (OSG_THIRD_PARTY_DIR)
-			# Add third party to path
 			SET(USERFILE_ENVIRONMENT_DEBUG "${USERFILE_ENVIRONMENT_DEBUG};${OSG_THIRD_PARTY_DIR}/bin")
 			SET(USERFILE_ENVIRONMENT_RELEASE "${USERFILE_ENVIRONMENT_RELEASE};${OSG_THIRD_PARTY_DIR}/bin")
-		ELSE (OSG_THIRD_PARTY_DIR)
-			MESSAGE("Warning: OpenSceneGraph 3rd Party Directory not found.")
-		ENDIF(OSG_THIRD_PARTY_DIR)
-
-		# For visual studio 2010 (MSVC10), 2012 (MSVC11) and 2013 (MSVC12)
-		IF(MSVC10 OR MSVC11 OR MSVC12)
-			CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEWER}.vcxproj.user @ONLY)
-			#CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_COMPOSITE_VIEWER}.vcxproj.user @ONLY)
-			#CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_SDK_VIEWER}.vcxproj.user @ONLY)
-			#IF (USE_VIEW_CONFIG)
-			#	CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEW_CONFIG}.vcxproj.user @ONLY)
-			#ENDIF()
+		ELSE()
+			MESSAGE(WARNING "Warning: OpenSceneGraph 3rd Party Directory not found.")
 		ENDIF()
-
-	ENDIF (OPENSCENEGRAPH_FOUND)
+	ENDIF()
+	
+	
+	# For visual studio 2010 (MSVC10), 2012 (MSVC11), 2013 (MSVC12) and 2015 (MSVC14)
+	IF(MSVC10 OR MSVC11 OR MSVC12 OR MSVC14)
+		CONFIGURE_FILE(osgoculusviewer.vcxproj.template ${TARGET_TARGETNAME_VIEWER}.vcxproj.user @ONLY)
+	ENDIF()
 ENDIF(MSVC)
 
 ####################################################################
