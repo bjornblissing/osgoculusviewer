@@ -62,7 +62,7 @@ int main( int argc, char** argv )
 	traits->windowName = "OsgOculusViewerExample";
 
 	// Create a graphic context based on our desired traits
-	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits);
+	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
 	if (!gc)
 	{
@@ -79,20 +79,20 @@ int main( int argc, char** argv )
 	osgViewer::Viewer viewer(arguments);
 	// Force single threaded to make sure that no other thread can use the GL context
 	viewer.setThreadingModel(osgViewer::Viewer::SingleThreaded);
-	viewer.getCamera()->setGraphicsContext(gc);
+	viewer.getCamera()->setGraphicsContext(gc.get());
 	viewer.getCamera()->setViewport(0, 0, traits->width, traits->height);
 
 	// Disable automatic computation of near and far plane
 	viewer.getCamera()->setComputeNearFarMode( osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR );
-	viewer.setCameraManipulator(cameraManipulator);
+	viewer.setCameraManipulator(cameraManipulator.get());
 
 	// Things to do when viewer is realized
 	osg::ref_ptr<OculusRealizeOperation> oculusRealizeOperation = new OculusRealizeOperation(oculusDevice);
 	viewer.setRealizeOperation(oculusRealizeOperation.get());
 
 	osg::ref_ptr<OculusViewer> oculusViewer = new OculusViewer(&viewer, oculusDevice, oculusRealizeOperation);
-	oculusViewer->addChild(loadedModel);
-	viewer.setSceneData(oculusViewer);
+	oculusViewer->addChild(loadedModel.get());
+	viewer.setSceneData(oculusViewer.get());
 	// Add statistics handler
 	viewer.addEventHandler(new osgViewer::StatsHandler);
 

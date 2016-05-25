@@ -563,7 +563,7 @@ void OculusInitialDrawCallback::operator()(osg::RenderInfo& renderInfo) const
 
 osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc) const
 {
-	OculusTextureBuffer* buffer = m_textureBuffer[eye];
+	osg::ref_ptr<OculusTextureBuffer> buffer = m_textureBuffer[eye];
 
 	osg::ref_ptr<osg::Camera> camera = new osg::Camera();
 	camera->setClearColor(clearColor);
@@ -578,12 +578,12 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 
 	if (buffer->colorBuffer())
 	{
-		camera->attach(osg::Camera::COLOR_BUFFER, buffer->colorBuffer());
+		camera->attach(osg::Camera::COLOR_BUFFER, buffer->colorBuffer().get());
 	}
 
 	if (buffer->depthBuffer())
 	{
-		camera->attach(osg::Camera::DEPTH_BUFFER, buffer->depthBuffer());
+		camera->attach(osg::Camera::DEPTH_BUFFER, buffer->depthBuffer().get());
 	}
 
 	if (m_samples != 0)
@@ -598,8 +598,8 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 		camera->setInitialDrawCallback(new OculusInitialDrawCallback());
 	}
 
-	camera->setPreDrawCallback(new OculusPreDrawCallback(camera.get(), buffer));
-	camera->setFinalDrawCallback(new OculusPostDrawCallback(camera.get(), buffer));
+	camera->setPreDrawCallback(new OculusPreDrawCallback(camera.get(), buffer.get()));
+	camera->setFinalDrawCallback(new OculusPostDrawCallback(camera.get(), buffer.get()));
 
 	return camera.release();
 }

@@ -30,7 +30,7 @@ void OculusViewer::configure()
 
 	// Attach a callback to detect swap
 	osg::ref_ptr<OculusSwapCallback> swapCallback = new OculusSwapCallback(m_device);
-	gc->setSwapCallback(swapCallback);
+	gc->setSwapCallback(swapCallback.get());
 
 	osg::ref_ptr<osg::Camera> camera = m_view->getCamera();
 	camera->setName("Main");
@@ -39,8 +39,8 @@ void OculusViewer::configure()
 	// master projection matrix
 	camera->setProjectionMatrix(m_device->projectionMatrixCenter());
 	// Create RTT cameras and attach textures
-	m_cameraRTTLeft = m_device->createRTTCamera(OculusDevice::LEFT, osg::Camera::RELATIVE_RF, clearColor, gc);
-	m_cameraRTTRight = m_device->createRTTCamera(OculusDevice::RIGHT, osg::Camera::RELATIVE_RF, clearColor, gc);
+	m_cameraRTTLeft = m_device->createRTTCamera(OculusDevice::LEFT, osg::Camera::RELATIVE_RF, clearColor, gc.get());
+	m_cameraRTTRight = m_device->createRTTCamera(OculusDevice::RIGHT, osg::Camera::RELATIVE_RF, clearColor, gc.get());
 	m_cameraRTTLeft->setName("LeftRTT");
 	m_cameraRTTRight->setName("RightRTT");
 

@@ -89,8 +89,8 @@ public:
 
 	virtual void operator()(osg::RenderInfo& renderInfo) const;
 protected:
-	osg::Camera* m_camera;
-	OculusTextureBuffer* m_textureBuffer;
+	osg::observer_ptr<osg::Camera> m_camera;
+	osg::observer_ptr<OculusTextureBuffer> m_textureBuffer;
 
 };
 
@@ -105,8 +105,8 @@ public:
 
 	virtual void operator()(osg::RenderInfo& renderInfo) const;
 protected:
-	osg::Camera* m_camera;
-	OculusTextureBuffer* m_textureBuffer;
+	osg::observer_ptr<osg::Camera> m_camera;
+	osg::observer_ptr<OculusTextureBuffer> m_textureBuffer;
 
 };
 
