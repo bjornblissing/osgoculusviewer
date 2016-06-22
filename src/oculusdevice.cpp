@@ -369,12 +369,13 @@ void OculusMirrorTexture::destroy(const OSG_GLExtensions* fbo_ext)
 }
 
 /* Public functions */
-OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre, const int samples) :
+OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre, const int samples, unsigned int mirrorTextureWidth) :
 	m_session(nullptr),
 	m_hmdDesc(),
 	m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
 	m_worldUnitsPerMetre(worldUnitsPerMetre),
 	m_mirrorTexture(nullptr),
+   m_mirrorTextureWidth(mirrorTextureWidth),
 	m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
 	m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
 	m_nearClip(nearClip), m_farClip(farClip),
@@ -426,10 +427,10 @@ void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state)
 		ovrSizei recommenedTextureSize = ovr_GetFovTextureSize(m_session, (ovrEyeType)i, m_hmdDesc.DefaultEyeFov[i], m_pixelsPerDisplayPixel);
 		m_textureBuffer[i] = new OculusTextureBuffer(m_session, state, recommenedTextureSize, m_samples);
 	}
-
-	int width = screenResolutionWidth() / 2;
-	int height = screenResolutionHeight() / 2;
-	m_mirrorTexture = new OculusMirrorTexture(m_session, state, width, height);
+   
+   // compute mirror texture height based on requested with and respecting the Oculus screen ar
+   int height = (float)m_mirrorTextureWidth / (float)screenResolutionWidth() * (float)screenResolutionHeight();
+	m_mirrorTexture = new OculusMirrorTexture(m_session, state, m_mirrorTextureWidth, height);
 }
 
 void OculusDevice::init()
@@ -681,8 +682,8 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const
 	traits->windowDecoration = true;
 	traits->x = 50;
 	traits->y = 50;
-	traits->width = screenResolutionWidth() / 2;
-	traits->height = screenResolutionHeight() / 2;
+   traits->width = m_mirrorTextureWidth;
+   traits->height = (float)m_mirrorTextureWidth / (float)screenResolutionWidth() * (float)screenResolutionHeight();
 	traits->doubleBuffer = true;
 	traits->sharedContext = nullptr;
 	traits->vsync = false; // VSync should always be disabled for Oculus Rift applications, the SDK compositor handles the swap
