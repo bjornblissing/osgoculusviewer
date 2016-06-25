@@ -120,7 +120,7 @@ public:
 		RIGHT = 1,
 		COUNT = 2
 	} Eye;
-	OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel = 1.0f, const float worldUnitsPerMetre = 1.0f, const int samples = 0);
+	OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel = 1.0f, const float worldUnitsPerMetre = 1.0f, const int samples = 0, unsigned int mirrorTextureWidth = 960);
 	void createRenderBuffers(osg::ref_ptr<osg::State> state);
 	void init();
 
@@ -180,6 +180,8 @@ protected:
 
 	osg::ref_ptr<OculusTextureBuffer> m_textureBuffer[2];
 	osg::ref_ptr<OculusMirrorTexture> m_mirrorTexture;
+
+   unsigned int m_mirrorTextureWidth;
 
 	ovrEyeRenderDesc m_eyeRenderDesc[2];
 	ovrVector2f m_UVScaleOffset[2][2];
