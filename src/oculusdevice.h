@@ -189,7 +189,7 @@ protected:
 	ovrPosef m_headPose[2];
 	ovrPosef m_eyeRenderPose[2];
 	ovrLayerEyeFov m_layerEyeFov;
-	ovrVector3f m_viewOffset[2];
+	ovrPosef m_viewOffset[2];
 	osg::Matrixf m_leftEyeProjectionMatrix;
 	osg::Matrixf m_rightEyeProjectionMatrix;
 	osg::Vec3f m_leftEyeAdjust;

@@ -538,8 +538,8 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	// Ask the API for the times when this frame is expected to be displayed.
 	m_frameTiming = ovr_GetPredictedDisplayTime(m_session, frameIndex);
 
-	m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyeOffset;
-	m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyeOffset;
+	m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyePose;
+	m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyePose;
 
 	// Query the HMD for the current tracking state.
 	ovrTrackingState ts = ovr_GetTrackingState(m_session, m_frameTiming, ovrTrue);
@@ -616,8 +616,8 @@ bool OculusDevice::submitFrame(unsigned int frameIndex)
 
 	ovrLayerHeader* layers = &m_layerEyeFov.Header;
 	ovrViewScaleDesc viewScale;
-	viewScale.HmdToEyeOffset[0] = m_viewOffset[0];
-	viewScale.HmdToEyeOffset[1] = m_viewOffset[1];
+	viewScale.HmdToEyePose[0] = m_viewOffset[0];
+	viewScale.HmdToEyePose[1] = m_viewOffset[1];
 	viewScale.HmdSpaceToWorldScaleInMeters = m_worldUnitsPerMetre;
 	ovrResult result = ovr_SubmitFrame(m_session, frameIndex, &viewScale, &layers, 1);
 	return result == ovrSuccess;
@@ -731,11 +731,11 @@ void OculusDevice::initializeEyeRenderDesc()
 
 void OculusDevice::calculateEyeAdjustment()
 {
-	ovrVector3f leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyeOffset;
-	ovrVector3f rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyeOffset;
+	ovrPosef leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyePose;
+	ovrPosef rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyePose;
 
-	m_leftEyeAdjust.set(leftEyeAdjust.x, leftEyeAdjust.y, leftEyeAdjust.z);
-	m_rightEyeAdjust.set(rightEyeAdjust.x, rightEyeAdjust.y, rightEyeAdjust.z);
+	m_leftEyeAdjust.set(leftEyeAdjust.Position.x, leftEyeAdjust.Position.y, leftEyeAdjust.Position.z);
+	m_rightEyeAdjust.set(rightEyeAdjust.Position.x, rightEyeAdjust.Position.y, rightEyeAdjust.Position.z);
 
 	// Display IPD
 	float ipd = (m_leftEyeAdjust - m_rightEyeAdjust).length();
