@@ -130,15 +130,11 @@ public:
 	unsigned int screenResolutionWidth() const;
 	unsigned int screenResolutionHeight() const;
 
-	osg::Matrix projectionMatrixCenter() const;
-	osg::Matrix projectionMatrixLeft() const;
-	osg::Matrix projectionMatrixRight() const;
+	osg::Matrixf projectionMatrixLeft() const { return m_leftEyeProjectionMatrix; }
+	osg::Matrixf projectionMatrixRight() const {	return m_rightEyeProjectionMatrix; }
 
-	osg::Matrix projectionOffsetMatrixLeft() const;
-	osg::Matrix projectionOffsetMatrixRight() const;
-
-	osg::Matrix viewMatrixLeft() const;
-	osg::Matrix viewMatrixRight() const;
+	osg::Matrixf viewMatrixLeft() const { return m_leftEyeViewMatrix; }
+	osg::Matrixf viewMatrixRight() const { return m_rightEyeViewMatrix; }
 
 	float nearClip() const { return m_nearClip;	}
 	float farClip() const { return m_farClip; }
@@ -164,7 +160,7 @@ protected:
 
 	void initializeEyeRenderDesc();
 	// Note: this function requires you to run the previous function first.
-	void calculateEyeAdjustment();
+	void calculateViewMatrices();
 	// Note: this function requires you to run the previous function first.
 	void calculateProjectionMatrices();
 
@@ -181,7 +177,7 @@ protected:
 	osg::ref_ptr<OculusTextureBuffer> m_textureBuffer[2];
 	osg::ref_ptr<OculusMirrorTexture> m_mirrorTexture;
 
-   unsigned int m_mirrorTextureWidth;
+	unsigned int m_mirrorTextureWidth;
 
 	ovrEyeRenderDesc m_eyeRenderDesc[2];
 	ovrVector2f m_UVScaleOffset[2][2];
@@ -192,8 +188,8 @@ protected:
 	ovrPosef m_viewOffset[2];
 	osg::Matrixf m_leftEyeProjectionMatrix;
 	osg::Matrixf m_rightEyeProjectionMatrix;
-	osg::Vec3f m_leftEyeAdjust;
-	osg::Vec3f m_rightEyeAdjust;
+	osg::Matrixf m_leftEyeViewMatrix;
+	osg::Matrixf m_rightEyeViewMatrix;
 
 	osg::Vec3 m_position;
 	osg::Quat m_orientation;

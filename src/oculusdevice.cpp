@@ -74,7 +74,7 @@ void OculusPostDrawCallback::operator()(osg::RenderInfo& renderInfo) const
 }
 
 /* Public functions */
-OculusTextureBuffer::OculusTextureBuffer(const ovrSession& session, osg::ref_ptr<osg::State> state, const ovrSizei& size, int samples) : m_session(session),
+OculusTextureBuffer::OculusTextureBuffer(const ovrSession& session, osg::ref_ptr<osg::State> state, const ovrSizei& size, int msaaSamples) : m_session(session),
 	m_textureSwapChain(nullptr),
 	m_colorBuffer(nullptr),
 	m_depthBuffer(nullptr),
@@ -83,9 +83,9 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrSession& session, osg::ref_ptr
 	m_MSAA_FBO(0),
 	m_MSAA_ColorTex(0),
 	m_MSAA_DepthTex(0),
-	m_samples(samples)
+	m_samples(msaaSamples)
 {
-	if (samples == 0)
+	if (msaaSamples == 0)
 	{
 		setup(*state);
 	}
@@ -427,9 +427,9 @@ void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state)
 		ovrSizei recommenedTextureSize = ovr_GetFovTextureSize(m_session, (ovrEyeType)i, m_hmdDesc.DefaultEyeFov[i], m_pixelsPerDisplayPixel);
 		m_textureBuffer[i] = new OculusTextureBuffer(m_session, state, recommenedTextureSize, m_samples);
 	}
-   
-   // compute mirror texture height based on requested with and respecting the Oculus screen ar
-   int height = (float)m_mirrorTextureWidth / (float)screenResolutionWidth() * (float)screenResolutionHeight();
+	
+	// compute mirror texture height based on requested with and respecting the Oculus screen ar
+	int height = (float)m_mirrorTextureWidth / (float)screenResolutionWidth() * (float)screenResolutionHeight();
 	m_mirrorTexture = new OculusMirrorTexture(m_session, state, m_mirrorTextureWidth, height);
 }
 
@@ -437,7 +437,7 @@ void OculusDevice::init()
 {
 	initializeEyeRenderDesc();
 
-	calculateEyeAdjustment();
+	calculateViewMatrices();
 
 	calculateProjectionMatrices();
 
@@ -481,53 +481,6 @@ unsigned int OculusDevice::screenResolutionHeight() const
 	return  m_hmdDesc.Resolution.h;
 }
 
-osg::Matrix OculusDevice::projectionMatrixCenter() const
-{
-	osg::Matrix projectionMatrixCenter;
-	projectionMatrixCenter = m_leftEyeProjectionMatrix.operator*(0.5) + m_rightEyeProjectionMatrix.operator*(0.5);
-	return projectionMatrixCenter;
-}
-
-osg::Matrix OculusDevice::projectionMatrixLeft() const
-{
-	return m_leftEyeProjectionMatrix;
-}
-
-osg::Matrix OculusDevice::projectionMatrixRight() const
-{
-	return m_rightEyeProjectionMatrix;
-}
-
-osg::Matrix OculusDevice::projectionOffsetMatrixLeft() const
-{
-	osg::Matrix projectionOffsetMatrix;
-	float offset = m_leftEyeProjectionMatrix(2, 0);
-	projectionOffsetMatrix.makeTranslate(osg::Vec3(-offset, 0.0, 0.0));
-	return projectionOffsetMatrix;
-}
-
-osg::Matrix OculusDevice::projectionOffsetMatrixRight() const
-{
-	osg::Matrix projectionOffsetMatrix;
-	float offset = m_rightEyeProjectionMatrix(2, 0);
-	projectionOffsetMatrix.makeTranslate(osg::Vec3(-offset, 0.0, 0.0));
-	return projectionOffsetMatrix;
-}
-
-osg::Matrix OculusDevice::viewMatrixLeft() const
-{
-	osg::Matrix viewMatrix;
-	viewMatrix.makeTranslate(-m_leftEyeAdjust);
-	return viewMatrix;
-}
-
-osg::Matrix OculusDevice::viewMatrixRight() const
-{
-	osg::Matrix viewMatrix;
-	viewMatrix.makeTranslate(-m_rightEyeAdjust);
-	return viewMatrix;
-}
-
 void OculusDevice::resetSensorOrientation() const
 {
 	ovr_RecenterTrackingOrigin(m_session);
@@ -549,6 +502,10 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	m_position.set(pose.Position.x, pose.Position.y, pose.Position.z);
 	m_position *= m_worldUnitsPerMetre;
 	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
+
+	// Update the projection and view matrices
+	calculateProjectionMatrices();
+	calculateViewMatrices();
 }
 
 void OculusInitialDrawCallback::operator()(osg::RenderInfo& renderInfo) const
@@ -682,8 +639,8 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const
 	traits->windowDecoration = true;
 	traits->x = 50;
 	traits->y = 50;
-   traits->width = m_mirrorTextureWidth;
-   traits->height = (float)m_mirrorTextureWidth / (float)screenResolutionWidth() * (float)screenResolutionHeight();
+	traits->width = m_mirrorTextureWidth;
+	traits->height = (float)m_mirrorTextureWidth / (float)screenResolutionWidth() * (float)screenResolutionHeight();
 	traits->doubleBuffer = true;
 	traits->sharedContext = nullptr;
 	traits->vsync = false; // VSync should always be disabled for Oculus Rift applications, the SDK compositor handles the swap
@@ -729,21 +686,20 @@ void OculusDevice::initializeEyeRenderDesc()
 	m_eyeRenderDesc[1] = ovr_GetRenderDesc(m_session, ovrEye_Right, m_hmdDesc.DefaultEyeFov[1]);
 }
 
-void OculusDevice::calculateEyeAdjustment()
+void OculusDevice::calculateViewMatrices()
 {
-	ovrPosef leftEyeAdjust = m_eyeRenderDesc[0].HmdToEyePose;
-	ovrPosef rightEyeAdjust = m_eyeRenderDesc[1].HmdToEyePose;
+	ovrPosef leftEyePose = m_eyeRenderDesc[0].HmdToEyePose;
+	ovrPosef rightEyePose = m_eyeRenderDesc[1].HmdToEyePose;
 
-	m_leftEyeAdjust.set(leftEyeAdjust.Position.x, leftEyeAdjust.Position.y, leftEyeAdjust.Position.z);
-	m_rightEyeAdjust.set(rightEyeAdjust.Position.x, rightEyeAdjust.Position.y, rightEyeAdjust.Position.z);
+	m_leftEyeViewMatrix.setTrans(osg::Vec3(leftEyePose.Position.x, leftEyePose.Position.y, leftEyePose.Position.z));
+	m_leftEyeViewMatrix.setRotate(osg::Quat(leftEyePose.Orientation.x, leftEyePose.Orientation.y, leftEyePose.Orientation.z, leftEyePose.Orientation.w));
 
-	// Display IPD
-	float ipd = (m_leftEyeAdjust - m_rightEyeAdjust).length();
-	osg::notify(osg::ALWAYS) << "Interpupillary Distance (IPD): " << ipd * 1000.0f << " mm" << std::endl;
+	m_rightEyeViewMatrix.setTrans(osg::Vec3(rightEyePose.Position.x, rightEyePose.Position.y, rightEyePose.Position.z));
+	m_rightEyeViewMatrix.setRotate(osg::Quat(rightEyePose.Orientation.x, rightEyePose.Orientation.y, rightEyePose.Orientation.z, rightEyePose.Orientation.w));
 
 	// Scale to world units
-	m_leftEyeAdjust *= m_worldUnitsPerMetre;
-	m_rightEyeAdjust *= m_worldUnitsPerMetre;
+	m_leftEyeViewMatrix.postMultScale(osg::Vec3d(m_worldUnitsPerMetre, m_worldUnitsPerMetre, m_worldUnitsPerMetre));
+	m_rightEyeViewMatrix.postMultScale(osg::Vec3d(m_worldUnitsPerMetre, m_worldUnitsPerMetre, m_worldUnitsPerMetre));
 }
 
 void OculusDevice::calculateProjectionMatrices()

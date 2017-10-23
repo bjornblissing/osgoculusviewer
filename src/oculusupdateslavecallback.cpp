@@ -17,13 +17,15 @@ void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& s
 	osg::Vec3 position = m_device->position();
 	osg::Quat orientation = m_device->orientation();
 
-	osg::Matrix viewOffset = (m_cameraType == LEFT_CAMERA) ? m_device->viewMatrixLeft() : m_device->viewMatrixRight();
+	osg::Matrix viewMatrix = (m_cameraType == LEFT_CAMERA) ? m_device->viewMatrixLeft() : m_device->viewMatrixRight();
+	osg::Matrix projectionMatrix = (m_cameraType == LEFT_CAMERA) ? m_device->projectionMatrixLeft() : m_device->projectionMatrixRight();
 
 	// invert orientation (conjugate of Quaternion) and position to apply to the view matrix as offset
-	viewOffset.preMultRotate(orientation.conj());
-	viewOffset.preMultTranslate(-position);
+	viewMatrix.preMultRotate(orientation.conj());
+	viewMatrix.preMultTranslate(-position);
 
-	slave._viewOffset = viewOffset;
+	slave._camera.get()->setViewMatrix(view.getCamera()->getViewMatrix()*viewMatrix);
+	slave._camera.get()->setProjectionMatrix(projectionMatrix);
 
 	slave.updateSlaveImplementation(view);
 }
