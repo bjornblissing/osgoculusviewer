@@ -46,6 +46,11 @@ bool OculusEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActio
 					return osgGA::GUIEventHandler::handle(ea, ad);
 					break;
 
+				case osgGA::GUIEventAdapter::KEY_5:
+					m_oculusDevice->setPerfHudMode(5);
+					return osgGA::GUIEventHandler::handle(ea, ad);
+					break;
+
 				default:
 					return osgGA::GUIEventHandler::handle(ea, ad);
 			}
