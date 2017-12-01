@@ -435,7 +435,7 @@ void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state)
 
 void OculusDevice::init()
 {
-	initializeEyeRenderDesc();
+	getEyeRenderDesc();
 
 	calculateViewMatrices();
 
@@ -486,15 +486,18 @@ void OculusDevice::resetSensorOrientation() const
 	ovr_RecenterTrackingOrigin(m_session);
 }
 
-void OculusDevice::updatePose(unsigned int frameIndex)
+void OculusDevice::updatePose()
 {
-	// Ask the API for the times when this frame is expected to be displayed.
-	m_frameTiming = ovr_GetPredictedDisplayTime(m_session, frameIndex);
+	// Update the render description as IPD may have changed
+	getEyeRenderDesc();
 
-	m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyePose;
-	m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyePose;
+	// Update the projection and view matrices
+	calculateProjectionMatrices();
+	calculateViewMatrices();
 
 	// Query the HMD for the current tracking state.
+	m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyePose;
+	m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyePose;
 	ovrTrackingState ts = ovr_GetTrackingState(m_session, m_frameTiming, ovrTrue);
 	ovr_CalcEyePoses(ts.HeadPose.ThePose, m_viewOffset, m_eyeRenderPose);
 	ovrPoseStatef headpose = ts.HeadPose;
@@ -502,10 +505,6 @@ void OculusDevice::updatePose(unsigned int frameIndex)
 	m_position.set(pose.Position.x, pose.Position.y, pose.Position.z);
 	m_position *= m_worldUnitsPerMetre;
 	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
-
-	// Update the projection and view matrices
-	calculateProjectionMatrices();
-	calculateViewMatrices();
 }
 
 void OculusInitialDrawCallback::operator()(osg::RenderInfo& renderInfo) const
@@ -562,21 +561,39 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform
 	return camera.release();
 }
 
-bool OculusDevice::submitFrame(unsigned int frameIndex)
+bool OculusDevice::waitToBeginFrame(long long frameIndex)
+{
+	ovrResult error = ovr_WaitToBeginFrame(m_session, frameIndex);
+	return (error == ovrSuccess);
+}
+
+bool OculusDevice::beginFrame(long long frameIndex)
+{
+	m_frameTiming = ovr_GetPredictedDisplayTime(m_session, frameIndex);
+
+	ovrResult error = ovr_BeginFrame(m_session, frameIndex);
+	return (error == ovrSuccess);
+}
+
+bool OculusDevice::submitFrame(long long frameIndex)
 {
 	m_layerEyeFov.ColorTexture[0] = m_textureBuffer[0]->textureSwapChain();
 	m_layerEyeFov.ColorTexture[1] = m_textureBuffer[1]->textureSwapChain();
 
-	// Set render pose
+	m_layerEyeFov.Fov[0] = m_eyeRenderDesc[0].Fov;
+	m_layerEyeFov.Fov[1] = m_eyeRenderDesc[1].Fov;
+
 	m_layerEyeFov.RenderPose[0] = m_eyeRenderPose[0];
 	m_layerEyeFov.RenderPose[1] = m_eyeRenderPose[1];
+
+	m_layerEyeFov.SensorSampleTime = m_frameTiming;
 
 	ovrLayerHeader* layers = &m_layerEyeFov.Header;
 	ovrViewScaleDesc viewScale;
 	viewScale.HmdToEyePose[0] = m_viewOffset[0];
 	viewScale.HmdToEyePose[1] = m_viewOffset[1];
 	viewScale.HmdSpaceToWorldScaleInMeters = m_worldUnitsPerMetre;
-	ovrResult result = ovr_SubmitFrame(m_session, frameIndex, &viewScale, &layers, 1);
+	ovrResult result = ovr_EndFrame(m_session, frameIndex, &viewScale, &layers, 1);
 	return result == ovrSuccess;
 }
 
@@ -680,7 +697,7 @@ void OculusDevice::printHMDDebugInfo()
 	osg::notify(osg::ALWAYS) << "FirmwareVersion: " << m_hmdDesc.FirmwareMajor << "." << m_hmdDesc.FirmwareMinor << std::endl;
 }
 
-void OculusDevice::initializeEyeRenderDesc()
+void OculusDevice::getEyeRenderDesc()
 {
 	m_eyeRenderDesc[0] = ovr_GetRenderDesc(m_session, ovrEye_Left, m_hmdDesc.DefaultEyeFov[0]);
 	m_eyeRenderDesc[1] = ovr_GetRenderDesc(m_session, ovrEye_Right, m_hmdDesc.DefaultEyeFov[1]);

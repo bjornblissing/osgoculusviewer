@@ -140,14 +140,17 @@ public:
 	float farClip() const { return m_farClip; }
 
 	void resetSensorOrientation() const;
-	void updatePose(unsigned int frameIndex = 0);
+	void updatePose();
 
 	osg::Vec3 position() const { return m_position; }
 	osg::Quat orientation() const { return m_orientation;  }
 
 	osg::Camera* createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc = 0) const;
 
-	bool submitFrame(unsigned int frameIndex = 0);
+	bool waitToBeginFrame(long long frameIndex = 0);
+	bool beginFrame(long long frameIndex = 0);
+
+	bool submitFrame(long long frameIndex = 0);
 	void blitMirrorTexture(osg::GraphicsContext* gc);
 
 	void setPerfHudMode(int mode);
@@ -158,7 +161,7 @@ protected:
 
 	void printHMDDebugInfo();
 
-	void initializeEyeRenderDesc();
+	void getEyeRenderDesc();
 	// Note: this function requires you to run the previous function first.
 	void calculateViewMatrices();
 	// Note: this function requires you to run the previous function first.
@@ -222,10 +225,10 @@ class OculusSwapCallback : public osg::GraphicsContext::SwapCallback
 public:
 	explicit OculusSwapCallback(osg::ref_ptr<OculusDevice> device) : m_device(device), m_frameIndex(0) {}
 	void swapBuffersImplementation(osg::GraphicsContext* gc);
-	int frameIndex() const { return m_frameIndex; }
+	long long frameIndex() const { return m_frameIndex; }
 private:
 	osg::observer_ptr<OculusDevice> m_device;
-	int m_frameIndex;
+	long long m_frameIndex;
 };
 
 class OculusInitialDrawCallback : public osg::Camera::DrawCallback

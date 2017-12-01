@@ -11,7 +11,9 @@ void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& s
 {
 	if (m_cameraType == LEFT_CAMERA)
 	{
-		m_device->updatePose(m_swapCallback->frameIndex());
+		m_device->waitToBeginFrame(m_swapCallback->frameIndex());
+		m_device->beginFrame(m_swapCallback->frameIndex());
+		m_device->updatePose();
 	}
 
 	osg::Vec3 position = m_device->position();
