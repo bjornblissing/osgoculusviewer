@@ -691,11 +691,17 @@ void OculusDevice::calculateViewMatrices()
 	ovrPosef leftEyePose = m_eyeRenderDesc[0].HmdToEyePose;
 	ovrPosef rightEyePose = m_eyeRenderDesc[1].HmdToEyePose;
 
-	m_leftEyeViewMatrix.setTrans(osg::Vec3(leftEyePose.Position.x, leftEyePose.Position.y, leftEyePose.Position.z));
-	m_leftEyeViewMatrix.setRotate(osg::Quat(leftEyePose.Orientation.x, leftEyePose.Orientation.y, leftEyePose.Orientation.z, leftEyePose.Orientation.w));
+	osg::Vec3 leftEyePosition(-leftEyePose.Position.x, leftEyePose.Position.y, leftEyePose.Position.z);
+	osg::Quat leftEyeOrientation(leftEyePose.Orientation.x, leftEyePose.Orientation.y, leftEyePose.Orientation.z, leftEyePose.Orientation.w);
+	
+	m_leftEyeViewMatrix.setTrans(leftEyePosition);
+	m_leftEyeViewMatrix.setRotate(leftEyeOrientation);
 
-	m_rightEyeViewMatrix.setTrans(osg::Vec3(rightEyePose.Position.x, rightEyePose.Position.y, rightEyePose.Position.z));
-	m_rightEyeViewMatrix.setRotate(osg::Quat(rightEyePose.Orientation.x, rightEyePose.Orientation.y, rightEyePose.Orientation.z, rightEyePose.Orientation.w));
+	osg::Vec3 rightEyePosition(-rightEyePose.Position.x, rightEyePose.Position.y, rightEyePose.Position.z);
+	osg::Quat rightEyeOrientation(rightEyePose.Orientation.x, rightEyePose.Orientation.y, rightEyePose.Orientation.z, rightEyePose.Orientation.w);
+	
+	m_rightEyeViewMatrix.setTrans(rightEyePosition);
+	m_rightEyeViewMatrix.setRotate(rightEyeOrientation);
 
 	// Scale to world units
 	m_leftEyeViewMatrix.postMultScale(osg::Vec3d(m_worldUnitsPerMetre, m_worldUnitsPerMetre, m_worldUnitsPerMetre));
