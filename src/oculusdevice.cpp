@@ -368,7 +368,7 @@ void OculusMirrorTexture::destroy(const OSG_GLExtensions* fbo_ext)
 	ovr_DestroyMirrorTexture(m_session, m_texture);
 }
 
-/* Public functions */
+
 OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre, const int samples, unsigned int mirrorTextureWidth) :
 	m_session(nullptr),
 	m_hmdDesc(),
@@ -427,7 +427,7 @@ void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state)
 		ovrSizei recommenedTextureSize = ovr_GetFovTextureSize(m_session, (ovrEyeType)i, m_hmdDesc.DefaultEyeFov[i], m_pixelsPerDisplayPixel);
 		m_textureBuffer[i] = new OculusTextureBuffer(m_session, state, recommenedTextureSize, m_samples);
 	}
-	
+
 	// compute mirror texture height based on requested with and respecting the Oculus screen ar
 	int height = (float)m_mirrorTextureWidth / (float)screenResolutionWidth() * (float)screenResolutionHeight();
 	m_mirrorTexture = new OculusMirrorTexture(m_session, state, m_mirrorTextureWidth, height);
@@ -436,10 +436,6 @@ void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state)
 void OculusDevice::init()
 {
 	getEyeRenderDesc();
-
-	calculateViewMatrices();
-
-	calculateProjectionMatrices();
 
 	setupLayers();
 
@@ -471,51 +467,51 @@ bool OculusDevice::hmdPresent() const
 	return false;
 }
 
-unsigned int OculusDevice::screenResolutionWidth() const
+void OculusDevice::updatePose(long long frameIndex) 
 {
-	return  m_hmdDesc.Resolution.w;
-}
-
-unsigned int OculusDevice::screenResolutionHeight() const
-{
-	return  m_hmdDesc.Resolution.h;
-}
-
-void OculusDevice::resetSensorOrientation() const
-{
-	ovr_RecenterTrackingOrigin(m_session);
-}
-
-void OculusDevice::updatePose()
-{
-	// Update the render description as IPD may have changed
+	// Call getEyeRenderDesc() each frame, since the returned values (e.g. HmdToEyePose) may change at runtime.
 	getEyeRenderDesc();
 
-	// Update the projection and view matrices
-	calculateProjectionMatrices();
-	calculateViewMatrices();
-
-	// Query the HMD for the current tracking state.
-	m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyePose;
-	m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyePose;
-	ovrTrackingState ts = ovr_GetTrackingState(m_session, m_frameTiming, ovrTrue);
-	ovr_CalcEyePoses(ts.HeadPose.ThePose, m_viewOffset, m_eyeRenderPose);
-	ovrPoseStatef headpose = ts.HeadPose;
-	ovrPosef pose = headpose.ThePose;
-	m_position.set(pose.Position.x, pose.Position.y, pose.Position.z);
-	m_position *= m_worldUnitsPerMetre;
-	m_orientation.set(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
+	ovrPosef HmdToEyePose[2] = { m_eyeRenderDesc[0].HmdToEyePose, m_eyeRenderDesc[1].HmdToEyePose };
+	ovr_GetEyePoses(m_session, frameIndex, ovrTrue, HmdToEyePose, m_eyeRenderPose, &m_sensorSampleTime);
 }
 
-void OculusInitialDrawCallback::operator()(osg::RenderInfo& renderInfo) const
+osg::Vec3 OculusDevice::position(Eye eye) const {
+	return osg::Vec3(m_eyeRenderPose[eye].Position.x, m_eyeRenderPose[eye].Position.y, m_eyeRenderPose[eye].Position.z);
+}
+
+osg::Quat OculusDevice::orientation(Eye eye) const {
+	return osg::Quat(m_eyeRenderPose[eye].Orientation.x, m_eyeRenderPose[eye].Orientation.y, m_eyeRenderPose[eye].Orientation.z, m_eyeRenderPose[eye].Orientation.w);
+}
+
+osg::Matrixf OculusDevice::viewMatrix(Eye eye) const
 {
-	osg::GraphicsOperation* graphicsOperation = renderInfo.getCurrentCamera()->getRenderer();
-	osgViewer::Renderer* renderer = dynamic_cast<osgViewer::Renderer*>(graphicsOperation);
-	if (renderer != nullptr)
-	{
-		// Disable normal OSG FBO camera setup because it will undo the MSAA FBO configuration.
-		renderer->setCameraRequiresSetUp(false);
-	}
+	osg::Matrix viewMatrix;
+	ovrPosef pose = m_eyeRenderDesc[eye].HmdToEyePose;
+
+	osg::Vec3 position(pose.Position.x, pose.Position.y, pose.Position.z);
+	osg::Quat orientation(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
+
+	viewMatrix.setTrans(position);
+	viewMatrix.setRotate(orientation);
+
+	// Scale to world units
+	viewMatrix.postMultScale(osg::Vec3d(m_worldUnitsPerMetre, m_worldUnitsPerMetre, m_worldUnitsPerMetre));
+
+	return viewMatrix;
+}
+
+osg::Matrixf OculusDevice::projectionMatrix(Eye eye) const
+{
+	osg::Matrix projectionMatrix;
+	ovrMatrix4f ovrProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[eye].Fov, m_nearClip, m_farClip, ovrProjection_ClipRangeOpenGL);
+	// Transpose matrix
+	projectionMatrix.set(ovrProjectionMatrix.M[0][0], ovrProjectionMatrix.M[1][0], ovrProjectionMatrix.M[2][0], ovrProjectionMatrix.M[3][0],
+		ovrProjectionMatrix.M[0][1], ovrProjectionMatrix.M[1][1], ovrProjectionMatrix.M[2][1], ovrProjectionMatrix.M[3][1],
+		ovrProjectionMatrix.M[0][2], ovrProjectionMatrix.M[1][2], ovrProjectionMatrix.M[2][2], ovrProjectionMatrix.M[3][2],
+		ovrProjectionMatrix.M[0][3], ovrProjectionMatrix.M[1][3], ovrProjectionMatrix.M[2][3], ovrProjectionMatrix.M[3][3]);
+
+	return projectionMatrix;
 }
 
 osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc) const
@@ -569,7 +565,7 @@ bool OculusDevice::waitToBeginFrame(long long frameIndex)
 
 bool OculusDevice::beginFrame(long long frameIndex)
 {
-	m_frameTiming = ovr_GetPredictedDisplayTime(m_session, frameIndex);
+	m_sensorSampleTime = ovr_GetPredictedDisplayTime(m_session, frameIndex);
 
 	ovrResult error = ovr_BeginFrame(m_session, frameIndex);
 	return (error == ovrSuccess);
@@ -586,12 +582,12 @@ bool OculusDevice::submitFrame(long long frameIndex)
 	m_layerEyeFov.RenderPose[0] = m_eyeRenderPose[0];
 	m_layerEyeFov.RenderPose[1] = m_eyeRenderPose[1];
 
-	m_layerEyeFov.SensorSampleTime = m_frameTiming;
+	m_layerEyeFov.SensorSampleTime = m_sensorSampleTime;
 
 	ovrLayerHeader* layers = &m_layerEyeFov.Header;
 	ovrViewScaleDesc viewScale;
-	viewScale.HmdToEyePose[0] = m_viewOffset[0];
-	viewScale.HmdToEyePose[1] = m_viewOffset[1];
+	viewScale.HmdToEyePose[0] = m_eyeRenderDesc[0].HmdToEyePose;
+	viewScale.HmdToEyePose[1] = m_eyeRenderDesc[1].HmdToEyePose;
 	viewScale.HmdSpaceToWorldScaleInMeters = m_worldUnitsPerMetre;
 	ovrResult result = ovr_EndFrame(m_session, frameIndex, &viewScale, &layers, 1);
 	return result == ovrSuccess;
@@ -703,45 +699,6 @@ void OculusDevice::getEyeRenderDesc()
 	m_eyeRenderDesc[1] = ovr_GetRenderDesc(m_session, ovrEye_Right, m_hmdDesc.DefaultEyeFov[1]);
 }
 
-void OculusDevice::calculateViewMatrices()
-{
-	ovrPosef leftEyePose = m_eyeRenderDesc[0].HmdToEyePose;
-	ovrPosef rightEyePose = m_eyeRenderDesc[1].HmdToEyePose;
-
-	osg::Vec3 leftEyePosition(-leftEyePose.Position.x, leftEyePose.Position.y, leftEyePose.Position.z);
-	osg::Quat leftEyeOrientation(leftEyePose.Orientation.x, leftEyePose.Orientation.y, leftEyePose.Orientation.z, leftEyePose.Orientation.w);
-	
-	m_leftEyeViewMatrix.setTrans(leftEyePosition);
-	m_leftEyeViewMatrix.setRotate(leftEyeOrientation);
-
-	osg::Vec3 rightEyePosition(-rightEyePose.Position.x, rightEyePose.Position.y, rightEyePose.Position.z);
-	osg::Quat rightEyeOrientation(rightEyePose.Orientation.x, rightEyePose.Orientation.y, rightEyePose.Orientation.z, rightEyePose.Orientation.w);
-	
-	m_rightEyeViewMatrix.setTrans(rightEyePosition);
-	m_rightEyeViewMatrix.setRotate(rightEyeOrientation);
-
-	// Scale to world units
-	m_leftEyeViewMatrix.postMultScale(osg::Vec3d(m_worldUnitsPerMetre, m_worldUnitsPerMetre, m_worldUnitsPerMetre));
-	m_rightEyeViewMatrix.postMultScale(osg::Vec3d(m_worldUnitsPerMetre, m_worldUnitsPerMetre, m_worldUnitsPerMetre));
-}
-
-void OculusDevice::calculateProjectionMatrices()
-{
-	ovrMatrix4f leftEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[0].Fov, m_nearClip, m_farClip, ovrProjection_ClipRangeOpenGL);
-	// Transpose matrix
-	m_leftEyeProjectionMatrix.set(leftEyeProjectionMatrix.M[0][0], leftEyeProjectionMatrix.M[1][0], leftEyeProjectionMatrix.M[2][0], leftEyeProjectionMatrix.M[3][0],
-								  leftEyeProjectionMatrix.M[0][1], leftEyeProjectionMatrix.M[1][1], leftEyeProjectionMatrix.M[2][1], leftEyeProjectionMatrix.M[3][1],
-								  leftEyeProjectionMatrix.M[0][2], leftEyeProjectionMatrix.M[1][2], leftEyeProjectionMatrix.M[2][2], leftEyeProjectionMatrix.M[3][2],
-								  leftEyeProjectionMatrix.M[0][3], leftEyeProjectionMatrix.M[1][3], leftEyeProjectionMatrix.M[2][3], leftEyeProjectionMatrix.M[3][3]);
-
-	ovrMatrix4f rightEyeProjectionMatrix = ovrMatrix4f_Projection(m_eyeRenderDesc[1].Fov, m_nearClip, m_farClip, ovrProjection_ClipRangeOpenGL);
-	// Transpose matrix
-	m_rightEyeProjectionMatrix.set(rightEyeProjectionMatrix.M[0][0], rightEyeProjectionMatrix.M[1][0], rightEyeProjectionMatrix.M[2][0], rightEyeProjectionMatrix.M[3][0],
-								   rightEyeProjectionMatrix.M[0][1], rightEyeProjectionMatrix.M[1][1], rightEyeProjectionMatrix.M[2][1], rightEyeProjectionMatrix.M[3][1],
-								   rightEyeProjectionMatrix.M[0][2], rightEyeProjectionMatrix.M[1][2], rightEyeProjectionMatrix.M[2][2], rightEyeProjectionMatrix.M[3][2],
-								   rightEyeProjectionMatrix.M[0][3], rightEyeProjectionMatrix.M[1][3], rightEyeProjectionMatrix.M[2][3], rightEyeProjectionMatrix.M[3][3]);
-}
-
 void OculusDevice::setupLayers()
 {
 	m_layerEyeFov.Header.Type = ovrLayerType_EyeFov;
@@ -809,4 +766,13 @@ void OculusSwapCallback::swapBuffersImplementation(osg::GraphicsContext* gc)
 	gc->swapBuffersImplementation();
 }
 
-
+void OculusInitialDrawCallback::operator()(osg::RenderInfo& renderInfo) const
+{
+	osg::GraphicsOperation* graphicsOperation = renderInfo.getCurrentCamera()->getRenderer();
+	osgViewer::Renderer* renderer = dynamic_cast<osgViewer::Renderer*>(graphicsOperation);
+	if (renderer != nullptr)
+	{
+		// Disable normal OSG FBO camera setup because it will undo the MSAA FBO configuration.
+		renderer->setCameraRequiresSetUp(false);
+	}
+}

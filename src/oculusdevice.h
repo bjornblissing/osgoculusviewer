@@ -127,23 +127,21 @@ public:
 
 	bool hmdPresent() const;
 
-	unsigned int screenResolutionWidth() const;
-	unsigned int screenResolutionHeight() const;
-
-	osg::Matrixf projectionMatrixLeft() const { return m_leftEyeProjectionMatrix; }
-	osg::Matrixf projectionMatrixRight() const {	return m_rightEyeProjectionMatrix; }
-
-	osg::Matrixf viewMatrixLeft() const { return m_leftEyeViewMatrix; }
-	osg::Matrixf viewMatrixRight() const { return m_rightEyeViewMatrix; }
+	unsigned int screenResolutionWidth() const { return m_hmdDesc.Resolution.w; }
+	unsigned int screenResolutionHeight() const { return  m_hmdDesc.Resolution.h; }
 
 	float nearClip() const { return m_nearClip;	}
 	float farClip() const { return m_farClip; }
 
-	void resetSensorOrientation() const;
-	void updatePose();
+	void resetSensorOrientation() const { ovr_RecenterTrackingOrigin(m_session); }
 
-	osg::Vec3 position() const { return m_position; }
-	osg::Quat orientation() const { return m_orientation;  }
+	void updatePose(long long frameIndex);
+
+	osg::Vec3 position(Eye eye) const;
+	osg::Quat orientation(Eye eye) const;
+
+	osg::Matrixf viewMatrix(Eye eye) const;
+	osg::Matrixf projectionMatrix(Eye eye) const;
 
 	osg::Camera* createRTTCamera(OculusDevice::Eye eye, osg::Transform::ReferenceFrame referenceFrame, const osg::Vec4& clearColor, osg::GraphicsContext* gc = 0) const;
 
@@ -162,10 +160,6 @@ protected:
 	void printHMDDebugInfo();
 
 	void getEyeRenderDesc();
-	// Note: this function requires you to run the previous function first.
-	void calculateViewMatrices();
-	// Note: this function requires you to run the previous function first.
-	void calculateProjectionMatrices();
 
 	void setupLayers();
 
@@ -184,15 +178,9 @@ protected:
 
 	ovrEyeRenderDesc m_eyeRenderDesc[2];
 	ovrVector2f m_UVScaleOffset[2][2];
-	double m_frameTiming;
-	ovrPosef m_headPose[2];
+	double m_sensorSampleTime;
 	ovrPosef m_eyeRenderPose[2];
 	ovrLayerEyeFov m_layerEyeFov;
-	ovrPosef m_viewOffset[2];
-	osg::Matrixf m_leftEyeProjectionMatrix;
-	osg::Matrixf m_rightEyeProjectionMatrix;
-	osg::Matrixf m_leftEyeViewMatrix;
-	osg::Matrixf m_rightEyeViewMatrix;
 
 	osg::Vec3 m_position;
 	osg::Quat m_orientation;

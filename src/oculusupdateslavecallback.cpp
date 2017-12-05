@@ -13,14 +13,14 @@ void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& s
 	{
 		m_device->waitToBeginFrame(m_swapCallback->frameIndex());
 		m_device->beginFrame(m_swapCallback->frameIndex());
-		m_device->updatePose();
+		m_device->updatePose(m_swapCallback->frameIndex());
 	}
 
-	osg::Vec3 position = m_device->position();
-	osg::Quat orientation = m_device->orientation();
+	osg::Vec3 position = m_device->position(m_cameraType == LEFT_CAMERA ? OculusDevice::Eye::LEFT : OculusDevice::Eye::RIGHT);
+	osg::Quat orientation = m_device->orientation(m_cameraType == LEFT_CAMERA ? OculusDevice::Eye::LEFT : OculusDevice::Eye::RIGHT);
 
-	osg::Matrix viewMatrix = (m_cameraType == LEFT_CAMERA) ? m_device->viewMatrixLeft() : m_device->viewMatrixRight();
-	osg::Matrix projectionMatrix = (m_cameraType == LEFT_CAMERA) ? m_device->projectionMatrixLeft() : m_device->projectionMatrixRight();
+	osg::Matrix viewMatrix = m_device->viewMatrix(m_cameraType == LEFT_CAMERA ? OculusDevice::Eye::LEFT : OculusDevice::Eye::RIGHT);
+	osg::Matrix projectionMatrix = m_device->projectionMatrix(m_cameraType == LEFT_CAMERA ? OculusDevice::Eye::LEFT : OculusDevice::Eye::RIGHT);
 
 	// invert orientation (conjugate of Quaternion) and position to apply to the view matrix as offset
 	viewMatrix.preMultRotate(orientation.conj());
