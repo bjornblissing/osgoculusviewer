@@ -90,6 +90,12 @@ int main( int argc, char** argv )
 	osg::ref_ptr<OculusRealizeOperation> oculusRealizeOperation = new OculusRealizeOperation(oculusDevice);
 	viewer.setRealizeOperation(oculusRealizeOperation.get());
 
+#if(OSG_VERSION_GREATER_OR_EQUAL(3, 5, 4))
+	// Things to do when viewer is shutting down
+	osg::ref_ptr<OculusCleanUpOperation> oculusCleanUpOperation = new OculusCleanUpOperation(oculusDevice);
+	viewer.setCleanUpOperation(oculusCleanUpOperation.get());
+#endif
+
 	osg::ref_ptr<OculusViewer> oculusViewer = new OculusViewer(&viewer, oculusDevice, oculusRealizeOperation);
 	oculusViewer->addChild(loadedModel.get());
 	viewer.setSceneData(oculusViewer.get());
