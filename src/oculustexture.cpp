@@ -273,9 +273,28 @@ void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo)
 		ovr_CommitTextureSwapChain(m_session, m_textureSwapChain);
 	}
 
+	osg::State& state = *renderInfo.getState();
+	const OSG_GLExtensions* fbo_ext = getGLExtensions(state);
+
 	if (m_samples == 0)
 	{
-		// Nothing to do here if MSAA not being used.
+		
+		osg::FrameBufferObject* fbo = getFrameBufferObject(renderInfo);
+
+		if (fbo == nullptr)
+		{
+			return;
+		}
+
+		// Avoids an error when calling onPreRender during next iteration.
+		// Without this, during the next while loop iteration onPreRender
+		// would bind a framebuffer with an invalid COLOR_ATTACHMENT0 because the texture ID
+		// associated with COLOR_ATTACHMENT0 had been unlocked by calling wglDXUnlockObjectsNV.
+		const unsigned int ctx = state.getContextID();
+		fbo_ext->glBindFramebuffer(GL_FRAMEBUFFER_EXT, fbo->getHandle(ctx));
+		fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0);
+		fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
+
 		return;
 	}
 
@@ -287,9 +306,6 @@ void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo)
 		ovr_GetTextureSwapChainCurrentIndex(m_session, m_textureSwapChain, &curIndex);
 		ovr_GetTextureSwapChainBufferGL(m_session, m_textureSwapChain, curIndex, &curTexId);
 	}
-
-	osg::State& state = *renderInfo.getState();
-	const OSG_GLExtensions* fbo_ext = getGLExtensions(state);
 
 	fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_MSAA_FBO);
 	fbo_ext->glFramebufferTexture2D(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D_MULTISAMPLE, m_MSAA_ColorTex, 0);
@@ -322,7 +338,7 @@ OculusMirrorTexture::OculusMirrorTexture(ovrSession& session, osg::ref_ptr<osg::
 	desc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
 
 	// Create mirror texture and an FBO used to copy mirror texture to back buffer
-	ovrResult result = ovr_CreateMirrorTextureGL(session, &desc, &m_texture);
+	ovrResult result = ovr_CreateMirrorTextureWithOptionsGL(session, &desc, &m_texture);
 	if (!OVR_SUCCESS(result))
 	{
 		osg::notify(osg::DEBUG_INFO) << "Failed to create mirror texture." << std::endl;
