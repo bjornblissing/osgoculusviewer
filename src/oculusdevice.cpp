@@ -15,17 +15,18 @@
 #include <osgViewer/Renderer>
 #include <osgViewer/GraphicsWindow>
 
-OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre, const int samples, unsigned int mirrorTextureWidth) :
+OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre, const int samples, TrackingOrigin origin, const int mirrorTextureWidth) :
 	m_session(nullptr),
 	m_hmdDesc(),
 	m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
 	m_worldUnitsPerMetre(worldUnitsPerMetre),
 	m_mirrorTexture(nullptr),
-   m_mirrorTextureWidth(mirrorTextureWidth),
+	m_mirrorTextureWidth(mirrorTextureWidth),
 	m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
 	m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
 	m_nearClip(nearClip), m_farClip(farClip),
-	m_samples(samples)
+	m_samples(samples),
+	m_origin(origin)
 {
 	for (int i = 0; i < 2; i++)
 	{
@@ -81,6 +82,8 @@ void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state)
 
 void OculusDevice::init()
 {
+	setTrackingOrigin();
+
 	getEyeRenderDesc();
 
 	setupLayers();
@@ -353,6 +356,21 @@ void OculusDevice::getEyeRenderDesc()
 {
 	m_eyeRenderDesc[0] = ovr_GetRenderDesc(m_session, ovrEye_Left, m_hmdDesc.DefaultEyeFov[0]);
 	m_eyeRenderDesc[1] = ovr_GetRenderDesc(m_session, ovrEye_Right, m_hmdDesc.DefaultEyeFov[1]);
+}
+
+void OculusDevice::setTrackingOrigin()
+{
+	// Set the origin for the tracking system
+	// Eye level is suitable for seated/cockpit or 3rd person experiences.
+	// Floor level is suitable for standing expericences.
+	if (m_origin == EYE_LEVEL)
+	{
+		ovr_SetTrackingOriginType(m_session, ovrTrackingOrigin_EyeLevel);
+	}
+	else if (m_origin == FLOOR_LEVEL)
+	{
+		ovr_SetTrackingOriginType(m_session, ovrTrackingOrigin_FloorLevel);
+	}
 }
 
 void OculusDevice::setupLayers()

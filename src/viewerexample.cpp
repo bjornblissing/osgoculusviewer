@@ -45,10 +45,12 @@ int main( int argc, char** argv )
 	// Open the HMD
 	float nearClip = 0.01f;
 	float farClip = 10000.0f;
-	float pixelsPerDisplayPixel = 1.0;
+	float pixelsPerDisplayPixel = 1.0f;
 	float worldUnitsPerMetre = 1.0f;
 	int samples = 4;
-	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, worldUnitsPerMetre, samples);
+	OculusDevice::TrackingOrigin origin = OculusDevice::TrackingOrigin::EYE_LEVEL;
+	int mirrorTextureWidth = 960;
+	osg::ref_ptr<OculusDevice> oculusDevice = new OculusDevice(nearClip, farClip, pixelsPerDisplayPixel, worldUnitsPerMetre, samples, origin, mirrorTextureWidth);
 
 	// Exit if we do not have a valid HMD present
 	if (!oculusDevice->hmdPresent())

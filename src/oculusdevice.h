@@ -20,7 +20,14 @@ public:
 		RIGHT = 1,
 		COUNT = 2
 	} Eye;
-	OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel = 1.0f, const float worldUnitsPerMetre = 1.0f, const int samples = 0, unsigned int mirrorTextureWidth = 960);
+
+	typedef enum TrackingOrigin_
+	{
+		EYE_LEVEL = 0,
+		FLOOR_LEVEL = 1
+	} TrackingOrigin;
+
+	OculusDevice(float nearClip, float farClip, const float pixelsPerDisplayPixel, const float worldUnitsPerMetre, const int samples, TrackingOrigin origin, const int mirrorTextureWidth);
 	void createRenderBuffers(osg::ref_ptr<osg::State> state);
 	void init();
 
@@ -61,6 +68,8 @@ protected:
 
 	void getEyeRenderDesc();
 
+	void setTrackingOrigin();
+
 	void setupLayers();
 
 	void trySetProcessAsHighPriority() const;
@@ -88,6 +97,7 @@ protected:
 	float m_nearClip;
 	float m_farClip;
 	int m_samples;
+	TrackingOrigin m_origin;
 private:
 	OculusDevice(const OculusDevice&); // Do not allow copy
 	OculusDevice& operator=(const OculusDevice&); // Do not allow assignment operator.
