@@ -241,12 +241,12 @@ void OculusTextureBuffer::onPreRender(osg::RenderInfo& renderInfo)
 		ovr_GetTextureSwapChainBufferGL(m_session, m_textureSwapChain, curIndex, &curTexId);
 	}
 
-	osg::State& state = *renderInfo.getState();
+	const osg::State& state = *renderInfo.getState();
 	const OSG_GLExtensions* fbo_ext = getGLExtensions(state);
 
 	if (m_samples == 0)
 	{
-		osg::FrameBufferObject* fbo = getFrameBufferObject(renderInfo);
+		const osg::FrameBufferObject* fbo = getFrameBufferObject(renderInfo);
 
 		if (fbo == nullptr)
 		{
@@ -273,13 +273,13 @@ void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo)
 		ovr_CommitTextureSwapChain(m_session, m_textureSwapChain);
 	}
 
-	osg::State& state = *renderInfo.getState();
+	const osg::State& state = *renderInfo.getState();
 	const OSG_GLExtensions* fbo_ext = getGLExtensions(state);
 
 	if (m_samples == 0)
 	{
 		
-		osg::FrameBufferObject* fbo = getFrameBufferObject(renderInfo);
+		const osg::FrameBufferObject* fbo = getFrameBufferObject(renderInfo);
 
 		if (fbo == nullptr)
 		{
