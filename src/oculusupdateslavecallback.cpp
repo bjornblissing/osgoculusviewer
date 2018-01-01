@@ -9,6 +9,7 @@
 
 void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& slave)
 {
+	// We need to call these functions for the first camera, which currently is the left camera
 	if (m_cameraType == LEFT_CAMERA)
 	{
 		m_device->waitToBeginFrame(m_swapCallback->frameIndex());
@@ -20,15 +21,7 @@ void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& s
 	osg::Matrix viewMatrix = m_device->viewMatrix(m_cameraType == LEFT_CAMERA ? OculusDevice::Eye::LEFT : OculusDevice::Eye::RIGHT);
 	osg::Matrix projectionMatrix = m_device->projectionMatrix(m_cameraType == LEFT_CAMERA ? OculusDevice::Eye::LEFT : OculusDevice::Eye::RIGHT);
 
-	// Get the HMD position and orientation in world space relative tracking origin
-	osg::Vec3 position = m_device->position(m_cameraType == LEFT_CAMERA ? OculusDevice::Eye::LEFT : OculusDevice::Eye::RIGHT);
-	osg::Quat orientation = m_device->orientation(m_cameraType == LEFT_CAMERA ? OculusDevice::Eye::LEFT : OculusDevice::Eye::RIGHT);
-
-	// invert orientation (conjugate of Quaternion) and position to apply to the view matrix as offset
-	viewMatrix.preMultRotate(orientation.conj());
-	viewMatrix.preMultTranslate(-position);
-
-	slave._camera.get()->setViewMatrix(view.getCamera()->getViewMatrix()*viewMatrix);
+	slave._camera.get()->setViewMatrix(view.getCamera()->getViewMatrix() * viewMatrix);
 	slave._camera.get()->setProjectionMatrix(projectionMatrix);
 
 	slave.updateSlaveImplementation(view);

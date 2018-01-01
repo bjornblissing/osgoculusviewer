@@ -154,14 +154,11 @@ osg::Quat OculusDevice::orientation(Eye eye) const {
 osg::Matrixf OculusDevice::viewMatrix(Eye eye) const
 {
 	osg::Matrix viewMatrix;
-	ovrPosef pose = m_eyeRenderDesc[eye].HmdToEyePose;
-
-	osg::Vec3 position(pose.Position.x, pose.Position.y, pose.Position.z);
-	osg::Quat orientation(pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
-
-	viewMatrix.setTrans(position);
-	viewMatrix.setRotate(orientation);
-
+	
+	// invert orientation (conjugate of Quaternion) and position to apply to the view matrix as offset
+	viewMatrix.setTrans(-position(eye));
+	viewMatrix.postMultRotate(orientation(eye).conj());
+	
 	// Scale to world units
 	viewMatrix.postMultScale(osg::Vec3d(m_worldUnitsPerMetre, m_worldUnitsPerMetre, m_worldUnitsPerMetre));
 
