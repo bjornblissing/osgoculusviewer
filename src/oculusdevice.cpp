@@ -141,6 +141,9 @@ void OculusDevice::updatePose(long long frameIndex)
 
 	ovrPosef HmdToEyePose[2] = { m_eyeRenderDesc[0].HmdToEyePose, m_eyeRenderDesc[1].HmdToEyePose };
 	ovr_GetEyePoses(m_session, frameIndex, ovrTrue, HmdToEyePose, m_eyeRenderPose, &m_sensorSampleTime);
+
+	// Update touch controllers
+	ovr_GetInputState(m_session, ovrControllerType_Touch, &m_controllerState);
 }
 
 osg::Vec3 OculusDevice::position(Eye eye) const {
@@ -275,6 +278,12 @@ void OculusDevice::setPerfHudMode(int mode)
 	if (mode == 4) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_CompRenderTiming); }
 	
 	if (mode == 5) { ovr_SetInt(m_session, "PerfHudMode", (int)ovrPerfHud_VersionInfo); }
+}
+
+bool OculusDevice::touchControllerAvailable() const
+{
+	osg::notify(osg::DEBUG_INFO) << "State: " << m_controllerState.ControllerType << std::endl;
+	return (m_controllerState.ControllerType == ovrControllerType_Touch);
 }
 
 osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const

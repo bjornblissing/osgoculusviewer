@@ -60,6 +60,12 @@ public:
 
 	void setPerfHudMode(int mode);
 
+	bool touchControllerAvailable() const;
+	ovrInputState touchControllerState() const { return m_controllerState; }
+
+	ovrPoseStatef handPoseLeft() const { return m_handPoses[ovrHand_Left]; }
+	ovrPoseStatef handPoseRigth() const { return m_handPoses[ovrHand_Right]; }
+
 	osg::GraphicsContext::Traits* graphicsContextTraits() const;
 protected:
 	~OculusDevice(); // Since we inherit from osg::Referenced we must make destructor protected
@@ -76,6 +82,8 @@ protected:
 
 	ovrSession m_session;
 	ovrHmdDesc m_hmdDesc;
+	ovrInputState m_controllerState;
+	ovrPoseStatef m_handPoses[2];
 
 	const float m_pixelsPerDisplayPixel;
 	const float m_worldUnitsPerMetre;

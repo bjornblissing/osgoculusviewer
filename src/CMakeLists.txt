@@ -9,6 +9,7 @@ SET(TARGET_SRC
 	oculuseventhandler.cpp
 	oculustexture.cpp
 	oculusupdateslavecallback.cpp
+	oculustouchmanipulator.cpp
 )
 # Header files for library
 SET(TARGET_H
@@ -17,6 +18,7 @@ SET(TARGET_H
 	oculuseventhandler.h
 	oculustexture.h
 	oculusupdateslavecallback.h
+	oculustouchmanipulator.h
 )
 
 #####################################################################
