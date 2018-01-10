@@ -37,19 +37,19 @@ void OculusViewer::configure()
 	osg::Vec4 clearColor = camera->getClearColor();
 
 	// Create RTT cameras and attach textures
-	m_cameraRTTLeft = m_device->createRTTCamera(OculusDevice::Eye::LEFT, osg::Camera::ABSOLUTE_RF, clearColor, gc.get());
-	m_cameraRTTRight = m_device->createRTTCamera(OculusDevice::Eye::RIGHT, osg::Camera::ABSOLUTE_RF, clearColor, gc.get());
-	m_cameraRTTLeft->setName("LeftRTT");
-	m_cameraRTTRight->setName("RightRTT");
+	osg::Camera* cameraRTTLeft = m_device->createRTTCamera(OculusDevice::Eye::LEFT, osg::Camera::ABSOLUTE_RF, clearColor, gc.get());
+	osg::Camera* cameraRTTRight = m_device->createRTTCamera(OculusDevice::Eye::RIGHT, osg::Camera::ABSOLUTE_RF, clearColor, gc.get()); 
+	cameraRTTLeft->setName("LeftRTT");
+	cameraRTTRight->setName("RightRTT");
 
 	// Add RTT cameras as slaves, specifying offsets for the projection
-	m_view->addSlave(m_cameraRTTLeft.get(),
+	m_view->addSlave(cameraRTTLeft,
 					 m_device->projectionMatrix(OculusDevice::Eye::LEFT),
 					 m_device->viewMatrix(OculusDevice::Eye::LEFT),
 					 true);
 	m_view->getSlave(0)._updateSlaveCallback = new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::LEFT_CAMERA, m_device.get(), swapCallback.get());
 
-	m_view->addSlave(m_cameraRTTRight.get(),
+	m_view->addSlave(cameraRTTRight,
 					m_device->projectionMatrix(OculusDevice::Eye::RIGHT),
 					m_device->viewMatrix(OculusDevice::Eye::RIGHT),
 					 true);

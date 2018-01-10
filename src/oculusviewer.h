@@ -25,7 +25,6 @@ public:
 	OculusViewer(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev, osg::ref_ptr<OculusRealizeOperation> realizeOperation) : osg::Group(),
 		m_configured(false),
 		m_view(view),
-		m_cameraRTTLeft(nullptr), m_cameraRTTRight(nullptr),
 		m_device(dev),
 		m_realizeOperation(realizeOperation)
 	{};
@@ -37,7 +36,6 @@ protected:
 	bool m_configured;
 
 	osg::observer_ptr<osgViewer::View> m_view;
-	osg::observer_ptr<osg::Camera> m_cameraRTTLeft, m_cameraRTTRight;
 	osg::observer_ptr<OculusDevice> m_device;
 	osg::observer_ptr<OculusRealizeOperation> m_realizeOperation;
 };
