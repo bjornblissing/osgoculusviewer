@@ -99,7 +99,14 @@ int main( int argc, char** argv )
 
 	viewer.addEventHandler(new OculusEventHandler(oculusDevice));
 
-	viewer.run();
+   // realize the viewer
+   viewer.realize();
+   // this call is needed to avoid the following warning message at every frame:
+   // Warning: detected OpenGL error 'invalid operation' at after RenderBin::draw(..)
+   viewer.setReleaseContextAtEndOfFrameHint(false);
+
+   while (!viewer.done())
+      viewer.frame();
 
 	return 0;
 }
