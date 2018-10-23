@@ -9,6 +9,7 @@
 #define _OSG_OCULUSVIEWER_H_
 
 #include <osg/Group>
+#include <osgViewer/Viewer>
 
 #include "oculusdevice.h"
 
@@ -22,9 +23,9 @@ namespace osgViewer
 class OculusViewer : public osg::Group
 {
 public:
-	OculusViewer(osgViewer::View* view, osg::ref_ptr<OculusDevice> dev, osg::ref_ptr<OculusRealizeOperation> realizeOperation) : osg::Group(),
+	OculusViewer(osgViewer::Viewer* viewer, osg::ref_ptr<OculusDevice> dev, osg::ref_ptr<OculusRealizeOperation> realizeOperation) : osg::Group(),
 		m_configured(false),
-		m_view(view),
+		m_viewer(viewer),
 		m_device(dev),
 		m_realizeOperation(realizeOperation)
 	{};
@@ -35,7 +36,7 @@ protected:
 
 	bool m_configured;
 
-	osg::observer_ptr<osgViewer::View> m_view;
+	osg::observer_ptr<osgViewer::Viewer> m_viewer;
 	osg::observer_ptr<OculusDevice> m_device;
 	osg::observer_ptr<OculusRealizeOperation> m_realizeOperation;
 };
