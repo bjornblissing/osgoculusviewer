@@ -144,6 +144,11 @@ void OculusDevice::updatePose(long long frameIndex)
 
 	// Update touch controllers
 	ovr_GetInputState(m_session, ovrControllerType_Touch, &m_controllerState);
+
+   // update touch pose
+   ovrTrackingState trackingState = ovr_GetTrackingState(m_session, 0.0, false);
+   m_handPoses[ovrHand_Left] = trackingState.HandPoses[ovrHand_Left];
+   m_handPoses[ovrHand_Right] = trackingState.HandPoses[ovrHand_Right];
 }
 
 osg::Vec3 OculusDevice::position(Eye eye) const {
