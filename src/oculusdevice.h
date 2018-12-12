@@ -63,6 +63,7 @@ public:
 	bool touchControllerAvailable() const;
 	ovrInputState touchControllerState() const { return m_controllerState; }
 
+	ovrPoseStatef headPose() const { return m_headPose; }
 	ovrPoseStatef handPoseLeft() const { return m_handPoses[ovrHand_Left]; }
 	ovrPoseStatef handPoseRigth() const { return m_handPoses[ovrHand_Right]; }
 
@@ -84,6 +85,7 @@ protected:
 	ovrHmdDesc m_hmdDesc;
 	ovrInputState m_controllerState;
 	ovrPoseStatef m_handPoses[2];
+	ovrPoseStatef m_headPose;
 
 	const float m_pixelsPerDisplayPixel;
 	const float m_worldUnitsPerMetre;
