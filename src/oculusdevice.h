@@ -107,6 +107,7 @@ protected:
 	float m_nearClip;
 	float m_farClip;
 	int m_samples;
+	bool m_begunFrame;
 	TrackingOrigin m_origin;
 private:
 	OculusDevice(const OculusDevice&); // Do not allow copy

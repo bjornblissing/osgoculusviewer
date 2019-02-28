@@ -26,6 +26,7 @@ OculusDevice::OculusDevice(float nearClip, float farClip, const float pixelsPerD
 	m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
 	m_nearClip(nearClip), m_farClip(farClip),
 	m_samples(samples),
+	m_begunFrame(false),
 	m_origin(origin)
 {
 	for (int i = 0; i < 2; i++)
@@ -241,29 +242,33 @@ bool OculusDevice::beginFrame(long long frameIndex)
 	m_sensorSampleTime = ovr_GetPredictedDisplayTime(m_session, frameIndex);
 
 	ovrResult error = ovr_BeginFrame(m_session, frameIndex);
+	m_begunFrame = (error == ovrSuccess);
 	return (error == ovrSuccess);
 }
 
 bool OculusDevice::submitFrame(long long frameIndex)
 {
-	m_layerEyeFov.ColorTexture[0] = m_textureBuffer[0]->textureSwapChain();
-	m_layerEyeFov.ColorTexture[1] = m_textureBuffer[1]->textureSwapChain();
+	if (m_begunFrame) {
+		m_layerEyeFov.ColorTexture[0] = m_textureBuffer[0]->textureSwapChain();
+		m_layerEyeFov.ColorTexture[1] = m_textureBuffer[1]->textureSwapChain();
 
-	m_layerEyeFov.Fov[0] = m_eyeRenderDesc[0].Fov;
-	m_layerEyeFov.Fov[1] = m_eyeRenderDesc[1].Fov;
+		m_layerEyeFov.Fov[0] = m_eyeRenderDesc[0].Fov;
+		m_layerEyeFov.Fov[1] = m_eyeRenderDesc[1].Fov;
 
-	m_layerEyeFov.RenderPose[0] = m_eyeRenderPose[0];
-	m_layerEyeFov.RenderPose[1] = m_eyeRenderPose[1];
+		m_layerEyeFov.RenderPose[0] = m_eyeRenderPose[0];
+		m_layerEyeFov.RenderPose[1] = m_eyeRenderPose[1];
 
-	m_layerEyeFov.SensorSampleTime = m_sensorSampleTime;
+		m_layerEyeFov.SensorSampleTime = m_sensorSampleTime;
 
-	ovrLayerHeader* layers = &m_layerEyeFov.Header;
-	ovrViewScaleDesc viewScale;
-	viewScale.HmdToEyePose[0] = m_eyeRenderDesc[0].HmdToEyePose;
-	viewScale.HmdToEyePose[1] = m_eyeRenderDesc[1].HmdToEyePose;
-	viewScale.HmdSpaceToWorldScaleInMeters = m_worldUnitsPerMetre;
-	ovrResult result = ovr_EndFrame(m_session, frameIndex, &viewScale, &layers, 1);
-	return result == ovrSuccess;
+		ovrLayerHeader* layers = &m_layerEyeFov.Header;
+		ovrViewScaleDesc viewScale;
+		viewScale.HmdToEyePose[0] = m_eyeRenderDesc[0].HmdToEyePose;
+		viewScale.HmdToEyePose[1] = m_eyeRenderDesc[1].HmdToEyePose;
+		viewScale.HmdSpaceToWorldScaleInMeters = m_worldUnitsPerMetre;
+		ovrResult result = ovr_EndFrame(m_session, frameIndex, &viewScale, &layers, 1);
+		return (result == ovrSuccess);
+	}
+	return false;
 }
 
 void OculusDevice::blitMirrorTexture(osg::GraphicsContext* gc)
