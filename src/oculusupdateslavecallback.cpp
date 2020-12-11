@@ -12,7 +12,7 @@ void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& s
   if (m_cameraType == LEFT_CAMERA) {
     m_device->waitToBeginFrame(m_swapCallback->frameIndex());
     m_device->beginFrame(m_swapCallback->frameIndex());
-    m_device->updatePose();
+    m_device->updatePose(m_swapCallback->frameIndex());
   }
 
   // Get the view and projection matrix for the view
@@ -23,6 +23,8 @@ void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& s
 
   slave._camera.get()->setViewMatrix(view.getCamera()->getViewMatrix() * viewMatrix);
   slave._camera.get()->setProjectionMatrix(projectionMatrix);
+  m_device->updateTimewarpProjection(m_cameraType == LEFT_CAMERA ? OculusDevice::Eye::LEFT :
+                                                                   OculusDevice::Eye::RIGHT);
 
   slave.updateSlaveImplementation(view);
 }

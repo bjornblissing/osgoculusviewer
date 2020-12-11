@@ -65,7 +65,7 @@ OculusTextureBuffer::OculusTextureBuffer(const ovrSession& session,
                                          const ovrSizei& size,
                                          int msaaSamples) :
     m_session(session),
-    m_textureSwapChain(nullptr),
+    m_colorTextureSwapChain(nullptr),
     m_colorBuffer(nullptr),
     m_depthBuffer(nullptr),
     m_textureSize(osg::Vec2i(size.w, size.h)),
@@ -92,15 +92,15 @@ void OculusTextureBuffer::setup(osg::State& state) {
   desc.SampleCount = 1;
   desc.StaticImage = ovrFalse;
 
-  ovrResult result = ovr_CreateTextureSwapChainGL(m_session, &desc, &m_textureSwapChain);
+  ovrResult result = ovr_CreateTextureSwapChainGL(m_session, &desc, &m_colorTextureSwapChain);
 
   int length = 0;
-  ovr_GetTextureSwapChainLength(m_session, m_textureSwapChain, &length);
+  ovr_GetTextureSwapChainLength(m_session, m_colorTextureSwapChain, &length);
 
   if (OVR_SUCCESS(result)) {
     for (int i = 0; i < length; ++i) {
       GLuint chainTexId;
-      ovr_GetTextureSwapChainBufferGL(m_session, m_textureSwapChain, i, &chainTexId);
+      ovr_GetTextureSwapChainBufferGL(m_session, m_colorTextureSwapChain, i, &chainTexId);
 
       osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D();
 
@@ -131,17 +131,41 @@ void OculusTextureBuffer::setup(osg::State& state) {
     return;
   }
 
-  m_depthBuffer = new osg::Texture2D();
-  m_depthBuffer->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
-  m_depthBuffer->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
-  m_depthBuffer->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
-  m_depthBuffer->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
-  m_depthBuffer->setSourceFormat(GL_DEPTH_COMPONENT);
-  m_depthBuffer->setSourceType(GL_UNSIGNED_INT);
-  m_depthBuffer->setInternalFormat(GL_DEPTH_COMPONENT24);
-  m_depthBuffer->setTextureWidth(textureWidth());
-  m_depthBuffer->setTextureHeight(textureHeight());
-  m_depthBuffer->setBorderWidth(0);
+  desc.Format = OVR_FORMAT_D32_FLOAT;
+
+  result = ovr_CreateTextureSwapChainGL(m_session, &desc, &m_depthTextureSwapChain);
+
+  length = 0;
+  ovr_GetTextureSwapChainLength(m_session, m_depthTextureSwapChain, &length);
+
+  if (OVR_SUCCESS(result)) {
+    for (int i = 0; i < length; ++i) {
+      GLuint chainTexId;
+      ovr_GetTextureSwapChainBufferGL(m_session, m_depthTextureSwapChain, i, &chainTexId);
+
+      osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D();
+
+      osg::ref_ptr<osg::Texture::TextureObject> textureObject =
+        new osg::Texture::TextureObject(texture.get(), chainTexId, GL_TEXTURE_2D);
+
+      textureObject->setAllocated(true);
+
+      texture->setTextureObject(state.getContextID(), textureObject.get());
+
+      texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+      texture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
+      texture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+      texture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
+      texture->setTextureSize(m_textureSize.x(), m_textureSize.y());
+      texture->setSourceFormat(GL_DEPTH_COMPONENT);
+      if (i == 0) {
+        m_depthBuffer = texture;
+      }
+    }
+  } else {
+    osg::notify(osg::WARN) << "Warning: Unable to create swap texture set! " << std::endl;
+    return;
+  }
 }
 
 void OculusTextureBuffer::setupMSAA(osg::State& state) {
@@ -157,23 +181,44 @@ void OculusTextureBuffer::setupMSAA(osg::State& state) {
   desc.SampleCount = 1;
   desc.StaticImage = ovrFalse;
 
-  ovrResult result = ovr_CreateTextureSwapChainGL(m_session, &desc, &m_textureSwapChain);
+  {
+    ovrResult result = ovr_CreateTextureSwapChainGL(m_session, &desc, &m_colorTextureSwapChain);
 
-  int length = 0;
-  ovr_GetTextureSwapChainLength(m_session, m_textureSwapChain, &length);
+    int length = 0;
+    ovr_GetTextureSwapChainLength(m_session, m_colorTextureSwapChain, &length);
 
-  if (OVR_SUCCESS(result)) {
-    for (int i = 0; i < length; ++i) {
-      GLuint chainTexId;
-      ovr_GetTextureSwapChainBufferGL(m_session, m_textureSwapChain, i, &chainTexId);
-      glBindTexture(GL_TEXTURE_2D, chainTexId);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    if (OVR_SUCCESS(result)) {
+      for (int i = 0; i < length; ++i) {
+        GLuint chainTexId;
+        ovr_GetTextureSwapChainBufferGL(m_session, m_colorTextureSwapChain, i, &chainTexId);
+        glBindTexture(GL_TEXTURE_2D, chainTexId);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      }
     }
+  }
+  desc.Format = OVR_FORMAT_D32_FLOAT;
 
-    osg::notify(osg::DEBUG_INFO) << "Successfully created the swap texture set!" << std::endl;
+  {
+    ovrResult result = ovr_CreateTextureSwapChainGL(m_session, &desc, &m_depthTextureSwapChain);
+
+    int length = 0;
+    ovr_GetTextureSwapChainLength(m_session, m_depthTextureSwapChain, &length);
+
+    if (OVR_SUCCESS(result)) {
+      for (int i = 0; i < length; ++i) {
+        GLuint chainTexId;
+        ovr_GetTextureSwapChainBufferGL(m_session, m_depthTextureSwapChain, i, &chainTexId);
+        glBindTexture(GL_TEXTURE_2D, chainTexId);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      }
+    }
   }
 
   // Create an FBO for output to Oculus swap texture set.
@@ -219,11 +264,18 @@ void OculusTextureBuffer::setupMSAA(osg::State& state) {
 }
 
 void OculusTextureBuffer::onPreRender(osg::RenderInfo& renderInfo) {
-  GLuint curTexId = 0;
-  if (m_textureSwapChain) {
+  GLuint curColTexId = 0;
+  if (m_colorTextureSwapChain) {
     int curIndex;
-    ovr_GetTextureSwapChainCurrentIndex(m_session, m_textureSwapChain, &curIndex);
-    ovr_GetTextureSwapChainBufferGL(m_session, m_textureSwapChain, curIndex, &curTexId);
+    ovr_GetTextureSwapChainCurrentIndex(m_session, m_colorTextureSwapChain, &curIndex);
+    ovr_GetTextureSwapChainBufferGL(m_session, m_colorTextureSwapChain, curIndex, &curColTexId);
+  }
+
+  GLuint curDepthTexId = 0;
+  if (m_depthTextureSwapChain) {
+    int curIndex;
+    ovr_GetTextureSwapChainCurrentIndex(m_session, m_depthTextureSwapChain, &curIndex);
+    ovr_GetTextureSwapChainBufferGL(m_session, m_depthTextureSwapChain, curIndex, &curDepthTexId);
   }
 
   const osg::State& state = *renderInfo.getState();
@@ -241,12 +293,12 @@ void OculusTextureBuffer::onPreRender(osg::RenderInfo& renderInfo) {
     fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT,
                                     GL_COLOR_ATTACHMENT0_EXT,
                                     GL_TEXTURE_2D,
-                                    curTexId,
+                                    curColTexId,
                                     0);
     fbo_ext->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT,
                                     GL_DEPTH_ATTACHMENT_EXT,
                                     GL_TEXTURE_2D,
-                                    m_depthBuffer->getTextureObject(state.getContextID())->id(),
+                                    curDepthTexId,
                                     0);
   } else {
     fbo_ext->glBindFramebuffer(GL_FRAMEBUFFER_EXT, m_MSAA_FBO);
@@ -263,8 +315,12 @@ void OculusTextureBuffer::onPreRender(osg::RenderInfo& renderInfo) {
   }
 }
 void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo) {
-  if (m_textureSwapChain) {
-    ovr_CommitTextureSwapChain(m_session, m_textureSwapChain);
+  if (m_colorTextureSwapChain) {
+    ovr_CommitTextureSwapChain(m_session, m_colorTextureSwapChain);
+  }
+
+  if (m_depthTextureSwapChain) {
+    ovr_CommitTextureSwapChain(m_session, m_depthTextureSwapChain);
   }
 
   const osg::State& state = *renderInfo.getState();
@@ -298,11 +354,18 @@ void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo) {
   }
 
   // Get texture id
-  GLuint curTexId = 0;
-  if (m_textureSwapChain) {
+  GLuint curColTexId = 0;
+  GLuint curDepthTexId = 0;
+  if (m_colorTextureSwapChain) {
     int curIndex;
-    ovr_GetTextureSwapChainCurrentIndex(m_session, m_textureSwapChain, &curIndex);
-    ovr_GetTextureSwapChainBufferGL(m_session, m_textureSwapChain, curIndex, &curTexId);
+    ovr_GetTextureSwapChainCurrentIndex(m_session, m_colorTextureSwapChain, &curIndex);
+    ovr_GetTextureSwapChainBufferGL(m_session, m_colorTextureSwapChain, curIndex, &curColTexId);
+  }
+
+  if (m_depthTextureSwapChain) {
+    int curIndex;
+    ovr_GetTextureSwapChainCurrentIndex(m_session, m_depthTextureSwapChain, &curIndex);
+    ovr_GetTextureSwapChainBufferGL(m_session, m_depthTextureSwapChain, curIndex, &curDepthTexId);
   }
 
   fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_MSAA_FBO);
@@ -320,12 +383,17 @@ void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo) {
   fbo_ext->glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER_EXT,
                                   GL_COLOR_ATTACHMENT0_EXT,
                                   GL_TEXTURE_2D,
-                                  curTexId,
+                                  curColTexId,
                                   0);
   fbo_ext->glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER_EXT,
                                      GL_DEPTH_ATTACHMENT_EXT,
                                      GL_RENDERBUFFER_EXT,
                                      0);
+  fbo_ext->glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER_EXT,
+                                  GL_DEPTH_ATTACHMENT_EXT,
+                                  GL_TEXTURE_2D,
+                                  curDepthTexId,
+                                  0);
 
   int w = m_textureSize.x();
   int h = m_textureSize.y();
@@ -335,7 +403,8 @@ void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo) {
 }
 
 void OculusTextureBuffer::destroy() {
-  ovr_DestroyTextureSwapChain(m_session, m_textureSwapChain);
+  ovr_DestroyTextureSwapChain(m_session, m_colorTextureSwapChain);
+  ovr_DestroyTextureSwapChain(m_session, m_depthTextureSwapChain);
 }
 
 OculusMirrorTexture::OculusMirrorTexture(ovrSession& session,

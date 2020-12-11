@@ -43,8 +43,11 @@ class OculusTextureBuffer : public osg::Referenced {
   int samples() const {
     return m_samples;
   }
-  ovrTextureSwapChain textureSwapChain() const {
-    return m_textureSwapChain;
+  ovrTextureSwapChain colorTextureSwapChain() const {
+    return m_colorTextureSwapChain;
+  }
+  ovrTextureSwapChain depthTextureSwapChain() const {
+    return m_depthTextureSwapChain;
   }
   osg::ref_ptr<osg::Texture2D> colorBuffer() const {
     return m_colorBuffer;
@@ -59,7 +62,8 @@ class OculusTextureBuffer : public osg::Referenced {
   ~OculusTextureBuffer() {}
 
   const ovrSession m_session;
-  ovrTextureSwapChain m_textureSwapChain;
+  ovrTextureSwapChain m_colorTextureSwapChain;
+  ovrTextureSwapChain m_depthTextureSwapChain;
   osg::ref_ptr<osg::Texture2D> m_colorBuffer;
   osg::ref_ptr<osg::Texture2D> m_depthBuffer;
   osg::Vec2i m_textureSize;

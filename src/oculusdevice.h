@@ -47,13 +47,14 @@ class OculusDevice : public osg::Referenced {
     ovr_RecenterTrackingOrigin(m_session);
   }
 
-  void updatePose();
+  void updatePose(long long frameIndex);
 
   osg::Vec3 position(Eye eye) const;
   osg::Quat orientation(Eye eye) const;
 
   osg::Matrixf viewMatrix(Eye eye) const;
   osg::Matrixf projectionMatrix(Eye eye) const;
+  void updateTimewarpProjection(Eye eye);
 
   osg::Camera* createRTTCamera(OculusDevice::Eye eye,
                                osg::Transform::ReferenceFrame referenceFrame,
@@ -116,7 +117,8 @@ class OculusDevice : public osg::Referenced {
   ovrVector2f m_UVScaleOffset[2][2];
   double m_sensorSampleTime;
   ovrPosef m_eyeRenderPose[2];
-  ovrLayerEyeFov m_layerEyeFov;
+  ovrLayerEyeFovDepth m_layerEyeFovDepth;
+  ovrTimewarpProjectionDesc m_posTimewarpProjectionDesc = {};
 
   osg::Vec3 m_position;
   osg::Quat m_orientation;

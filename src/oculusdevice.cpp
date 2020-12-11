@@ -131,21 +131,25 @@ bool OculusDevice::hmdPresent() const {
   return false;
 }
 
-void OculusDevice::updatePose() {
+void OculusDevice::updatePose(long long frameIndex) {
   // Call getEyeRenderDesc() each frame, since the returned values (e.g. HmdToEyePose) may change at
   // runtime.
   getEyeRenderDesc();
   ovrPosef HmdToEyePose[2] = {m_eyeRenderDesc[0].HmdToEyePose, m_eyeRenderDesc[1].HmdToEyePose};
 
   // Update the tracking state
-  ovrTrackingState trackingState = ovr_GetTrackingState(m_session, m_sensorSampleTime, ovrTrue);
-  m_headPose = trackingState.HeadPose;
-  ovr_CalcEyePoses(m_headPose.ThePose, HmdToEyePose, m_eyeRenderPose);
+  ovr_GetEyePoses(m_session,
+                  frameIndex,
+                  ovrTrue,
+                  HmdToEyePose,
+                  m_eyeRenderPose,
+                  &m_sensorSampleTime);
 
   // Update touch controllers
   ovr_GetInputState(m_session, ovrControllerType_Touch, &m_controllerState);
 
   // update touch pose
+  ovrTrackingState trackingState = ovr_GetTrackingState(m_session, 0.0, ovrFalse);
   m_handPoses[ovrHand_Left] = trackingState.HandPoses[ovrHand_Left];
   m_handPoses[ovrHand_Right] = trackingState.HandPoses[ovrHand_Right];
 }
@@ -183,6 +187,7 @@ osg::Matrixf OculusDevice::projectionMatrix(Eye eye) const {
                                                            m_nearClip,
                                                            m_farClip,
                                                            ovrProjection_ClipRangeOpenGL);
+
   // Transpose matrix
   projectionMatrix.set(ovrProjectionMatrix.M[0][0],
                        ovrProjectionMatrix.M[1][0],
@@ -202,6 +207,12 @@ osg::Matrixf OculusDevice::projectionMatrix(Eye eye) const {
                        ovrProjectionMatrix.M[3][3]);
 
   return projectionMatrix;
+}
+
+void OculusDevice::updateTimewarpProjection(Eye eye) {
+  ovrMatrix4f proj =
+    ovrMatrix4f_Projection(m_hmdDesc.DefaultEyeFov[eye], 0.2f, 1000.0f, ovrProjection_None);
+  m_posTimewarpProjectionDesc = ovrTimewarpProjectionDesc_FromProjection(proj, ovrProjection_None);
 }
 
 osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye,
@@ -252,27 +263,33 @@ bool OculusDevice::waitToBeginFrame(long long frameIndex) {
 }
 
 bool OculusDevice::beginFrame(long long frameIndex) {
-  m_sensorSampleTime = ovr_GetPredictedDisplayTime(m_session, frameIndex);
-
   ovrResult error = ovr_BeginFrame(m_session, frameIndex);
   m_begunFrame = (error == ovrSuccess);
   return (error == ovrSuccess);
 }
 
 bool OculusDevice::submitFrame(long long frameIndex) {
+  m_layerEyeFovDepth.Header.Type = ovrLayerType_EyeFovDepth;
+  m_layerEyeFovDepth.Header.Flags = ovrLayerFlag_TextureOriginAtBottomLeft;  // Because OpenGL.
+  m_layerEyeFovDepth.ProjectionDesc = m_posTimewarpProjectionDesc;
+  m_layerEyeFovDepth.SensorSampleTime = m_sensorSampleTime;
+
   if (m_begunFrame) {
-    m_layerEyeFov.ColorTexture[0] = m_textureBuffer[0]->textureSwapChain();
-    m_layerEyeFov.ColorTexture[1] = m_textureBuffer[1]->textureSwapChain();
+    m_layerEyeFovDepth.ColorTexture[0] = m_textureBuffer[0]->colorTextureSwapChain();
+    m_layerEyeFovDepth.ColorTexture[1] = m_textureBuffer[1]->colorTextureSwapChain();
 
-    m_layerEyeFov.Fov[0] = m_eyeRenderDesc[0].Fov;
-    m_layerEyeFov.Fov[1] = m_eyeRenderDesc[1].Fov;
+    m_layerEyeFovDepth.DepthTexture[0] = m_textureBuffer[0]->colorTextureSwapChain();
+    m_layerEyeFovDepth.DepthTexture[1] = m_textureBuffer[1]->colorTextureSwapChain();
 
-    m_layerEyeFov.RenderPose[0] = m_eyeRenderPose[0];
-    m_layerEyeFov.RenderPose[1] = m_eyeRenderPose[1];
+    m_layerEyeFovDepth.Fov[0] = m_eyeRenderDesc[0].Fov;
+    m_layerEyeFovDepth.Fov[1] = m_eyeRenderDesc[1].Fov;
 
-    m_layerEyeFov.SensorSampleTime = m_sensorSampleTime;
+    m_layerEyeFovDepth.RenderPose[0] = m_eyeRenderPose[0];
+    m_layerEyeFovDepth.RenderPose[1] = m_eyeRenderPose[1];
 
-    ovrLayerHeader* layers = &m_layerEyeFov.Header;
+    m_layerEyeFovDepth.SensorSampleTime = m_sensorSampleTime;
+
+    ovrLayerHeader* layers = &m_layerEyeFovDepth.Header;
     ovrViewScaleDesc viewScale;
     viewScale.HmdToEyePose[0] = m_eyeRenderDesc[0].HmdToEyePose;
     viewScale.HmdToEyePose[1] = m_eyeRenderDesc[1].HmdToEyePose;
@@ -407,8 +424,8 @@ void OculusDevice::setTrackingOrigin() {
 }
 
 void OculusDevice::setupLayers() {
-  m_layerEyeFov.Header.Type = ovrLayerType_EyeFov;
-  m_layerEyeFov.Header.Flags = ovrLayerFlag_TextureOriginAtBottomLeft;  // Because OpenGL.
+  m_layerEyeFovDepth.Header.Type = ovrLayerType_EyeFovDepth;
+  m_layerEyeFovDepth.Header.Flags = ovrLayerFlag_TextureOriginAtBottomLeft;  // Because OpenGL.
 
   ovrRecti viewPort[2];
   viewPort[0].Pos.x = 0;
@@ -421,10 +438,10 @@ void OculusDevice::setupLayers() {
   viewPort[1].Size.w = m_textureBuffer[1]->textureWidth();
   viewPort[1].Size.h = m_textureBuffer[1]->textureHeight();
 
-  m_layerEyeFov.Viewport[0] = viewPort[0];
-  m_layerEyeFov.Viewport[1] = viewPort[1];
-  m_layerEyeFov.Fov[0] = m_eyeRenderDesc[0].Fov;
-  m_layerEyeFov.Fov[1] = m_eyeRenderDesc[1].Fov;
+  m_layerEyeFovDepth.Viewport[0] = viewPort[0];
+  m_layerEyeFovDepth.Viewport[1] = viewPort[1];
+  m_layerEyeFovDepth.Fov[0] = m_eyeRenderDesc[0].Fov;
+  m_layerEyeFovDepth.Fov[1] = m_eyeRenderDesc[1].Fov;
 }
 
 void OculusDevice::trySetProcessAsHighPriority() const {
