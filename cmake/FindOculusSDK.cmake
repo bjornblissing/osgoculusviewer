@@ -39,24 +39,18 @@ ENDIF()
 
 # Determine the compiler version for Visual Studio
 IF (MSVC)
-	# Visual Studio 2010
-	IF (${MSVC_VERSION} EQUAL 1600)
-		SET(_OCULUS_MSVC_DIR "VS2010")
-	ENDIF()
-	# Visual Studio 2012
-	IF (${MSVC_VERSION} EQUAL 1700)
-		SET(_OCULUS_MSVC_DIR "VS2012")
-	ENDIF()
-	# Visual Studio 2013
-	IF (${MSVC_VERSION} EQUAL 1800)
-		SET(_OCULUS_MSVC_DIR "VS2013")
-	ENDIF()
 	# Visual Studio 2015
 	IF (${MSVC_VERSION} EQUAL 1900)
 		SET(_OCULUS_MSVC_DIR "VS2015")
 	ENDIF()
 	# Visual Studio 2017
 	IF (${MSVC_VERSION} GREATER_EQUAL 1910 AND ${MSVC_VERSION} LESS_EQUAL 1919)
+		SET(_OCULUS_MSVC_DIR "VS2017")
+	ENDIF()
+	
+	# Visual Studio 2019
+	IF (${MSVC_VERSION} GREATER_EQUAL 1920)
+		# Oculus is currently using VS2017 libraries for Visual Studio 2019
 		SET(_OCULUS_MSVC_DIR "VS2017")
 	ENDIF()
 ENDIF()
