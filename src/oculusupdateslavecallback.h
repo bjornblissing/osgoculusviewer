@@ -8,29 +8,25 @@
 #ifndef _OSG_OCULUSUPDATESLAVECALLBACK_H_
 #define _OSG_OCULUSUPDATESLAVECALLBACK_H_
 
-#include <osgViewer/View>
-
 #include "oculusdevice.h"
 
+#include <osgViewer/View>
 
-struct OculusUpdateSlaveCallback : public osg::View::Slave::UpdateSlaveCallback
-{
-	enum CameraType
-	{
-		LEFT_CAMERA,
-		RIGHT_CAMERA
-	};
+struct OculusUpdateSlaveCallback : public osg::View::Slave::UpdateSlaveCallback {
+  enum CameraType { LEFT_CAMERA, RIGHT_CAMERA };
 
-	OculusUpdateSlaveCallback(CameraType cameraType, OculusDevice* device, OculusSwapCallback* swapCallback) :
-		m_cameraType(cameraType),
-		m_device(device),
-		m_swapCallback(swapCallback) {}
+  OculusUpdateSlaveCallback(CameraType cameraType,
+                            OculusDevice* device,
+                            OculusSwapCallback* swapCallback) :
+      m_cameraType(cameraType),
+      m_device(device),
+      m_swapCallback(swapCallback) {}
 
-	virtual void updateSlave(osg::View& view, osg::View::Slave& slave);
+  virtual void updateSlave(osg::View& view, osg::View::Slave& slave);
 
-	CameraType m_cameraType;
-	osg::ref_ptr<OculusDevice> m_device;
-	osg::ref_ptr<OculusSwapCallback> m_swapCallback;
+  CameraType m_cameraType;
+  osg::ref_ptr<OculusDevice> m_device;
+  osg::ref_ptr<OculusSwapCallback> m_swapCallback;
 };
 
-#endif // _OSG_OCULUSUPDATESLAVECALLBACK_H_
+#endif  // _OSG_OCULUSUPDATESLAVECALLBACK_H_
