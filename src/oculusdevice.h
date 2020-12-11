@@ -42,7 +42,7 @@ public:
 
 	void resetSensorOrientation() const { ovr_RecenterTrackingOrigin(m_session); }
 
-	void updatePose(long long frameIndex);
+	void updatePose();
 
 	osg::Vec3 position(Eye eye) const;
 	osg::Quat orientation(Eye eye) const;

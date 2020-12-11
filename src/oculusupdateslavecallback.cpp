@@ -14,7 +14,7 @@ void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& s
 	{
 		m_device->waitToBeginFrame(m_swapCallback->frameIndex());
 		m_device->beginFrame(m_swapCallback->frameIndex());
-		m_device->updatePose(m_swapCallback->frameIndex());
+		m_device->updatePose();
 	}
 
 	// Get the view and projection matrix for the view

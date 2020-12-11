@@ -135,20 +135,21 @@ bool OculusDevice::hmdPresent() const
 	return false;
 }
 
-void OculusDevice::updatePose(long long frameIndex) 
+void OculusDevice::updatePose()
 {
 	// Call getEyeRenderDesc() each frame, since the returned values (e.g. HmdToEyePose) may change at runtime.
 	getEyeRenderDesc();
-
 	ovrPosef HmdToEyePose[2] = { m_eyeRenderDesc[0].HmdToEyePose, m_eyeRenderDesc[1].HmdToEyePose };
-	ovr_GetEyePoses(m_session, frameIndex, ovrTrue, HmdToEyePose, m_eyeRenderPose, &m_sensorSampleTime);
+
+	// Update the tracking state
+	ovrTrackingState trackingState = ovr_GetTrackingState(m_session, m_sensorSampleTime, ovrTrue);
+	m_headPose = trackingState.HeadPose;
+	ovr_CalcEyePoses(m_headPose.ThePose, HmdToEyePose, m_eyeRenderPose);
 
 	// Update touch controllers
 	ovr_GetInputState(m_session, ovrControllerType_Touch, &m_controllerState);
 
 	// update touch pose
-	ovrTrackingState trackingState = ovr_GetTrackingState(m_session, 0.0, false);
-	m_headPose = trackingState.HeadPose;
 	m_handPoses[ovrHand_Left] = trackingState.HandPoses[ovrHand_Left];
 	m_handPoses[ovrHand_Right] = trackingState.HandPoses[ovrHand_Right];
 }
