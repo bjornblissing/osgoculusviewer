@@ -2,10 +2,6 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.14)
 
 PROJECT(OsgOculusViewer LANGUAGES CXX)
 
-# Check for availablity of Interprocedural Optimization, i.e. Link time code generation
-INCLUDE(CheckIPOSupported)
-CHECK_IPO_SUPPORTED(RESULT IPO_SUPPORTED)
-
 SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Build example viewer
@@ -45,6 +41,11 @@ IF(CMAKE_CONFIGURATION_TYPES)
 		 "Reset the configurations to what we need"
 		 FORCE)
 	MARK_AS_ADVANCED(CMAKE_CONFIGURATION_TYPES)
+ENDIF()
+
+IF(MSVC)
+	# Use Link Time Code Generation
+	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG")
 ENDIF()
 
 # Compile subdirectory

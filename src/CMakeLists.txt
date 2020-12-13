@@ -6,8 +6,12 @@ SET(TARGET_TARGETNAME_VIEWER OculusViewerExample)
 SET(TARGET_SRC
 	oculusviewer.cpp
 	oculusdevice.cpp
+	oculusdrawcallbacks.cpp
 	oculuseventhandler.cpp
-	oculustexture.cpp
+	oculusgraphicsoperation.cpp
+	oculusmirrortexture.cpp
+	oculusswapcallback.cpp
+	oculustexturebuffer.cpp
 	oculusupdateslavecallback.cpp
 	oculustouchmanipulator.cpp
 )
@@ -15,10 +19,15 @@ SET(TARGET_SRC
 SET(TARGET_H
 	oculusviewer.h
 	oculusdevice.h
+	oculusdrawcallbacks.h
 	oculuseventhandler.h
-	oculustexture.h
+	oculusgraphicsoperation.h
+	oculusmirrortexture.h
+	oculusswapcallback.h
+	oculustexturebuffer.h
 	oculusupdateslavecallback.h
 	oculustouchmanipulator.h
+	glextensions.h
 )
 
 #####################################################################
@@ -31,6 +40,7 @@ TARGET_COMPILE_OPTIONS(${TARGET_LIBRARYNAME}
 	PUBLIC 
 		$<$<CONFIG:Release>:/MT>
 		$<$<CONFIG:Debug>:/MTd>
+		$<$<CXX_COMPILER_ID:MSVC>:/MP>
 	PRIVATE
 		$<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
@@ -39,6 +49,8 @@ TARGET_INCLUDE_DIRECTORIES(${TARGET_LIBRARYNAME}
 	PUBLIC
 		${OPENSCENEGRAPH_INCLUDE_DIR}
 		${OCULUS_SDK_INCLUDE_DIRS}
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+		$<INSTALL_INTERFACE:include> 
 	PRIVATE
 		${OPENGL_INCLUDE_DIR}
 )
@@ -60,11 +72,6 @@ TARGET_COMPILE_DEFINITIONS(${TARGET_LIBRARYNAME}
 		$<$<CXX_COMPILER_ID:MSVC>:WIN32_LEAN_AND_MEAN>
 		$<$<CXX_COMPILER_ID:MSVC>:NOMINMAX>
 )
-
-IF (IPO_SUPPORTED)
-	# Enable link time code generation
-	SET_PROPERTY(TARGET ${TARGET_LIBRARYNAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-ENDIF()
 
 #####################################################################
 # Create example
@@ -88,10 +95,6 @@ IF(OSGOCULUSVIEWER_BUILD_EXAMPLE)
 	SET_TARGET_PROPERTIES(${TARGET_TARGETNAME_VIEWER} PROPERTIES 
 		VS_DEBUGGER_ENVIRONMENT "PATH=%PATH%;${OSG_DIR}/bin;${OSG_THIRD_PARTY_DIR}/bin;"
 	)
-	IF (IPO_SUPPORTED)
-		# Enable link time code generation
-		SET_PROPERTY(TARGET ${TARGET_TARGETNAME_VIEWER} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-	ENDIF()
 
 ENDIF()
 
@@ -101,9 +104,17 @@ ENDIF()
 
 INSTALL(FILES ${TARGET_H} DESTINATION include)
 
-INSTALL(TARGETS ${TARGET_LIBRARYNAME}
+INSTALL(TARGETS ${TARGET_LIBRARYNAME} EXPORT OsgOculusViewerTargets
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
+	RUNTIME DESTINATION bin
+	INCLUDES DESTIONATION include
+)
+
+install(EXPORT OsgOculusViewerTargets
+	FILE OsgOculusViewerTargets.cmake
+	NAMESPACE OsgOculusViewer::
+	DESTINATION lib/cmake/osgoculusviewer
 )
 
 INSTALL(FILES "${PROJECT_SOURCE_DIR}/README.md" DESTINATION . RENAME readme.txt)

@@ -5,14 +5,16 @@
  *      Author: Bjorn Blissing
  */
 
-#include "oculuseventhandler.h"
-#include "oculustouchmanipulator.h"
-#include "oculusviewer.h"
-
 #include <osgDB/ReadFile>
 #include <osgGA/TrackballManipulator>
 #include <osgUtil/GLObjectsVisitor>
 #include <osgViewer/Viewer>
+
+#include <oculusdevice.h>
+#include <oculuseventhandler.h>
+#include <oculusgraphicsoperation.h>
+#include <oculustouchmanipulator.h>
+#include <oculusviewer.h>
 
 int main(int argc, char** argv) {
   // use an ArgumentParser object to manage the program arguments.
@@ -94,7 +96,7 @@ int main(int argc, char** argv) {
 #endif
 
   osg::ref_ptr<OculusViewer> oculusViewer =
-    new OculusViewer(&viewer, oculusDevice, oculusRealizeOperation);
+    new OculusViewer(&viewer, oculusDevice.get(), oculusRealizeOperation.get());
   oculusViewer->addChild(loadedModel.get());
   viewer.setSceneData(oculusViewer.get());
 
@@ -106,9 +108,7 @@ int main(int argc, char** argv) {
   // Add statistics handler
   viewer.addEventHandler(new osgViewer::StatsHandler);
 
-  viewer.addEventHandler(new OculusEventHandler(oculusDevice));
-
+  viewer.addEventHandler(new OculusEventHandler(oculusDevice.get()));
   viewer.run();
-
   return 0;
 }

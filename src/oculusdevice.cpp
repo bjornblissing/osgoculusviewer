@@ -6,14 +6,16 @@
  *
  */
 
-#include "oculusdevice.h"
+#include <osg/Version>
+
+#include <oculusdevice.h>
+#include <oculusdrawcallbacks.h>
+#include <oculusmirrortexture.h>
+#include <oculustexturebuffer.h>
 
 #ifdef _WIN32
   #include <Windows.h>
 #endif
-
-#include <osgViewer/GraphicsWindow>
-#include <osgViewer/Renderer>
 
 OculusDevice::OculusDevice(float nearClip,
                            float farClip,
@@ -22,23 +24,13 @@ OculusDevice::OculusDevice(float nearClip,
                            const int samples,
                            TrackingOrigin origin,
                            const int mirrorTextureWidth) :
-    m_session(nullptr),
-    m_hmdDesc(),
     m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
     m_worldUnitsPerMetre(worldUnitsPerMetre),
-    m_mirrorTexture(nullptr),
     m_mirrorTextureWidth(mirrorTextureWidth),
-    m_position(osg::Vec3(0.0f, 0.0f, 0.0f)),
-    m_orientation(osg::Quat(0.0f, 0.0f, 0.0f, 1.0f)),
     m_nearClip(nearClip),
     m_farClip(farClip),
     m_samples(samples),
-    m_begunFrame(false),
     m_origin(origin) {
-  for (int i = 0; i < 2; i++) {
-    m_textureBuffer[i] = nullptr;
-  }
-
   trySetProcessAsHighPriority();
 
   ovrResult result = ovr_Initialize(nullptr);
@@ -65,7 +57,7 @@ OculusDevice::OculusDevice(float nearClip,
   printHMDDebugInfo();
 }
 
-void OculusDevice::createRenderBuffers(osg::ref_ptr<osg::State> state) {
+void OculusDevice::createRenderBuffers(osg::State* state) {
   // Compute recommended render texture size
   if (m_pixelsPerDisplayPixel > 1.0f) {
     osg::notify(osg::WARN) << "Warning: Pixel per display pixel is set to a value higher than 1.0."
@@ -107,7 +99,7 @@ void OculusDevice::destroyTextures(osg::GraphicsContext* gc) {
   // Delete texture and depth buffers
   for (int i = 0; i < 2; i++) {
     if (m_textureBuffer[i].valid()) {
-      m_textureBuffer[i]->destroy();
+      m_textureBuffer[i]->destroy(gc);
     }
   }
 }
@@ -233,11 +225,11 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye,
   camera->setGraphicsContext(gc);
 
   if (buffer->colorBuffer()) {
-    camera->attach(osg::Camera::COLOR_BUFFER, buffer->colorBuffer().get());
+    camera->attach(osg::Camera::COLOR_BUFFER, buffer->colorBuffer());
   }
 
   if (buffer->depthBuffer()) {
-    camera->attach(osg::Camera::DEPTH_BUFFER, buffer->depthBuffer().get());
+    camera->attach(osg::Camera::DEPTH_BUFFER, buffer->depthBuffer());
   }
 
   if (m_samples != 0) {
@@ -251,8 +243,8 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye,
     camera->setInitialDrawCallback(new OculusInitialDrawCallback());
   }
 
-  camera->setPreDrawCallback(new OculusPreDrawCallback(camera.get(), buffer.get()));
-  camera->setFinalDrawCallback(new OculusPostDrawCallback(camera.get(), buffer.get()));
+  camera->setPreDrawCallback(new OculusPreDrawCallback(camera, buffer));
+  camera->setFinalDrawCallback(new OculusPostDrawCallback(camera, buffer));
 
   return camera.release();
 }
@@ -386,6 +378,9 @@ osg::GraphicsContext::Traits* OculusDevice::graphicsContextTraits() const {
 
 /* Protected functions */
 OculusDevice::~OculusDevice() {
+  // Remove any performance hud
+  setPerfHudMode(0);
+
   // Destroy the textures if before OSG 3.5.4
   // For version 3.5.4 or later this should be handled
   // by a CleanUpOperation set in the viewer (see the OculusViewerExample)
@@ -450,49 +445,5 @@ void OculusDevice::trySetProcessAsHighPriority() const {
 #ifdef _WIN32
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #endif
-  }
-}
-
-void OculusRealizeOperation::operator()(osg::GraphicsContext* gc) {
-  if (!m_realized) {
-    OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
-    gc->makeCurrent();
-
-    if (osgViewer::GraphicsWindow* window = dynamic_cast<osgViewer::GraphicsWindow*>(gc)) {
-      // Run wglSwapIntervalEXT(0) to force VSync Off
-      window->setSyncToVBlank(false);
-    }
-
-    osg::ref_ptr<osg::State> state = gc->getState();
-    m_device->createRenderBuffers(state);
-    // Init the oculus system
-    m_device->init();
-  }
-
-  m_realized = true;
-}
-
-void OculusCleanUpOperation::operator()(osg::GraphicsContext* gc) {
-  gc->makeCurrent();
-  m_device->destroyTextures(gc);
-}
-
-void OculusSwapCallback::swapBuffersImplementation(osg::GraphicsContext* gc) {
-  // Submit rendered frame to compositor
-  m_device->submitFrame(m_frameIndex++);
-
-  // Blit mirror texture to backbuffer
-  m_device->blitMirrorTexture(gc);
-
-  // Run the default system swapBufferImplementation
-  gc->swapBuffersImplementation();
-}
-
-void OculusInitialDrawCallback::operator()(osg::RenderInfo& renderInfo) const {
-  osg::GraphicsOperation* graphicsOperation = renderInfo.getCurrentCamera()->getRenderer();
-  osgViewer::Renderer* renderer = dynamic_cast<osgViewer::Renderer*>(graphicsOperation);
-  if (renderer != nullptr) {
-    // Disable normal OSG FBO camera setup because it will undo the MSAA FBO configuration.
-    renderer->setCameraRequiresSetUp(false);
   }
 }

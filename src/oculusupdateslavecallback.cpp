@@ -5,7 +5,9 @@
  *      Author: Björn Blissing
  */
 
-#include "oculusupdateslavecallback.h"
+#include <oculusdevice.h>
+#include <oculusswapcallback.h>
+#include <oculusupdateslavecallback.h>
 
 void OculusUpdateSlaveCallback::updateSlave(osg::View& view, osg::View::Slave& slave) {
   // We need to call these functions for the first camera, which currently is the left camera

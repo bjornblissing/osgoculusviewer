@@ -5,11 +5,14 @@
  *      Author: Jan Ciger & Björn Blissing
  */
 
-#include "oculusviewer.h"
+#include <osgViewer/Viewer>
 
-#include "oculusupdateslavecallback.h"
+#include <oculusdevice.h>
+#include <oculusgraphicsoperation.h>
+#include <oculusswapcallback.h>
+#include <oculusupdateslavecallback.h>
+#include <oculusviewer.h>
 
-/* Public functions */
 void OculusViewer::traverse(osg::NodeVisitor& nv) {
   // Must be realized before any traversal
   if (m_realizeOperation->realized()) {
@@ -21,12 +24,11 @@ void OculusViewer::traverse(osg::NodeVisitor& nv) {
   osg::Group::traverse(nv);
 }
 
-/* Protected functions */
 void OculusViewer::configure() {
   osg::ref_ptr<osg::GraphicsContext> gc = m_viewer->getCamera()->getGraphicsContext();
 
   // Attach a callback to detect swap
-  osg::ref_ptr<OculusSwapCallback> swapCallback = new OculusSwapCallback(m_device);
+  osg::ref_ptr<OculusSwapCallback> swapCallback = new OculusSwapCallback(m_device.get());
   gc->setSwapCallback(swapCallback.get());
 
   osg::ref_ptr<osg::Camera> camera = m_viewer->getCamera();

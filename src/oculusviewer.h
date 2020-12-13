@@ -8,33 +8,31 @@
 #ifndef _OSG_OCULUSVIEWER_H_
 #define _OSG_OCULUSVIEWER_H_
 
-#include "oculusdevice.h"
-
 #include <osg/Group>
-#include <osgViewer/Viewer>
 
 // Forward declaration
 namespace osgViewer {
-class View;
+class Viewer;
 }
+
+class OculusDevice;
+class OculusRealizeOperation;
 
 class OculusViewer : public osg::Group {
  public:
   OculusViewer(osgViewer::Viewer* viewer,
-               osg::ref_ptr<OculusDevice> dev,
-               osg::ref_ptr<OculusRealizeOperation> realizeOperation) :
+               OculusDevice* dev,
+               OculusRealizeOperation* realizeOperation) :
       osg::Group(),
-      m_configured(false),
       m_viewer(viewer),
       m_device(dev),
-      m_realizeOperation(realizeOperation){};
-  virtual void traverse(osg::NodeVisitor& nv);
+      m_realizeOperation(realizeOperation) {}
+  void traverse(osg::NodeVisitor& nv) override;
 
- protected:
-  ~OculusViewer(){};
-  virtual void configure();
+ private:
+  void configure();
 
-  bool m_configured;
+  bool m_configured = {false};
 
   osg::observer_ptr<osgViewer::Viewer> m_viewer;
   osg::observer_ptr<OculusDevice> m_device;

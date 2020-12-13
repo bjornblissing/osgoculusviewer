@@ -5,9 +5,8 @@
  *      Author: Bjorn Blissing
  */
 
-#include "oculuseventhandler.h"
-
-#include "oculusdevice.h"
+#include <oculusdevice.h>
+#include <oculuseventhandler.h>
 
 bool OculusEventHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& ad) {
   switch (ea.getEventType()) {

@@ -5,7 +5,8 @@
  *      Author: Björn Blissing
  */
 
-#include "oculustouchmanipulator.h"
+#include <oculusdevice.h>
+#include <oculustouchmanipulator.h>
 
 void OculusTouchManipulator::setNode(osg::Node* node) {
   _node = node;

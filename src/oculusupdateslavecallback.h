@@ -8,9 +8,11 @@
 #ifndef _OSG_OCULUSUPDATESLAVECALLBACK_H_
 #define _OSG_OCULUSUPDATESLAVECALLBACK_H_
 
-#include "oculusdevice.h"
-
 #include <osgViewer/View>
+
+// Forward declaration
+class OculusDevice;
+class OculusSwapCallback;
 
 struct OculusUpdateSlaveCallback : public osg::View::Slave::UpdateSlaveCallback {
   enum CameraType { LEFT_CAMERA, RIGHT_CAMERA };
@@ -22,11 +24,12 @@ struct OculusUpdateSlaveCallback : public osg::View::Slave::UpdateSlaveCallback 
       m_device(device),
       m_swapCallback(swapCallback) {}
 
-  virtual void updateSlave(osg::View& view, osg::View::Slave& slave);
+  void updateSlave(osg::View& view, osg::View::Slave& slave) override;
 
+ private:
   CameraType m_cameraType;
-  osg::ref_ptr<OculusDevice> m_device;
-  osg::ref_ptr<OculusSwapCallback> m_swapCallback;
+  osg::observer_ptr<OculusDevice> m_device;
+  osg::observer_ptr<OculusSwapCallback> m_swapCallback;
 };
 
 #endif  // _OSG_OCULUSUPDATESLAVECALLBACK_H_

@@ -8,7 +8,15 @@
 #ifndef _OSG_OCULUSDEVICE_H_
 #define _OSG_OCULUSDEVICE_H_
 
-#include "oculustexture.h"
+#include <osg/GraphicsContext>
+#include <osg/State>
+#include <osg/Transform>
+
+#include <OVR_CAPI.h>
+
+// Forward declarations
+class OculusTextureBuffer;
+class OculusMirrorTexture;
 
 class OculusDevice : public osg::Referenced {
  public:
@@ -23,7 +31,7 @@ class OculusDevice : public osg::Referenced {
                const int samples,
                TrackingOrigin origin,
                const int mirrorTextureWidth);
-  void createRenderBuffers(osg::ref_ptr<osg::State> state);
+  void createRenderBuffers(osg::State* state);
   void init();
 
   void destroyTextures(osg::GraphicsContext* gc);
@@ -86,8 +94,12 @@ class OculusDevice : public osg::Referenced {
 
   osg::GraphicsContext::Traits* graphicsContextTraits() const;
 
- protected:
-  ~OculusDevice();  // Since we inherit from osg::Referenced we must make destructor protected
+ private:
+  ~OculusDevice();  // Since we inherit from osg::Referenced we must make destructor private
+  OculusDevice(const OculusDevice&) = delete;
+  OculusDevice& operator=(const OculusDevice&) = delete;
+  OculusDevice(OculusDevice&&) = delete;
+  OculusDevice& operator=(OculusDevice&&) = delete;
 
   void printHMDDebugInfo();
 
@@ -99,8 +111,8 @@ class OculusDevice : public osg::Referenced {
 
   void trySetProcessAsHighPriority() const;
 
-  ovrSession m_session;
-  ovrHmdDesc m_hmdDesc;
+  ovrSession m_session = {nullptr};
+  ovrHmdDesc m_hmdDesc{};
   ovrInputState m_controllerState;
   ovrPoseStatef m_handPoses[2];
   ovrPoseStatef m_headPose;
@@ -108,8 +120,8 @@ class OculusDevice : public osg::Referenced {
   const float m_pixelsPerDisplayPixel;
   const float m_worldUnitsPerMetre;
 
-  osg::ref_ptr<OculusTextureBuffer> m_textureBuffer[2];
-  osg::ref_ptr<OculusMirrorTexture> m_mirrorTexture;
+  osg::ref_ptr<OculusTextureBuffer> m_textureBuffer[2] = {nullptr, nullptr};
+  osg::ref_ptr<OculusMirrorTexture> m_mirrorTexture = {nullptr};
 
   unsigned int m_mirrorTextureWidth;
 
@@ -120,66 +132,14 @@ class OculusDevice : public osg::Referenced {
   ovrLayerEyeFovDepth m_layerEyeFovDepth;
   ovrTimewarpProjectionDesc m_posTimewarpProjectionDesc = {};
 
-  osg::Vec3 m_position;
-  osg::Quat m_orientation;
+  osg::Vec3 m_position{};
+  osg::Quat m_orientation{};
 
   float m_nearClip;
   float m_farClip;
-  int m_samples;
-  bool m_begunFrame;
+  int m_samples = {0};
+  bool m_begunFrame = {false};
   TrackingOrigin m_origin;
-
- private:
-  OculusDevice(const OculusDevice&);             // Do not allow copy
-  OculusDevice& operator=(const OculusDevice&);  // Do not allow assignment operator.
-};
-
-class OculusRealizeOperation : public osg::GraphicsOperation {
- public:
-  explicit OculusRealizeOperation(osg::ref_ptr<OculusDevice> device) :
-      osg::GraphicsOperation("OculusRealizeOperation", false),
-      m_device(device),
-      m_realized(false) {}
-  virtual void operator()(osg::GraphicsContext* gc);
-  bool realized() const {
-    return m_realized;
-  }
-
- protected:
-  OpenThreads::Mutex _mutex;
-  osg::observer_ptr<OculusDevice> m_device;
-  bool m_realized;
-};
-
-class OculusCleanUpOperation : public osg::GraphicsOperation {
- public:
-  explicit OculusCleanUpOperation(osg::ref_ptr<OculusDevice> device) :
-      osg::GraphicsOperation("OculusCleanupOperation", false),
-      m_device(device) {}
-  virtual void operator()(osg::GraphicsContext* gc);
-
- protected:
-  osg::observer_ptr<OculusDevice> m_device;
-};
-
-class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
- public:
-  explicit OculusSwapCallback(osg::ref_ptr<OculusDevice> device) :
-      m_device(device),
-      m_frameIndex(0) {}
-  void swapBuffersImplementation(osg::GraphicsContext* gc);
-  long long frameIndex() const {
-    return m_frameIndex;
-  }
-
- private:
-  osg::observer_ptr<OculusDevice> m_device;
-  long long m_frameIndex;
-};
-
-class OculusInitialDrawCallback : public osg::Camera::DrawCallback {
- public:
-  virtual void operator()(osg::RenderInfo& renderInfo) const;
 };
 
 #endif /* _OSG_OCULUSDEVICE_H_ */

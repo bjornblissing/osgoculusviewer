@@ -1,5 +1,5 @@
 /*
- * oculustexture.cpp
+ * oculustexturebuffer.cpp
  *
  *  Created on: Dec 05, 2017
  *      Author: Bjorn Blissing
@@ -8,29 +8,11 @@
  *      Author: Chris Denham
  */
 
-#include "oculustexture.h"
-
 #include <osgViewer/Renderer>
 
-#ifndef GL_TEXTURE_MAX_LEVEL
-  #define GL_TEXTURE_MAX_LEVEL 0x813D
-#endif
-
-static const OSG_GLExtensions* getGLExtensions(const osg::State& state) {
-#if (OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
-  return state.get<osg::GLExtensions>();
-#else
-  return osg::FBOExtensions::instance(state.getContextID(), true);
-#endif
-}
-
-static const OSG_Texture_Extensions* getTextureExtensions(const osg::State& state) {
-#if (OSG_VERSION_GREATER_OR_EQUAL(3, 4, 0))
-  return state.get<osg::GLExtensions>();
-#else
-  return osg::Texture::getExtensions(state.getContextID(), true);
-#endif
-}
+#include <glextensions.h>
+#include <oculusdrawcallbacks.h>
+#include <oculustexturebuffer.h>
 
 static osg::FrameBufferObject* getFrameBufferObject(osg::RenderInfo& renderInfo) {
   osg::Camera* camera = renderInfo.getCurrentCamera();
@@ -51,37 +33,21 @@ static osg::FrameBufferObject* getFrameBufferObject(osg::RenderInfo& renderInfo)
   return nullptr;
 }
 
-void OculusPreDrawCallback::operator()(osg::RenderInfo& renderInfo) const {
-  m_textureBuffer->onPreRender(renderInfo);
-}
-
-void OculusPostDrawCallback::operator()(osg::RenderInfo& renderInfo) const {
-  m_textureBuffer->onPostRender(renderInfo);
-}
-
-/* Public functions */
 OculusTextureBuffer::OculusTextureBuffer(const ovrSession& session,
-                                         osg::ref_ptr<osg::State> state,
+                                         osg::State* state,
                                          const ovrSizei& size,
                                          int msaaSamples) :
     m_session(session),
-    m_colorTextureSwapChain(nullptr),
-    m_colorBuffer(nullptr),
-    m_depthBuffer(nullptr),
     m_textureSize(osg::Vec2i(size.w, size.h)),
-    m_Oculus_FBO(0),
-    m_MSAA_FBO(0),
-    m_MSAA_ColorTex(0),
-    m_MSAA_DepthTex(0),
     m_samples(msaaSamples) {
   if (msaaSamples == 0) {
-    setup(*state);
+    setup(state);
   } else {
-    setupMSAA(*state);
+    setupMSAA(state);
   }
 }
 
-void OculusTextureBuffer::setup(osg::State& state) {
+void OculusTextureBuffer::setup(osg::State* state) {
   ovrTextureSwapChainDesc desc = {};
   desc.Type = ovrTexture_2D;
   desc.ArraySize = 1;
@@ -109,7 +75,7 @@ void OculusTextureBuffer::setup(osg::State& state) {
 
       textureObject->setAllocated(true);
 
-      texture->setTextureObject(state.getContextID(), textureObject.get());
+      texture->setTextureObject(state->getContextID(), textureObject.get());
 
       texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
       texture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
@@ -150,7 +116,7 @@ void OculusTextureBuffer::setup(osg::State& state) {
 
       textureObject->setAllocated(true);
 
-      texture->setTextureObject(state.getContextID(), textureObject.get());
+      texture->setTextureObject(state->getContextID(), textureObject.get());
 
       texture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
       texture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
@@ -168,8 +134,8 @@ void OculusTextureBuffer::setup(osg::State& state) {
   }
 }
 
-void OculusTextureBuffer::setupMSAA(osg::State& state) {
-  const OSG_GLExtensions* fbo_ext = getGLExtensions(state);
+void OculusTextureBuffer::setupMSAA(osg::State* state) {
+  const OSG_GLExtensions* fbo_ext = getGLExtensions(*state);
 
   ovrTextureSwapChainDesc desc = {};
   desc.Type = ovrTexture_2D;
@@ -178,7 +144,7 @@ void OculusTextureBuffer::setupMSAA(osg::State& state) {
   desc.Height = m_textureSize.y();
   desc.MipLevels = 1;
   desc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
-  desc.SampleCount = 1;
+  desc.SampleCount = 1;  // The code doesn't currently handle MSAA textures.
   desc.StaticImage = ovrFalse;
 
   {
@@ -230,7 +196,7 @@ void OculusTextureBuffer::setupMSAA(osg::State& state) {
   // We don't want to support MIPMAP so, ensure only level 0 is allowed.
   const int maxTextureLevel = 0;
 
-  const OSG_Texture_Extensions* extensions = getTextureExtensions(state);
+  const OSG_Texture_Extensions* extensions = getTextureExtensions(*state);
 
   // Create MSAA color buffer
   glGenTextures(1, &m_MSAA_ColorTex);
@@ -402,65 +368,35 @@ void OculusTextureBuffer::onPostRender(osg::RenderInfo& renderInfo) {
   fbo_ext->glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
 }
 
-void OculusTextureBuffer::destroy() {
+void OculusTextureBuffer::destroy(osg::GraphicsContext* gc) {
   ovr_DestroyTextureSwapChain(m_session, m_colorTextureSwapChain);
+  m_colorTextureSwapChain = nullptr;
   ovr_DestroyTextureSwapChain(m_session, m_depthTextureSwapChain);
-}
+  m_depthTextureSwapChain = nullptr;
 
-OculusMirrorTexture::OculusMirrorTexture(ovrSession& session,
-                                         osg::ref_ptr<osg::State> state,
-                                         int width,
-                                         int height) :
-    m_session(session),
-    m_texture(nullptr),
-    m_width(width),
-    m_height(height) {
-  ovrMirrorTextureDesc desc;
-  memset(&desc, 0, sizeof(desc));
-  desc.Width = width;
-  desc.Height = height;
-  desc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
-
-  // Create mirror texture and an FBO used to copy mirror texture to back buffer
-  ovrResult result = ovr_CreateMirrorTextureWithOptionsGL(session, &desc, &m_texture);
-  if (!OVR_SUCCESS(result)) {
-    osg::notify(osg::DEBUG_INFO) << "Failed to create mirror texture." << std::endl;
-  }
-
-  // Configure the mirror read buffer
-  GLuint texId;
-  ovr_GetMirrorTextureBufferGL(session, m_texture, &texId);
-  const OSG_GLExtensions* fbo_ext = getGLExtensions(*state);
-  fbo_ext->glGenFramebuffers(1, &m_mirrorFBO);
-  fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
-  fbo_ext->glFramebufferTexture2D(GL_READ_FRAMEBUFFER_EXT,
-                                  GL_COLOR_ATTACHMENT0_EXT,
-                                  GL_TEXTURE_2D,
-                                  texId,
-                                  0);
-  fbo_ext->glFramebufferRenderbuffer(GL_READ_FRAMEBUFFER_EXT,
-                                     GL_DEPTH_ATTACHMENT_EXT,
-                                     GL_RENDERBUFFER_EXT,
-                                     0);
-  fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
-}
-
-void OculusMirrorTexture::blitTexture(osg::GraphicsContext* gc) {
-  const OSG_GLExtensions* fbo_ext = getGLExtensions(*(gc->getState()));
-  // Blit mirror texture to back buffer
-  fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);
-  fbo_ext->glBindFramebuffer(GL_DRAW_FRAMEBUFFER_EXT, 0);
-  GLint w = m_width;
-  GLint h = m_height;
-  fbo_ext->glBlitFramebuffer(0, h, w, 0, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-  fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
-}
-
-void OculusMirrorTexture::destroy(osg::GraphicsContext* gc) {
   if (gc) {
     const OSG_GLExtensions* fbo_ext = getGLExtensions(*(gc->getState()));
-    fbo_ext->glDeleteFramebuffers(1, &m_mirrorFBO);
+    if (m_Oculus_FBO) {
+      fbo_ext->glDeleteFramebuffers(1, &m_Oculus_FBO);
+      m_Oculus_FBO = 0;
+    }
+
+    if (m_MSAA_FBO) {
+      fbo_ext->glDeleteFramebuffers(1, &m_MSAA_FBO);
+      m_MSAA_FBO = 0;
+    }
+
+    if (m_MSAA_ColorTex) {
+      fbo_ext->glDeleteFramebuffers(1, &m_MSAA_ColorTex);
+      m_MSAA_ColorTex = 0;
+    }
+
+    if (m_MSAA_DepthTex) {
+      fbo_ext->glDeleteFramebuffers(1, &m_MSAA_DepthTex);
+      m_MSAA_DepthTex = 0;
+    }
   }
 
-  ovr_DestroyMirrorTexture(m_session, m_texture);
+  m_colorBuffer = nullptr;
+  m_depthBuffer = nullptr;
 }
