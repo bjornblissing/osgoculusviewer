@@ -16,18 +16,19 @@ SET(TARGET_SRC
 	oculustouchmanipulator.cpp
 )
 # Header files for library
+SET(HEADER_PATH ../include/)
 SET(TARGET_H
-	oculusviewer.h
-	oculusdevice.h
-	oculusdrawcallbacks.h
-	oculuseventhandler.h
-	oculusgraphicsoperation.h
-	oculusmirrortexture.h
-	oculusswapcallback.h
-	oculustexturebuffer.h
-	oculusupdateslavecallback.h
-	oculustouchmanipulator.h
-	glextensions.h
+	${HEADER_PATH}/oculusviewer.h
+	${HEADER_PATH}/oculusdevice.h
+	${HEADER_PATH}/oculusdrawcallbacks.h
+	${HEADER_PATH}/oculuseventhandler.h
+	${HEADER_PATH}/oculusgraphicsoperation.h
+	${HEADER_PATH}/oculusmirrortexture.h
+	${HEADER_PATH}/oculusswapcallback.h
+	${HEADER_PATH}/oculustexturebuffer.h
+	${HEADER_PATH}/oculusupdateslavecallback.h
+	${HEADER_PATH}/oculustouchmanipulator.h
+	${HEADER_PATH}/glextensions.h
 )
 
 #####################################################################
@@ -49,7 +50,7 @@ TARGET_INCLUDE_DIRECTORIES(${TARGET_LIBRARYNAME}
 	PUBLIC
 		${OPENSCENEGRAPH_INCLUDE_DIR}
 		${OCULUS_SDK_INCLUDE_DIRS}
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${HEADER_PATH}>
 		$<INSTALL_INTERFACE:include> 
 	PRIVATE
 		${OPENGL_INCLUDE_DIR}
