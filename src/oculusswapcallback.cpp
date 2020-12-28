@@ -12,8 +12,10 @@ void OculusSwapCallback::swapBuffersImplementation(osg::GraphicsContext* gc) {
   // Submit rendered frame to compositor
   m_device->submitFrame(m_frameIndex++);
 
-  // Blit mirror texture to backbuffer
-  m_device->blitMirrorTexture(gc);
+  // Blit mirror texture to backbuffer, 
+  // if not already doing the blit on post draw
+  if (!m_device->blitOnPostDraw())
+    m_device->blitMirrorTexture(gc);
 
   // Run the default system swapBufferImplementation
   gc->swapBuffersImplementation();

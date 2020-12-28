@@ -48,7 +48,8 @@ int main(int argc, char** argv) {
                                                              worldUnitsPerMetre,
                                                              samples,
                                                              origin,
-                                                             mirrorTextureWidth);
+                                                             mirrorTextureWidth,
+                                                             false);
 
   // Exit if we do not have a valid HMD present
   if (!oculusDevice->hmdPresent()) {

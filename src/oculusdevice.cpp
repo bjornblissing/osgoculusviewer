@@ -23,14 +23,16 @@ OculusDevice::OculusDevice(float nearClip,
                            const float worldUnitsPerMetre,
                            const int samples,
                            TrackingOrigin origin,
-                           const int mirrorTextureWidth) :
+                           const int mirrorTextureWidth,
+                           bool blitOnPostDraw) :
     m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
     m_worldUnitsPerMetre(worldUnitsPerMetre),
     m_mirrorTextureWidth(mirrorTextureWidth),
     m_nearClip(nearClip),
     m_farClip(farClip),
     m_samples(samples),
-    m_origin(origin) {
+    m_origin(origin),
+    m_blitOnPostDraw(blitOnPostDraw) {
   trySetProcessAsHighPriority();
 
   ovrResult result = ovr_Initialize(nullptr);
@@ -210,7 +212,7 @@ void OculusDevice::updateTimewarpProjection(Eye eye) {
 osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye,
                                            osg::Transform::ReferenceFrame referenceFrame,
                                            const osg::Vec4& clearColor,
-                                           osg::GraphicsContext* gc) const {
+                                           osg::GraphicsContext* gc) {
   osg::ref_ptr<OculusTextureBuffer> buffer = m_textureBuffer[eye];
 
   osg::ref_ptr<osg::Camera> camera = new osg::Camera();
@@ -244,7 +246,11 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye,
   }
 
   camera->setPreDrawCallback(new OculusPreDrawCallback(camera, buffer));
-  camera->setFinalDrawCallback(new OculusPostDrawCallback(camera, buffer));
+
+  if (m_blitOnPostDraw && eye == Eye::RIGHT)
+    camera->setFinalDrawCallback(new OculusPostDrawCallback(camera, buffer, true, this));
+  else
+    camera->setFinalDrawCallback(new OculusPostDrawCallback(camera, buffer));
 
   return camera.release();
 }
