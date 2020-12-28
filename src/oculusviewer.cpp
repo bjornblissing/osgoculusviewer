@@ -52,7 +52,7 @@ void OculusViewer::configure() {
                      m_device->projectionMatrix(OculusDevice::Eye::LEFT),
                      m_device->viewMatrix(OculusDevice::Eye::LEFT),
                      true);
-  m_viewer->getSlave(0)._updateSlaveCallback =
+  m_viewer->getSlave(m_viewer->getNumSlaves()-1)._updateSlaveCallback =
     new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::LEFT_CAMERA,
                                   m_device.get(),
                                   swapCallback.get());
@@ -61,7 +61,7 @@ void OculusViewer::configure() {
                      m_device->projectionMatrix(OculusDevice::Eye::RIGHT),
                      m_device->viewMatrix(OculusDevice::Eye::RIGHT),
                      true);
-  m_viewer->getSlave(1)._updateSlaveCallback =
+  m_viewer->getSlave(m_viewer->getNumSlaves()-1)._updateSlaveCallback =
     new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::RIGHT_CAMERA,
                                   m_device.get(),
                                   swapCallback.get());
