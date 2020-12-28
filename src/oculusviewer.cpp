@@ -52,19 +52,32 @@ void OculusViewer::configure() {
                      m_device->projectionMatrix(OculusDevice::Eye::LEFT),
                      m_device->viewMatrix(OculusDevice::Eye::LEFT),
                      true);
-  m_viewer->getSlave(0)._updateSlaveCallback =
-    new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::LEFT_CAMERA,
-                                  m_device.get(),
-                                  swapCallback.get());
 
   m_viewer->addSlave(cameraRTTRight,
                      m_device->projectionMatrix(OculusDevice::Eye::RIGHT),
                      m_device->viewMatrix(OculusDevice::Eye::RIGHT),
                      true);
-  m_viewer->getSlave(1)._updateSlaveCallback =
-    new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::RIGHT_CAMERA,
-                                  m_device.get(),
-                                  swapCallback.get());
+
+  // Add callbacks to handle update of slave views
+  osg::View::Slave* leftSlaveView = m_viewer->findSlaveForCamera(cameraRTTLeft);
+  if (leftSlaveView) {
+    leftSlaveView->_updateSlaveCallback =
+      new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::LEFT_CAMERA,
+                                    m_device.get(),
+                                    swapCallback.get());
+  } else {
+    osg::notify(osg::FATAL) << "Error: Unable to acquire left slave view!" << std::endl;
+  }
+
+  osg::View::Slave* rightSlaveView = m_viewer->findSlaveForCamera(cameraRTTRight);
+  if (rightSlaveView) {
+    rightSlaveView->_updateSlaveCallback =
+      new OculusUpdateSlaveCallback(OculusUpdateSlaveCallback::RIGHT_CAMERA,
+                                    m_device.get(),
+                                    swapCallback.get());
+  } else {
+    osg::notify(osg::FATAL) << "Error: Unable to acquire right slave view!" << std::endl;
+  }
 
   // Use sky light instead of headlight to avoid light changes when head movements
   m_viewer->setLightingMode(osg::View::SKY_LIGHT);
