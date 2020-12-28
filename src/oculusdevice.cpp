@@ -142,6 +142,7 @@ void OculusDevice::updatePose(long long frameIndex) {
 
   // update touch pose
   ovrTrackingState trackingState = ovr_GetTrackingState(m_session, 0.0, ovrFalse);
+  m_headPose = trackingState.HeadPose;
   m_handPoses[ovrHand_Left] = trackingState.HandPoses[ovrHand_Left];
   m_handPoses[ovrHand_Right] = trackingState.HandPoses[ovrHand_Right];
 }
