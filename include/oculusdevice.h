@@ -44,12 +44,20 @@ class OculusDevice : public osg::Referenced {
     return m_hmdDesc.Resolution.h;
   }
 
+  const ovrHmdDesc& hmdDescription() const { return m_hmdDesc; }
+
   float nearClip() const {
     return m_nearClip;
   }
   float farClip() const {
     return m_farClip;
   }
+
+  // Added these methods to modify near and far clip after constructing the device.
+  // As these are used on a frame basis only to compute the projection matrix through 
+  // the Oculus SDK, it's safe to modify them any time at runtime.
+  void setNearClip(float nearClip) { m_nearClip = nearClip; }
+  void setFarClip(float farClip) { m_farClip = farClip; }
 
   void resetSensorOrientation() const {
     ovr_RecenterTrackingOrigin(m_session);
