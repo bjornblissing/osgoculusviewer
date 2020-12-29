@@ -44,6 +44,10 @@ class OculusDevice : public osg::Referenced {
     return m_hmdDesc.Resolution.h;
   }
 
+  const ovrHmdDesc& hmdDescription() const {
+    return m_hmdDesc;
+  }
+
   float nearClip() const {
     return m_nearClip;
   }
