@@ -51,8 +51,17 @@ class OculusDevice : public osg::Referenced {
   float nearClip() const {
     return m_nearClip;
   }
+
   float farClip() const {
     return m_farClip;
+  }
+
+  void setNearClip(float nearClip) {
+    m_nearClip = nearClip;
+  }
+
+  void setFarClip(float farClip) {
+    m_farClip = farClip;
   }
 
   void resetSensorOrientation() const {
