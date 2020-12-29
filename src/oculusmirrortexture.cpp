@@ -49,7 +49,7 @@ OculusMirrorTexture::OculusMirrorTexture(ovrSession& session,
   fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
 }
 
-void OculusMirrorTexture::blitTexture(osg::GraphicsContext* gc) {
+void OculusMirrorTexture::blitTexture(osg::GraphicsContext* gc) const {
   const OSG_GLExtensions* fbo_ext = getGLExtensions(*(gc->getState()));
   // Blit mirror texture to back buffer
   fbo_ext->glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, m_mirrorFBO);

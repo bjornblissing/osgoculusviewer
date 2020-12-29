@@ -30,7 +30,9 @@ class OculusDevice : public osg::Referenced {
                const float worldUnitsPerMetre,
                const int samples,
                TrackingOrigin origin,
-               const int mirrorTextureWidth);
+               const int mirrorTextureWidth,
+               bool blitOnPostDraw = false);
+
   void createRenderBuffers(osg::State* state);
   void init();
 
@@ -64,6 +66,10 @@ class OculusDevice : public osg::Referenced {
     m_farClip = farClip;
   }
 
+  bool blitOnPostDraw() const {
+    return m_blitOnPostDraw;
+  }
+
   void resetSensorOrientation() const {
     ovr_RecenterTrackingOrigin(m_session);
   }
@@ -86,7 +92,7 @@ class OculusDevice : public osg::Referenced {
   bool beginFrame(long long frameIndex = 0);
 
   bool submitFrame(long long frameIndex = 0);
-  void blitMirrorTexture(osg::GraphicsContext* gc);
+  void blitMirrorTexture(osg::GraphicsContext* gc) const;
 
   void setPerfHudMode(int mode);
 
@@ -152,6 +158,7 @@ class OculusDevice : public osg::Referenced {
   float m_farClip;
   int m_samples = {0};
   bool m_begunFrame = {false};
+  bool m_blitOnPostDraw = {false};
   TrackingOrigin m_origin;
 };
 

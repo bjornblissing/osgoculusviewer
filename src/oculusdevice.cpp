@@ -23,14 +23,16 @@ OculusDevice::OculusDevice(float nearClip,
                            const float worldUnitsPerMetre,
                            const int samples,
                            TrackingOrigin origin,
-                           const int mirrorTextureWidth) :
+                           const int mirrorTextureWidth,
+                           bool blitOnPostDraw) :
     m_pixelsPerDisplayPixel(pixelsPerDisplayPixel),
     m_worldUnitsPerMetre(worldUnitsPerMetre),
     m_mirrorTextureWidth(mirrorTextureWidth),
     m_nearClip(nearClip),
     m_farClip(farClip),
     m_samples(samples),
-    m_origin(origin) {
+    m_origin(origin),
+    m_blitOnPostDraw(blitOnPostDraw) {
   trySetProcessAsHighPriority();
 
   ovrResult result = ovr_Initialize(nullptr);
@@ -245,7 +247,9 @@ osg::Camera* OculusDevice::createRTTCamera(OculusDevice::Eye eye,
   }
 
   camera->setPreDrawCallback(new OculusPreDrawCallback(camera, buffer));
-  camera->setFinalDrawCallback(new OculusPostDrawCallback(camera, buffer));
+
+  camera->setFinalDrawCallback(
+    new OculusPostDrawCallback(camera, buffer, this, eye == Eye::RIGHT && m_blitOnPostDraw));
 
   return camera.release();
 }
@@ -293,7 +297,7 @@ bool OculusDevice::submitFrame(long long frameIndex) {
   return false;
 }
 
-void OculusDevice::blitMirrorTexture(osg::GraphicsContext* gc) {
+void OculusDevice::blitMirrorTexture(osg::GraphicsContext* gc) const {
   m_mirrorTexture->blitTexture(gc);
 }
 

@@ -23,7 +23,7 @@ class OculusMirrorTexture : public osg::Referenced {
   GLint height() const {
     return m_height;
   }
-  void blitTexture(osg::GraphicsContext* gc);
+  void blitTexture(osg::GraphicsContext* gc) const;
 
  private:
   ~OculusMirrorTexture() {}

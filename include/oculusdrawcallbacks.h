@@ -12,6 +12,7 @@
 
 // Forward declaration
 class OculusTextureBuffer;
+class OculusDevice;
 
 class OculusInitialDrawCallback : public osg::Camera::DrawCallback {
  public:
@@ -33,15 +34,18 @@ class OculusPreDrawCallback : public osg::Camera::DrawCallback {
 
 class OculusPostDrawCallback : public osg::Camera::DrawCallback {
  public:
-  OculusPostDrawCallback(osg::Camera* camera, OculusTextureBuffer* textureBuffer) :
-      m_camera(camera),
-      m_textureBuffer(textureBuffer) {}
+  OculusPostDrawCallback(osg::Camera* camera,
+                         OculusTextureBuffer* textureBuffer,
+                         const OculusDevice* device,
+                         bool blit = false);
 
   void operator()(osg::RenderInfo& renderInfo) const override;
 
  private:
   osg::observer_ptr<osg::Camera> m_camera;
   osg::observer_ptr<OculusTextureBuffer> m_textureBuffer;
+  const OculusDevice* m_device;
+  bool m_blit;
 };
 
 #endif /* _OSG_OCULUSDRAWCALLBACKS_H_ */
