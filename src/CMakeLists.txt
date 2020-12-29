@@ -18,6 +18,7 @@ SET(TARGET_SRC
 # Header files for library
 SET(HEADER_PATH ../include/)
 SET(TARGET_H
+	${HEADER_PATH}/oculusconfig.h
 	${HEADER_PATH}/oculusviewer.h
 	${HEADER_PATH}/oculusdevice.h
 	${HEADER_PATH}/oculusdrawcallbacks.h

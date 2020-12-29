@@ -8,12 +8,14 @@
 #ifndef _OSG_OCULUSEVENTHANDLER_H_
 #define _OSG_OCULUSEVENTHANDLER_H_
 
+#include "oculusconfig.h"
+
 #include <osgViewer/ViewerEventHandlers>
 
 // Forward declaration
 class OculusDevice;
 
-class OculusEventHandler : public osgGA::GUIEventHandler {
+class OSGOCULUS_EXPORT OculusEventHandler : public osgGA::GUIEventHandler {
  public:
   explicit OculusEventHandler(OculusDevice* device) : m_oculusDevice(device) {}
   bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter&) override;

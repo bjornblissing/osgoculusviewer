@@ -11,13 +11,15 @@
 #ifndef _OSG_OCULUSTEXTURE_H_
 #define _OSG_OCULUSTEXTURE_H_
 
+#include "oculusconfig.h"
+
 #include <osg/Texture2D>
 
 #include <osg/FrameBufferObject>
 
 #include <OVR_CAPI_GL.h>
 
-class OculusTextureBuffer : public osg::Referenced {
+class OSGOCULUS_EXPORT OculusTextureBuffer : public osg::Referenced {
  public:
   OculusTextureBuffer(const ovrSession& session,
                       osg::State* state,

@@ -8,6 +8,8 @@
 #ifndef _OSG_OCULUSDEVICE_H_
 #define _OSG_OCULUSDEVICE_H_
 
+#include "oculusconfig.h"
+
 #include <osg/GraphicsContext>
 #include <osg/State>
 #include <osg/Transform>
@@ -18,7 +20,7 @@
 class OculusTextureBuffer;
 class OculusMirrorTexture;
 
-class OculusDevice : public osg::Referenced {
+class OSGOCULUS_EXPORT OculusDevice : public osg::Referenced {
  public:
   typedef enum Eye_ { LEFT = 0, RIGHT = 1, COUNT = 2 } Eye;
 
