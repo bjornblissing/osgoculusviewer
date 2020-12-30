@@ -7,6 +7,9 @@ SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # Build example viewer
 OPTION(OSGOCULUSVIEWER_BUILD_EXAMPLE "Enable to build viewer example" ON)
 
+# Build osgOculus as dynamic library
+OPTION(OSGOCULUSLIB_BUILD_SHARED "Build osgOculus library as shared/dll" OFF)
+
 # Path to find OpenSceneGraph
 SET(OSG_DIR $ENV{OSG_DIR} CACHE PATH "Path where to find the OpenSceneGraph")
 IF(NOT OSG_DIR)
