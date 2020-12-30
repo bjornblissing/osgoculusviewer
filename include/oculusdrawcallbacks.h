@@ -8,18 +8,20 @@
 #ifndef _OSG_OCULUSDRAWCALLBACKS_H_
 #define _OSG_OCULUSDRAWCALLBACKS_H_
 
+#include "oculusconfig.h"
+
 #include <osg/Camera>
 
 // Forward declaration
 class OculusTextureBuffer;
 class OculusDevice;
 
-class OculusInitialDrawCallback : public osg::Camera::DrawCallback {
+class OSGOCULUS_EXPORT OculusInitialDrawCallback : public osg::Camera::DrawCallback {
  public:
   virtual void operator()(osg::RenderInfo& renderInfo) const override;
 };
 
-class OculusPreDrawCallback : public osg::Camera::DrawCallback {
+class OSGOCULUS_EXPORT OculusPreDrawCallback : public osg::Camera::DrawCallback {
  public:
   OculusPreDrawCallback(osg::Camera* camera, OculusTextureBuffer* textureBuffer) :
       m_camera(camera),
@@ -32,7 +34,7 @@ class OculusPreDrawCallback : public osg::Camera::DrawCallback {
   osg::observer_ptr<OculusTextureBuffer> m_textureBuffer;
 };
 
-class OculusPostDrawCallback : public osg::Camera::DrawCallback {
+class OSGOCULUS_EXPORT OculusPostDrawCallback : public osg::Camera::DrawCallback {
  public:
   OculusPostDrawCallback(osg::Camera* camera,
                          OculusTextureBuffer* textureBuffer,

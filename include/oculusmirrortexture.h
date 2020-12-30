@@ -9,11 +9,13 @@
 #ifndef _OSG_OCULUSMIRRORTEXTURE_H_
 #define _OSG_OCULUSMIRRORTEXTURE_H_
 
+#include "oculusconfig.h"
+
 #include <osg/State>
 
 #include <OVR_CAPI_GL.h>
 
-class OculusMirrorTexture : public osg::Referenced {
+class OSGOCULUS_EXPORT OculusMirrorTexture : public osg::Referenced {
  public:
   OculusMirrorTexture(ovrSession& session, osg::ref_ptr<osg::State> state, int width, int height);
   void destroy(osg::GraphicsContext* gc = 0);

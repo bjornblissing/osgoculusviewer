@@ -8,12 +8,14 @@
 #ifndef _OSG_OCULUSSWAPCALLBACK_H_
 #define _OSG_OCULUSSWAPCALLBACK_H_
 
+#include "oculusconfig.h"
+
 #include <osg/GraphicsContext>
 
 // Forward declaration
 class OculusDevice;
 
-class OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
+class OSGOCULUS_EXPORT OculusSwapCallback : public osg::GraphicsContext::SwapCallback {
  public:
   explicit OculusSwapCallback(OculusDevice* device) : m_device(device) {}
   void swapBuffersImplementation(osg::GraphicsContext* gc) override;

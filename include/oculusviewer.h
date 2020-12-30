@@ -8,6 +8,8 @@
 #ifndef _OSG_OCULUSVIEWER_H_
 #define _OSG_OCULUSVIEWER_H_
 
+#include "oculusconfig.h"
+
 #include <osg/Group>
 
 // Forward declaration
@@ -18,7 +20,7 @@ class Viewer;
 class OculusDevice;
 class OculusRealizeOperation;
 
-class OculusViewer : public osg::Group {
+class OSGOCULUS_EXPORT OculusViewer : public osg::Group {
  public:
   OculusViewer(osgViewer::Viewer* viewer,
                OculusDevice* dev,

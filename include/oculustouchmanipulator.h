@@ -8,12 +8,14 @@
 #ifndef _OSG_OCULUSTOUCHMANIPULATOR_H_
 #define _OSG_OCULUSTOUCHMANIPULATOR_H_
 
+#include "oculusconfig.h"
+
 #include <osgGA/CameraManipulator>
 
 // Forward declaration
 class OculusDevice;
 
-class OculusTouchManipulator : public osgGA::CameraManipulator {
+class OSGOCULUS_EXPORT OculusTouchManipulator : public osgGA::CameraManipulator {
  public:
   explicit OculusTouchManipulator(OculusDevice* device) : m_device(device) {}
 

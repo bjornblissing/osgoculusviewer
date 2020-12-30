@@ -8,12 +8,14 @@
 #ifndef _OSG_OCULUSGRAPHICSOPERATION_H_
 #define _OSG_OCULUSGRAPHICSOPERATION_H_
 
+#include "oculusconfig.h"
+
 #include <osg/GraphicsThread>
 
 // Forward declaration
 class OculusDevice;
 
-class OculusRealizeOperation : public osg::GraphicsOperation {
+class OSGOCULUS_EXPORT OculusRealizeOperation : public osg::GraphicsOperation {
  public:
   explicit OculusRealizeOperation(OculusDevice* device) :
       osg::GraphicsOperation("OculusRealizeOperation", false),
@@ -29,7 +31,7 @@ class OculusRealizeOperation : public osg::GraphicsOperation {
   bool m_realized = {false};
 };
 
-class OculusCleanUpOperation : public osg::GraphicsOperation {
+class OSGOCULUS_EXPORT OculusCleanUpOperation : public osg::GraphicsOperation {
  public:
   explicit OculusCleanUpOperation(OculusDevice* device) :
       osg::GraphicsOperation("OculusCleanupOperation", false),

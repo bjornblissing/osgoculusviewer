@@ -8,13 +8,15 @@
 #ifndef _OSG_OCULUSUPDATESLAVECALLBACK_H_
 #define _OSG_OCULUSUPDATESLAVECALLBACK_H_
 
+#include "oculusconfig.h"
+
 #include <osgViewer/View>
 
 // Forward declaration
 class OculusDevice;
 class OculusSwapCallback;
 
-struct OculusUpdateSlaveCallback : public osg::View::Slave::UpdateSlaveCallback {
+struct OSGOCULUS_EXPORT OculusUpdateSlaveCallback : public osg::View::Slave::UpdateSlaveCallback {
   enum CameraType { LEFT_CAMERA, RIGHT_CAMERA };
 
   OculusUpdateSlaveCallback(CameraType cameraType,

@@ -18,6 +18,7 @@ SET(TARGET_SRC
 # Header files for library
 SET(HEADER_PATH ../include/)
 SET(TARGET_H
+	${HEADER_PATH}/oculusconfig.h
 	${HEADER_PATH}/oculusviewer.h
 	${HEADER_PATH}/oculusdevice.h
 	${HEADER_PATH}/oculusdrawcallbacks.h
@@ -35,7 +36,12 @@ SET(TARGET_H
 # Create library
 #####################################################################
 
-ADD_LIBRARY(${TARGET_LIBRARYNAME} ${TARGET_SRC} ${TARGET_H})
+# static or dinamic?
+IF(OSGOCULUSLIB_BUILD_SHARED)
+	ADD_LIBRARY(${TARGET_LIBRARYNAME} SHARED ${TARGET_SRC} ${TARGET_H})	
+ELSE()
+	ADD_LIBRARY(${TARGET_LIBRARYNAME} ${TARGET_SRC} ${TARGET_H})
+ENDIF()
 
 TARGET_COMPILE_OPTIONS(${TARGET_LIBRARYNAME}
 	PUBLIC 
